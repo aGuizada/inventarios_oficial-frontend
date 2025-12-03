@@ -1,0 +1,92 @@
+<div class="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+        <!-- Header -->
+        <div class="bg-blue-600 p-8 text-center">
+            <div
+                class="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+                <i class="fas fa-cube text-3xl text-white"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-1">Bienvenido</h2>
+            <p class="text-blue-100">Sistema de Inventarios</p>
+        </div>
+
+        <!-- Form -->
+        <div class="p-8">
+            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+                <!-- Error Message -->
+                <div *ngIf="errorMessage"
+                    class="bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-center gap-2 animate-shake">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {{ errorMessage }}
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Correo Electrónico</label>
+                    <div class="relative">
+                        <div
+                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <input type="email" formControlName="email"
+                            class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            [class.border-red-300]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+                            placeholder="ejemplo@correo.com">
+                    </div>
+                    <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+                        class="mt-1 text-xs text-red-500">
+                        <span *ngIf="loginForm.get('email')?.errors?.['required']">El correo es requerido</span>
+                        <span *ngIf="loginForm.get('email')?.errors?.['email']">Correo inválido</span>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+                    <div class="relative">
+                        <div
+                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <input [type]="showPassword ? 'text' : 'password'" formControlName="password"
+                            class="block w-full pl-10 pr-10 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            [class.border-red-300]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+                            placeholder="••••••••">
+                        <button type="button" (click)="togglePassword()"
+                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                            <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                        </button>
+                    </div>
+                    <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+                        class="mt-1 text-xs text-red-500">
+                        <span *ngIf="loginForm.get('password')?.errors?.['required']">La contraseña es requerida</span>
+                        <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Mínimo 6 caracteres</span>
+                    </div>
+                </div>
+
+                <!-- Remember & Forgot -->
+                <div class="flex items-center justify-between text-sm">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" formControlName="remember"
+                            class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                        <span class="text-slate-600">Recordarme</span>
+                    </label>
+                    <a href="#" class="text-blue-600 hover:text-blue-700 font-medium">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" [disabled]="loginForm.invalid || isLoading"
+                    class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 focus:ring-4 focus:ring-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                    <i *ngIf="isLoading" class="fas fa-spinner fa-spin"></i>
+                    <span>{{ isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}</span>
+                </button>
+            </form>
+
+            <!-- Footer -->
+            <div class="mt-6 text-center text-sm text-slate-500">
+                ¿No tienes una cuenta?
+                <a routerLink="/register" class="text-blue-600 hover:text-blue-700 font-medium">Regístrate</a>
+            </div>
+        </div>
+    </div>
+</div>
