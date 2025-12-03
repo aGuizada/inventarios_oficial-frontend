@@ -133,7 +133,7 @@
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
         <div
-            class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+            class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full max-h-[90vh] overflow-y-auto">
             <form [formGroup]="form" (ngSubmit)="save()">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start">
@@ -211,42 +211,95 @@
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <label for="stock"
-                                                class="block text-sm font-medium text-gray-700">Stock</label>
-                                            <input type="number" id="stock" formControlName="stock"
+                                                class="block text-sm font-medium text-gray-700">Stock <span class="text-red-500">*</span></label>
+                                            <input type="number" id="stock" formControlName="stock" min="0"
                                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
                                         </div>
                                         <div>
                                             <label for="unidad_envase"
-                                                class="block text-sm font-medium text-gray-700">Unidad Envase</label>
-                                            <input type="number" id="unidad_envase" formControlName="unidad_envase"
+                                                class="block text-sm font-medium text-gray-700">Unidad Envase <span class="text-red-500">*</span></label>
+                                            <input type="number" id="unidad_envase" formControlName="unidad_envase" min="1"
                                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <label for="precio_costo_unid"
-                                                class="block text-sm font-medium text-gray-700">Costo Unit.</label>
-                                            <input type="number" id="precio_costo_unid"
-                                                formControlName="precio_costo_unid"
+                                                class="block text-sm font-medium text-gray-700">Costo Unit. <span class="text-red-500">*</span></label>
+                                            <input type="number" id="precio_costo_unid" step="0.01"
+                                                formControlName="precio_costo_unid" min="0"
                                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
                                         </div>
                                         <div>
-                                            <label for="precio_venta"
-                                                class="block text-sm font-medium text-gray-700">Precio Venta</label>
-                                            <input type="number" id="precio_venta" formControlName="precio_venta"
+                                            <label for="precio_costo_paq"
+                                                class="block text-sm font-medium text-gray-700">Costo Paquete <span class="text-red-500">*</span></label>
+                                            <input type="number" id="precio_costo_paq" step="0.01"
+                                                formControlName="precio_costo_paq" min="0"
                                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="precio_venta"
+                                                class="block text-sm font-medium text-gray-700">Precio Venta <span class="text-red-500">*</span></label>
+                                            <input type="number" id="precio_venta" formControlName="precio_venta" step="0.01" min="0"
+                                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                        </div>
+                                        <div>
+                                            <label for="costo_compra"
+                                                class="block text-sm font-medium text-gray-700">Costo Compra <span class="text-red-500">*</span></label>
+                                            <input type="number" id="costo_compra" formControlName="costo_compra" step="0.01" min="0"
+                                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Precios Adicionales</label>
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label for="precio_uno"
+                                                    class="block text-xs font-medium text-gray-600">Precio Uno</label>
+                                                <input type="number" id="precio_uno" formControlName="precio_uno" step="0.01" min="0"
+                                                    class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                            </div>
+                                            <div>
+                                                <label for="precio_dos"
+                                                    class="block text-xs font-medium text-gray-600">Precio Dos</label>
+                                                <input type="number" id="precio_dos" formControlName="precio_dos" step="0.01" min="0"
+                                                    class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                            </div>
+                                            <div>
+                                                <label for="precio_tres"
+                                                    class="block text-xs font-medium text-gray-600">Precio Tres</label>
+                                                <input type="number" id="precio_tres" formControlName="precio_tres" step="0.01" min="0"
+                                                    class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                            </div>
+                                            <div>
+                                                <label for="precio_cuatro"
+                                                    class="block text-xs font-medium text-gray-600">Precio Cuatro</label>
+                                                <input type="number" id="precio_cuatro" formControlName="precio_cuatro" step="0.01" min="0"
+                                                    class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                            </div>
                                         </div>
                                     </div>
                                     <div>
                                         <label for="descripcion"
                                             class="block text-sm font-medium text-gray-700">Descripción</label>
-                                        <textarea id="descripcion" formControlName="descripcion" rows="3"
+                                        <textarea id="descripcion" formControlName="descripcion" rows="3" maxlength="256"
                                             class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"></textarea>
                                     </div>
                                     <div>
+                                        <label for="fotografia"
+                                            class="block text-sm font-medium text-gray-700">Fotografía</label>
+                                        <input type="file" id="fotografia" accept="image/*" (change)="onFileSelected($event)"
+                                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                        <div *ngIf="imagePreview" class="mt-2">
+                                            <img [src]="imagePreview" alt="Preview" class="h-32 w-32 object-cover rounded-md border border-gray-300">
+                                        </div>
+                                    </div>
+                                    <div>
                                         <label for="vencimiento"
-                                            class="block text-sm font-medium text-gray-700">Vencimiento</label>
-                                        <input type="date" id="vencimiento" formControlName="vencimiento"
+                                            class="block text-sm font-medium text-gray-700">Vencimiento (días)</label>
+                                        <input type="number" id="vencimiento" formControlName="vencimiento" min="0"
                                             class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
                                     </div>
                                     <div class="flex items-center mt-6">

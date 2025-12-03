@@ -12,17 +12,24 @@ export class CotizacionService {
 
     constructor(private http: HttpClient) { }
 
-    getAll(page: number = 1): Observable<PaginatedResponse<Cotizacion>> {
-        const params = new HttpParams().set('page', page.toString());
-        return this.http.get<PaginatedResponse<Cotizacion>>(this.apiUrl, { params });
+    getAll(): Observable<Cotizacion[]> {
+        return this.http.get<Cotizacion[]>(this.apiUrl);
     }
 
-    getById(id: number): Observable<ApiResponse<Cotizacion>> {
-        return this.http.get<ApiResponse<Cotizacion>>(`${this.apiUrl}/${id}`);
+    getById(id: number): Observable<Cotizacion> {
+        return this.http.get<Cotizacion>(`${this.apiUrl}/${id}`);
     }
 
-    create(cotizacion: Partial<Cotizacion>): Observable<ApiResponse<Cotizacion>> {
-        return this.http.post<ApiResponse<Cotizacion>>(this.apiUrl, cotizacion);
+    create(cotizacion: Partial<Cotizacion>): Observable<Cotizacion> {
+        return this.http.post<Cotizacion>(this.apiUrl, cotizacion);
+    }
+
+    update(id: number, cotizacion: Partial<Cotizacion>): Observable<Cotizacion> {
+        return this.http.put<Cotizacion>(`${this.apiUrl}/${id}`, cotizacion);
+    }
+
+    delete(id: number): Observable<void> {
+        return this.http.delete<void>(`${this.apiUrl}/${id}`);
     }
 
     convertirAVenta(id: number): Observable<ApiResponse<Venta>> {

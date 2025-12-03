@@ -1,23 +1,24 @@
 import { Cliente } from './cliente.interface';
 import { TipoVenta } from './tipo-venta.interface';
 import { TipoPago } from './tipo-pago.interface';
+import { Articulo } from './articulo.interface';
 
 export interface Venta {
-    id: number;
-    numero_venta: string;
-    fecha: string;
-    cliente_id?: number;
+    id?: number;
+    cliente_id: number;
+    user_id: number;
     tipo_venta_id: number;
     tipo_pago_id: number;
-    subtotal: number;
-    descuento: number;
+    tipo_comprobante?: string;
+    serie_comprobante?: string;
+    num_comprobante?: string;
+    fecha_hora: string;
     total: number;
-    user_id: number;
-    sucursal_id: number;
-    caja_id?: number;
-    estado: string;
-    created_at: string;
-    updated_at: string;
+    estado?: string;
+    caja_id: number;
+    almacen_id?: number; // Para validar stock
+    created_at?: string;
+    updated_at?: string;
     cliente?: Cliente;
     tipo_venta?: TipoVenta;
     tipo_pago?: TipoPago;
@@ -25,13 +26,13 @@ export interface Venta {
 }
 
 export interface DetalleVenta {
-    id: number;
-    venta_id: number;
+    id?: number;
+    venta_id?: number;
     articulo_id: number;
     cantidad: number;
-    precio_unitario: number;
-    subtotal: number;
-    created_at: string;
-    updated_at: string;
-    articulo?: any;
+    precio: number;
+    descuento?: number;
+    created_at?: string;
+    updated_at?: string;
+    articulo?: Articulo;
 }

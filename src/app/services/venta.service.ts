@@ -4,6 +4,16 @@ import { Observable } from 'rxjs';
 import { Venta, ApiResponse, PaginatedResponse } from '../interfaces';
 import { environment } from '../../environments/environment';
 
+export interface ProductoInventario {
+    inventario_id: number;
+    articulo_id: number;
+    almacen_id: number;
+    stock_disponible: number;
+    cantidad: number;
+    articulo?: any;
+    almacen?: any;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -12,20 +22,27 @@ export class VentaService {
 
     constructor(private http: HttpClient) { }
 
-    getAll(page: number = 1): Observable<PaginatedResponse<Venta>> {
-        const params = new HttpParams().set('page', page.toString());
-        return this.http.get<PaginatedResponse<Venta>>(this.apiUrl, { params });
+    getAll(): Observable<Venta[]> {
+        return this.http.get<Venta[]>(this.apiUrl);
     }
 
-    getById(id: number): Observable<ApiResponse<Venta>> {
-        return this.http.get<ApiResponse<Venta>>(`${this.apiUrl}/${id}`);
+    getById(id: number): Observable<Venta> {
+        return this.http.get<Venta>(`${this.apiUrl}/${id}`);
     }
 
-    create(venta: Partial<Venta>): Observable<ApiResponse<Venta>> {
-        return this.http.post<ApiResponse<Venta>>(this.apiUrl, venta);
+    create(venta: Partial<Venta>): Observable<Venta> {
+        return this.http.post<Venta>(this.apiUrl, venta);
     }
 
-    anular(id: number): Observable<ApiResponse<any>> {
-        return this.http.post<ApiResponse<any>>(`${this.apiUrl}/${id}/anular`, {});
+    getProductosInventario(almacenId?: number): Observable<ProductoInventario[]> {
+        let params = new HttpParams();
+        if (almacenId) {
+            params = params.set('almacen_id', almacenId.toString());
+        }
+        return this.http.get<ProductoInventario[]>(`${this.apiUrl}/productos-inventario`, { params });
+    }
+
+    anular(id: number): Observable<any> {
+        return this.http.post<any>(`${this.apiUrl}/${id}/anular`, {});
     }
 }

@@ -1,30 +1,39 @@
 import { Cliente } from './cliente.interface';
+import { User } from './user.interface';
+import { Almacen } from './almacen.interface';
+import { Articulo } from './articulo.interface';
 
 export interface Cotizacion {
     id: number;
-    numero_cotizacion: string;
-    fecha: string;
-    cliente_id?: number;
-    subtotal: number;
-    descuento: number;
-    total: number;
-    validez_dias: number;
-    estado: string;
+    cliente_id: number;
     user_id: number;
-    created_at: string;
-    updated_at: string;
+    almacen_id: number;
+    fecha_hora: string;
+    total: number;
+    validez?: string;
+    plazo_entrega?: string;
+    tiempo_entrega?: string;
+    lugar_entrega?: string;
+    forma_pago?: string;
+    nota?: string;
+    estado?: string;
+    created_at?: string;
+    updated_at?: string;
     cliente?: Cliente;
+    user?: User;
+    almacen?: Almacen;
     detalles?: DetalleCotizacion[];
 }
 
 export interface DetalleCotizacion {
-    id: number;
-    cotizacion_id: number;
+    id?: number;
+    cotizacion_id?: number;
     articulo_id: number;
     cantidad: number;
     precio_unitario: number;
+    descuento?: number;
     subtotal: number;
-    created_at: string;
-    updated_at: string;
-    articulo?: any;
+    created_at?: string;
+    updated_at?: string;
+    articulo?: Articulo;
 }

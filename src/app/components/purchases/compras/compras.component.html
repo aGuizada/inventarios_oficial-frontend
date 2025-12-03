@@ -1,1 +1,402 @@
-<p>compras works!</p>
+<div class="container mx-auto px-4 py-4">
+    <h1 class="text-2xl font-bold text-gray-800 mb-4">Gestión de Compras</h1>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading && compras.length === 0" class="flex justify-center items-center py-8">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+
+    <!-- Historial de Compras (solo se muestra si hay compras registradas) -->
+    <div *ngIf="!isLoading && compras && compras.length > 0" class="mt-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Historial de Compras</h2>
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                N°</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Proveedor</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Fecha</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Tipo</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Total</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Estado</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr *ngFor="let compra of compras" class="hover:bg-gray-50 transition duration-150">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{{ compra.id }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ compra.proveedor?.nombre || 'N/A' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ compra.fecha_hora | date:'short' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <span [class]="compra.tipo_compra === 'contado' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'"
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                    {{ compra.tipo_compra === 'contado' ? 'Contado' : 'Crédito' }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ compra.total | currency }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span [class]="compra.estado === 'anulado' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'"
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                    {{ compra.estado || 'Activo' }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button (click)="edit(compra)"
+                                    class="text-indigo-600 hover:text-indigo-900 mr-4">Editar</button>
+                                <button (click)="delete(compra.id)"
+                                    class="text-red-600 hover:text-red-900">Eliminar</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario de Compra (se muestra directamente en la página) -->
+    <div *ngIf="isModalOpen" class="mt-2">
+        <form [formGroup]="form" (ngSubmit)="save()" class="flex flex-col">
+            <!-- Contenido principal - Tres columnas -->
+            <div class="flex flex-row gap-4" style="min-height: 70vh;">
+                <!-- Columna 1 - Formulario -->
+                <div class="w-1/3 overflow-y-auto">
+                    <div class="space-y-3">
+                            <!-- Proveedor -->
+                            <div class="relative">
+                                <label for="proveedor_nombre"
+                                    class="block text-sm font-medium text-gray-700 mb-1">Proveedor <span
+                                        class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <input type="text" id="proveedor_nombre" 
+                                        [(ngModel)]="proveedorBusqueda"
+                                        (input)="buscarProveedor($event)"
+                                        (focus)="onFocusProveedor()"
+                                        (blur)="onBlurProveedor()"
+                                        [ngModelOptions]="{standalone: true}"
+                                        [class.border-red-500]="form.get('proveedor_nombre')?.invalid && form.get('proveedor_nombre')?.touched"
+                                        placeholder="Escriba el nombre del proveedor..."
+                                        class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <button *ngIf="proveedorSeleccionado" type="button" 
+                                        (click)="limpiarProveedor()"
+                                        class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div *ngIf="mostrarSugerenciasProveedor && proveedoresFiltrados.length > 0"
+                                    class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                    <ul class="py-1">
+                                        <li *ngFor="let proveedor of proveedoresFiltrados"
+                                            (mousedown)="seleccionarProveedor(proveedor)"
+                                            class="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm">
+                                            <div class="font-medium text-gray-900">{{ proveedor.nombre }}</div>
+                                            <div *ngIf="proveedor.num_documento" class="text-xs text-gray-500">
+                                                {{ proveedor.tipo_documento }}: {{ proveedor.num_documento }}
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <input type="hidden" formControlName="proveedor_id">
+                                <input type="hidden" formControlName="proveedor_nombre">
+                            </div>
+
+                            <!-- Almacén -->
+                            <div>
+                                <label for="almacen_id" class="block text-sm font-medium text-gray-700 mb-1">Almacén
+                                    <span class="text-red-500">*</span></label>
+                                <select id="almacen_id" formControlName="almacen_id"
+                                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <option value="">Seleccione</option>
+                                    <option *ngFor="let almacen of almacenes" [value]="almacen.id">
+                                        {{ almacen.nombre_almacen }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Fecha y Hora -->
+                            <div>
+                                <label for="fecha_hora" class="block text-sm font-medium text-gray-700 mb-1">Fecha y Hora
+                                    <span class="text-red-500">*</span></label>
+                                <input type="datetime-local" id="fecha_hora" formControlName="fecha_hora"
+                                    class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            </div>
+
+                            <!-- Tipo de Compra -->
+                            <div>
+                                <label for="tipo_compra" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Compra
+                                    <span class="text-red-500">*</span></label>
+                                <select id="tipo_compra" formControlName="tipo_compra"
+                                    class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <option value="contado">Contado</option>
+                                    <option value="credito">Crédito</option>
+                                </select>
+                            </div>
+
+                            <!-- Campos de Comprobante en grid de 3 columnas -->
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label for="tipo_comprobante" class="block text-sm font-medium text-gray-700 mb-1">Tipo Comprobante</label>
+                                    <input type="text" id="tipo_comprobante" formControlName="tipo_comprobante"
+                                        class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label for="serie_comprobante" class="block text-sm font-medium text-gray-700 mb-1">Serie</label>
+                                    <input type="text" id="serie_comprobante" formControlName="serie_comprobante"
+                                        class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label for="num_comprobante" class="block text-sm font-medium text-gray-700 mb-1">N° Comprobante</label>
+                                    <input type="text" id="num_comprobante" formControlName="num_comprobante"
+                                        class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                </div>
+                            </div>
+
+                            <!-- Descuento Global -->
+                            <div>
+                                <label for="descuento_global" class="block text-sm font-medium text-gray-700 mb-1">Descuento Global</label>
+                                <input type="number" id="descuento_global" formControlName="descuento_global" step="0.01" min="0"
+                                    (input)="calculateTotal()"
+                                    class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                <!-- Columna 2 - Catálogo de Productos -->
+                <div class="w-1/3 overflow-y-auto">
+                    <h4 class="text-md font-semibold text-gray-800 mb-3">Catálogo de Productos</h4>
+                        
+                        <!-- Buscador de productos -->
+                        <div class="relative mb-4">
+                            <input type="text" 
+                                [(ngModel)]="busquedaArticulo"
+                                (input)="buscarArticulo($event)"
+                                (focus)="onFocusArticulo()"
+                                (blur)="onBlurArticulo()"
+                                [ngModelOptions]="{standalone: true}"
+                                placeholder="Buscar producto por nombre o código..."
+                                class="block w-full py-2 px-3 pl-10 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                            </svg>
+                            <button *ngIf="busquedaArticulo" type="button" 
+                                (click)="limpiarBusquedaArticulo()"
+                                class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <!-- Dropdown de sugerencias -->
+                            <div *ngIf="mostrarSugerenciasArticulo && articulosFiltrados.length > 0"
+                                class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-64 overflow-auto">
+                                <ul class="py-1">
+                                    <li *ngFor="let articulo of articulosFiltrados"
+                                        (mousedown)="seleccionarArticuloCatalogo(articulo)"
+                                        class="px-4 py-2 hover:bg-blue-50 cursor-pointer">
+                                        <div class="font-medium text-gray-900">{{ articulo.nombre }}</div>
+                                        <div class="text-xs text-gray-500">
+                                            Código: {{ articulo.codigo }}
+                                            <span *ngIf="articulo.precio_costo_unid" class="ml-2 font-semibold">
+                                                | Costo: {{ articulo.precio_costo_unid | currency }}
+                                            </span>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Información del producto seleccionado -->
+                        <div *ngIf="articuloSeleccionado" class="bg-white border border-gray-300 rounded-lg p-4 mb-4 shadow-sm">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h5 class="text-lg font-semibold text-gray-900">{{ articuloSeleccionado.nombre }}</h5>
+                                    <p class="text-sm text-gray-500">Código: {{ articuloSeleccionado.codigo }}</p>
+                                </div>
+                                <button type="button" (click)="articuloSeleccionado = null; busquedaArticulo = ''"
+                                    class="text-gray-400 hover:text-gray-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            <!-- Precios del producto -->
+                            <div class="grid grid-cols-2 gap-3 mb-4">
+                                <div class="bg-green-50 p-3 rounded">
+                                    <div class="text-xs text-gray-600 mb-1">Costo Unitario</div>
+                                    <div class="text-lg font-bold text-green-600">
+                                        {{ articuloSeleccionado.precio_costo_unid | currency }}
+                                    </div>
+                                </div>
+                                <div class="bg-blue-50 p-3 rounded">
+                                    <div class="text-xs text-gray-600 mb-1">Costo Paquete</div>
+                                    <div class="text-lg font-bold text-blue-600">
+                                        {{ articuloSeleccionado.precio_costo_paq | currency }}
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded">
+                                    <div class="text-xs text-gray-600 mb-1">Precio Venta</div>
+                                    <div class="text-sm font-semibold text-gray-700">
+                                        {{ articuloSeleccionado.precio_venta | currency }}
+                                    </div>
+                                </div>
+                                <div *ngIf="articuloSeleccionado.precio_uno" class="bg-gray-50 p-3 rounded">
+                                    <div class="text-xs text-gray-600 mb-1">Precio 1</div>
+                                    <div class="text-sm font-semibold text-gray-700">
+                                        {{ articuloSeleccionado.precio_uno | currency }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Stock disponible -->
+                            <div class="mb-4">
+                                <div class="text-xs text-gray-600 mb-1">Stock Disponible</div>
+                                <div class="text-lg font-semibold" 
+                                    [class.text-green-600]="articuloSeleccionado.stock > 0"
+                                    [class.text-red-600]="articuloSeleccionado.stock === 0">
+                                    {{ articuloSeleccionado.stock }} unidades
+                                </div>
+                            </div>
+
+                            <!-- Botón para agregar -->
+                            <button type="button" (click)="agregarArticuloACompra()"
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                </svg>
+                                Agregar a Compra
+                            </button>
+                        </div>
+
+                        <!-- Lista de productos (cuando no hay búsqueda o producto seleccionado) -->
+                        <div *ngIf="!articuloSeleccionado" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                            <div class="max-h-96 overflow-y-auto">
+                                <div *ngIf="articulos.length === 0" class="px-4 py-8 text-center text-sm text-gray-500">
+                                    Cargando productos...
+                                </div>
+                                <div *ngFor="let articulo of (articulosFiltrados.length > 0 ? articulosFiltrados : articulos).slice(0, 50)" 
+                                    (click)="seleccionarArticuloCatalogo(articulo)"
+                                    class="px-4 py-3 border-b border-gray-200 hover:bg-blue-50 cursor-pointer transition">
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex-1">
+                                            <div class="font-medium text-gray-900">{{ articulo.nombre }}</div>
+                                            <div class="text-sm text-gray-500">Código: {{ articulo.codigo }}</div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="font-semibold text-green-600">{{ articulo.precio_costo_unid | currency }}</div>
+                                            <div class="text-xs text-gray-500">Stock: {{ articulo.stock }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div *ngIf="articulos.length > 0 && articulosFiltrados.length === 0 && busquedaArticulo.length > 0" class="px-4 py-8 text-center text-sm text-gray-500">
+                                    No se encontraron productos con "{{ busquedaArticulo }}"
+                                </div>
+                            </div>
+                        </div>
+                </div>
+
+                <!-- Columna 3 - Artículos Agregados -->
+                <div class="w-1/3 overflow-y-auto">
+                    <h4 class="text-md font-semibold text-gray-800 mb-3">Artículos Agregados</h4>
+                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                        <div class="overflow-x-auto" style="max-height: calc(70vh - 100px); overflow-y: auto;">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Artículo</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Cant.</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Precio</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Desc.</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Subt.</th>
+                                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">
+                                            Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200" formArrayName="detalles">
+                                    <tr *ngFor="let detalle of detalles.controls; let i = index"
+                                        [formGroupName]="i" class="hover:bg-gray-50">
+                                        <td class="px-3 py-2 text-sm">
+                                            {{ getArticuloNombre(detalle.get('articulo_id')?.value) }}
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <input type="number" formControlName="cantidad" min="1"
+                                                class="w-16 py-1 px-2 border border-gray-300 rounded text-sm">
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <input type="number" formControlName="precio_unitario" step="0.01"
+                                                min="0" class="w-20 py-1 px-2 border border-gray-300 rounded text-sm">
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            <input type="number" formControlName="descuento" step="0.01" min="0"
+                                                class="w-16 py-1 px-2 border border-gray-300 rounded text-sm">
+                                        </td>
+                                        <td class="px-3 py-2 text-sm font-medium">
+                                            {{ detalle.get('subtotal')?.value | currency }}
+                                        </td>
+                                        <td class="px-3 py-2 text-center">
+                                            <button type="button" (click)="removeDetalle(i)"
+                                                class="text-red-600 hover:text-red-900">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                                                    viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd"
+                                                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr *ngIf="detalles.length === 0">
+                                        <td colspan="6" class="px-3 py-4 text-center text-sm text-gray-500">
+                                            No hay artículos agregados. Seleccione productos del catálogo.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Total -->
+                        <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg font-semibold text-gray-800">Total:</span>
+                                <span class="text-xl font-bold text-blue-600">
+                                    {{ form.get('total')?.value | currency }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer con botones -->
+            <div class="mt-3 flex justify-end space-x-3">
+                <button type="button" (click)="closeModal()"
+                    class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Cancelar
+                </button>
+                <button type="submit" [disabled]="form.invalid || detalles.length === 0 || isLoading"
+                    class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                    <span *ngIf="isLoading" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+                    {{ isLoading ? 'Registrando...' : 'Registrar Compra' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

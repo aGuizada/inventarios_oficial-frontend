@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Inventario, ApiResponse } from '../interfaces';
+import { Inventario } from '../interfaces';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -12,18 +12,15 @@ export class InventarioService {
 
     constructor(private http: HttpClient) { }
 
-    getAll(): Observable<ApiResponse<Inventario[]>> {
-        return this.http.get<ApiResponse<Inventario[]>>(this.apiUrl);
+    getAll(): Observable<Inventario[]> {
+        return this.http.get<Inventario[]>(this.apiUrl);
     }
 
-    getByAlmacen(almacenId: number): Observable<ApiResponse<Inventario[]>> {
-        return this.http.get<ApiResponse<Inventario[]>>(`${this.apiUrl}/almacen/${almacenId}`);
+    getByAlmacen(almacenId: number): Observable<Inventario[]> {
+        return this.http.get<Inventario[]>(`${this.apiUrl}?almacen_id=${almacenId}`);
     }
 
-    ajustar(inventarioId: number, cantidad: number, motivo: string): Observable<ApiResponse<any>> {
-        return this.http.post<ApiResponse<any>>(`${this.apiUrl}/${inventarioId}/ajustar`, {
-            cantidad,
-            motivo
-        });
+    getById(id: number): Observable<Inventario> {
+        return this.http.get<Inventario>(`${this.apiUrl}/${id}`);
     }
 }

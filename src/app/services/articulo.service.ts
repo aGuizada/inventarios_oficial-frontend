@@ -23,11 +23,15 @@ export class ArticuloService {
         return this.http.get<ApiResponse<Articulo>>(`${this.apiUrl}/${id}`);
     }
 
-    create(articulo: Partial<Articulo>): Observable<ApiResponse<Articulo>> {
+    create(articulo: Partial<Articulo> | FormData): Observable<ApiResponse<Articulo>> {
         return this.http.post<ApiResponse<Articulo>>(this.apiUrl, articulo);
     }
 
-    update(id: number, articulo: Partial<Articulo>): Observable<ApiResponse<Articulo>> {
+    update(id: number, articulo: Partial<Articulo> | FormData): Observable<ApiResponse<Articulo>> {
+        if (articulo instanceof FormData) {
+            articulo.append('_method', 'PUT');
+            return this.http.post<ApiResponse<Articulo>>(`${this.apiUrl}/${id}`, articulo);
+        }
         return this.http.put<ApiResponse<Articulo>>(`${this.apiUrl}/${id}`, articulo);
     }
 
