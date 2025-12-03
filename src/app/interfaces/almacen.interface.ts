@@ -2,11 +2,12 @@ import { Sucursal } from './sucursal.interface';
 
 export interface Almacen {
     id: number;
-    nombre: string;
-    descripcion?: string;
-    ubicacion?: string;
+    nombre_almacen: string;
+    ubicacion: string;
     sucursal_id: number;
-    created_at: string;
-    updated_at: string;
+    telefono?: string;
+    estado: boolean;
+    created_at?: string;
+    updated_at?: string;
     sucursal?: Sucursal;
 }

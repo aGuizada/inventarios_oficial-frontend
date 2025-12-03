@@ -1,1 +1,276 @@
-<p>articulos works!</p>
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Gestión de Artículos</h1>
+        <button (click)="openModal()"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                    clip-rule="evenodd" />
+            </svg>
+            Nuevo Artículo
+        </button>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="flex justify-center items-center py-8">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+
+    <!-- Table -->
+    <div *ngIf="!isLoading" class="bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Código</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Nombre</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Categoría</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Marca
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Precio Venta</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Estado</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr *ngFor="let articulo of articulos" class="hover:bg-gray-50 transition duration-150">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ articulo.codigo }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ articulo.nombre }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ articulo.categoria?.nombre ||
+                            'N/A' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ articulo.marca?.nombre || 'N/A'
+                            }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ articulo.stock }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ articulo.precio_venta |
+                            currency }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span [class]="articulo.estado ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                {{ articulo.estado ? 'Activo' : 'Inactivo' }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button (click)="edit(articulo)"
+                                class="text-indigo-600 hover:text-indigo-900 mr-4">Editar</button>
+                            <button (click)="delete(articulo.id)"
+                                class="text-red-600 hover:text-red-900">Eliminar</button>
+                        </td>
+                    </tr>
+                    <tr *ngIf="!isLoading && articulos && articulos.length === 0">
+                        <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">No hay artículos
+                            registrados.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div class="flex-1 flex justify-between sm:hidden">
+                <button (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1"
+                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">
+                    Anterior
+                </button>
+                <button (click)="changePage(currentPage + 1)" [disabled]="currentPage === lastPage"
+                    class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">
+                    Siguiente
+                </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Mostrando página <span class="font-medium">{{ currentPage }}</span> de <span
+                            class="font-medium">{{ lastPage }}</span> (Total: {{ totalItems }})
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <button (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1"
+                            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
+                            <span class="sr-only">Anterior</span>
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd"
+                                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <button (click)="changePage(currentPage + 1)" [disabled]="currentPage === lastPage"
+                            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
+                            <span class="sr-only">Siguiente</span>
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd"
+                                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div *ngIf="isModalOpen" class="fixed inset-0 overflow-y-auto z-50" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
+            (click)="closeModal()"></div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div
+            class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+            <form [formGroup]="form" (ngSubmit)="save()">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                                {{ isEditing ? 'Editar Artículo' : 'Nuevo Artículo' }}
+                            </h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Column 1 -->
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="codigo"
+                                            class="block text-sm font-medium text-gray-700">Código</label>
+                                        <input type="text" id="codigo" formControlName="codigo"
+                                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                    </div>
+                                    <div>
+                                        <label for="nombre"
+                                            class="block text-sm font-medium text-gray-700">Nombre</label>
+                                        <input type="text" id="nombre" formControlName="nombre"
+                                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                    </div>
+                                    <div>
+                                        <label for="categoria_id"
+                                            class="block text-sm font-medium text-gray-700">Categoría</label>
+                                        <select id="categoria_id" formControlName="categoria_id"
+                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                            <option value="">Seleccione</option>
+                                            <option *ngFor="let cat of categorias" [value]="cat.id">{{ cat.nombre }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="marca_id"
+                                            class="block text-sm font-medium text-gray-700">Marca</label>
+                                        <select id="marca_id" formControlName="marca_id"
+                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                            <option value="">Seleccione</option>
+                                            <option *ngFor="let m of marcas" [value]="m.id">{{ m.nombre }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="medida_id"
+                                            class="block text-sm font-medium text-gray-700">Medida</label>
+                                        <select id="medida_id" formControlName="medida_id"
+                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                            <option value="">Seleccione</option>
+                                            <option *ngFor="let m of medidas" [value]="m.id">{{ m.nombre_medida }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="industria_id"
+                                            class="block text-sm font-medium text-gray-700">Industria</label>
+                                        <select id="industria_id" formControlName="industria_id"
+                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                            <option value="">Seleccione</option>
+                                            <option *ngFor="let i of industrias" [value]="i.id">{{ i.nombre }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="proveedor_id"
+                                            class="block text-sm font-medium text-gray-700">Proveedor</label>
+                                        <select id="proveedor_id" formControlName="proveedor_id"
+                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                            <option value="">Seleccione</option>
+                                            <option *ngFor="let p of proveedores" [value]="p.id">{{ p.nombre }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Column 2 -->
+                                <div class="space-y-4">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="stock"
+                                                class="block text-sm font-medium text-gray-700">Stock</label>
+                                            <input type="number" id="stock" formControlName="stock"
+                                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                        </div>
+                                        <div>
+                                            <label for="unidad_envase"
+                                                class="block text-sm font-medium text-gray-700">Unidad Envase</label>
+                                            <input type="number" id="unidad_envase" formControlName="unidad_envase"
+                                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="precio_costo_unid"
+                                                class="block text-sm font-medium text-gray-700">Costo Unit.</label>
+                                            <input type="number" id="precio_costo_unid"
+                                                formControlName="precio_costo_unid"
+                                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                        </div>
+                                        <div>
+                                            <label for="precio_venta"
+                                                class="block text-sm font-medium text-gray-700">Precio Venta</label>
+                                            <input type="number" id="precio_venta" formControlName="precio_venta"
+                                                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="descripcion"
+                                            class="block text-sm font-medium text-gray-700">Descripción</label>
+                                        <textarea id="descripcion" formControlName="descripcion" rows="3"
+                                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"></textarea>
+                                    </div>
+                                    <div>
+                                        <label for="vencimiento"
+                                            class="block text-sm font-medium text-gray-700">Vencimiento</label>
+                                        <input type="date" id="vencimiento" formControlName="vencimiento"
+                                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                                    </div>
+                                    <div class="flex items-center mt-6">
+                                        <input id="estado" type="checkbox" formControlName="estado"
+                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                        <label for="estado" class="ml-2 block text-sm text-gray-900">Activo</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit" [disabled]="form.invalid"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+                        Guardar
+                    </button>
+                    <button type="button" (click)="closeModal()"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

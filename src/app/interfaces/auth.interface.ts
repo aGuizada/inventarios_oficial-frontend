@@ -1,7 +1,7 @@
 import { User } from './user.interface';
 
 export interface LoginRequest {
-    email: string;
+    usuario: string;
     password: string;
 }
 
@@ -16,5 +16,6 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
     user: User;
-    token: string;
+    access_token: string;
+    token_type: string;
 }

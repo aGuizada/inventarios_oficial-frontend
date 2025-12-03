@@ -20,6 +20,10 @@ export class ArqueoCajaService {
         return this.http.get<ApiResponse<ArqueoCaja>>(`${this.apiUrl}/${id}`);
     }
 
+    create(data: any): Observable<ApiResponse<ArqueoCaja>> {
+        return this.http.post<ApiResponse<ArqueoCaja>>(this.apiUrl, data);
+    }
+
     cerrar(id: number, saldoFinal: number, observaciones?: string): Observable<ApiResponse<any>> {
         return this.http.post<ApiResponse<any>>(`${this.apiUrl}/${id}/cerrar`, {
             saldo_final: saldoFinal,

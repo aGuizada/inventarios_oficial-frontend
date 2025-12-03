@@ -5,23 +5,32 @@ import { Industria } from './industria.interface';
 
 export interface Articulo {
     id: number;
+    categoria_id: number;
+    proveedor_id: number;
+    medida_id: number;
+    marca_id: number;
+    industria_id: number;
     codigo: string;
     nombre: string;
-    descripcion?: string;
-    precio_compra: number;
+    unidad_envase: number;
+    precio_costo_unid: number;
+    precio_costo_paq: number;
     precio_venta: number;
-    stock_minimo: number;
-    stock_maximo: number;
-    categoria_id: number;
-    marca_id?: number;
-    medida_id?: number;
-    industria_id?: number;
-    imagen?: string;
+    precio_uno: number;
+    precio_dos: number;
+    precio_tres: number;
+    precio_cuatro: number;
+    stock: number;
+    descripcion?: string;
     estado: boolean;
-    created_at: string;
-    updated_at: string;
+    costo_compra: number;
+    vencimiento?: string;
+    fotografia?: string;
+    created_at?: string;
+    updated_at?: string;
     categoria?: Categoria;
-    marca?: Marca;
+    proveedor?: any; // Define Proveedor interface if needed, but avoid circular dependency if possible or use forward ref
     medida?: Medida;
+    marca?: Marca;
     industria?: Industria;
 }

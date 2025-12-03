@@ -20,23 +20,23 @@
                     {{ errorMessage }}
                 </div>
 
-                <!-- Email -->
+                <!-- Usuario -->
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Correo Electrónico</label>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Usuario</label>
                     <div class="relative">
                         <div
                             class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                            <i class="fas fa-envelope"></i>
+                            <i class="fas fa-user"></i>
                         </div>
-                        <input type="email" formControlName="email"
+                        <input type="text" formControlName="usuario"
                             class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                            [class.border-red-300]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-                            placeholder="ejemplo@correo.com">
+                            [class.border-red-300]="loginForm.get('usuario')?.invalid && loginForm.get('usuario')?.touched"
+                            placeholder="nombre_usuario">
                     </div>
-                    <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+                    <div *ngIf="loginForm.get('usuario')?.invalid && loginForm.get('usuario')?.touched"
                         class="mt-1 text-xs text-red-500">
-                        <span *ngIf="loginForm.get('email')?.errors?.['required']">El correo es requerido</span>
-                        <span *ngIf="loginForm.get('email')?.errors?.['email']">Correo inválido</span>
+                        <span *ngIf="loginForm.get('usuario')?.errors?.['required']">El usuario es requerido</span>
+                        <span *ngIf="loginForm.get('usuario')?.errors?.['minlength']">Mínimo 3 caracteres</span>
                     </div>
                 </div>
 
