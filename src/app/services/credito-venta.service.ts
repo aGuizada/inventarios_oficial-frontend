@@ -20,6 +20,10 @@ export class CreditoVentaService {
         return this.http.get<ApiResponse<CreditoVenta>>(`${this.apiUrl}/${id}`);
     }
 
+    create(credito: Partial<CreditoVenta>): Observable<ApiResponse<CreditoVenta>> {
+        return this.http.post<ApiResponse<CreditoVenta>>(this.apiUrl, credito);
+    }
+
     pagarCuota(creditoId: number, cuotaId: number, monto: number): Observable<ApiResponse<any>> {
         return this.http.post<ApiResponse<any>>(`${this.apiUrl}/${creditoId}/cuotas/${cuotaId}/pagar`, { monto });
     }
