@@ -1,8 +1,5 @@
 <div class="container mx-auto px-4 py-4">
   <div class="mb-4 flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-gray-800">
-      {{ isHistorialView ? 'Historial de Ventas' : 'Gestión de Ventas' }}
-    </h1>
     <button *ngIf="isHistorialView" 
       (click)="navegarANuevaVenta()"
       class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition duration-300 flex items-center">
