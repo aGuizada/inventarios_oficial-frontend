@@ -1,9 +1,15 @@
 export interface Moneda {
     id: number;
+    empresa_id: number;
     nombre: string;
-    codigo: string;
+    pais?: string;
     simbolo: string;
     tipo_cambio: number;
-    created_at: string;
-    updated_at: string;
+    estado?: boolean;
+    created_at?: string;
+    updated_at?: string;
+    empresa?: {
+        id: number;
+        nombre: string;
+    };
 }

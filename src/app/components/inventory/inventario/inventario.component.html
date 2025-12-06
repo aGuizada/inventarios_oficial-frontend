@@ -33,11 +33,11 @@
         </label>
         <select
           id="almacen"
-          [(ngModel)]="almacenSeleccionado"
-          (change)="filtrarPorAlmacen(almacenSeleccionado)"
+          [ngModel]="almacenSeleccionado"
+          (ngModelChange)="filtrarPorAlmacen($event)"
           class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-          <option [value]="null">Todos los almacenes</option>
-          <option *ngFor="let almacen of almacenes" [value]="almacen.id">
+          <option [ngValue]="null">Todos los almacenes</option>
+          <option *ngFor="let almacen of almacenes" [ngValue]="almacen.id">
             {{ almacen.nombre_almacen }}
           </option>
         </select>

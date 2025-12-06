@@ -66,8 +66,14 @@ export class InventarioComponent implements OnInit {
       });
   }
 
-  filtrarPorAlmacen(almacenId: number | null): void {
-    this.almacenSeleccionado = almacenId;
+  filtrarPorAlmacen(almacenId: any): void {
+    // Convertir a número si viene como string del select
+    if (almacenId === null || almacenId === '' || almacenId === 'null') {
+      this.almacenSeleccionado = null;
+    } else {
+      this.almacenSeleccionado = typeof almacenId === 'string' ? parseInt(almacenId, 10) : Number(almacenId);
+    }
+    console.log('Almacén seleccionado:', this.almacenSeleccionado, 'Tipo:', typeof this.almacenSeleccionado);
     this.aplicarFiltros();
   }
 
@@ -77,10 +83,21 @@ export class InventarioComponent implements OnInit {
 
   aplicarFiltros(): void {
     let filtrados = [...this.inventarios];
+    console.log('Inventarios totales:', filtrados.length);
+    console.log('Almacén seleccionado para filtrar:', this.almacenSeleccionado);
 
     // Filtrar por almacén
-    if (this.almacenSeleccionado) {
-      filtrados = filtrados.filter(inv => inv.almacen_id === this.almacenSeleccionado);
+    if (this.almacenSeleccionado !== null && this.almacenSeleccionado !== undefined) {
+      const almacenIdNum = Number(this.almacenSeleccionado);
+      filtrados = filtrados.filter(inv => {
+        const invAlmacenId = Number(inv.almacen_id);
+        const coincide = invAlmacenId === almacenIdNum;
+        if (!coincide && inv.almacen_id) {
+          console.log(`Inventario ${inv.id}: almacen_id=${inv.almacen_id} (${typeof inv.almacen_id}) no coincide con ${almacenIdNum} (${typeof almacenIdNum})`);
+        }
+        return coincide;
+      });
+      console.log('Inventarios filtrados por almacén:', filtrados.length);
     }
 
     // Filtrar por búsqueda (nombre de artículo o código)

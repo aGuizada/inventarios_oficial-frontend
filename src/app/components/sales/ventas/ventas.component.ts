@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -9,7 +9,9 @@ import { CajaService } from '../../../services/caja.service';
 import { TipoVentaService } from '../../../services/tipo-venta.service';
 import { TipoPagoService } from '../../../services/tipo-pago.service';
 import { CreditoVentaService } from '../../../services/credito-venta.service';
-import { Venta, DetalleVenta, Cliente, Almacen, Caja, TipoVenta, TipoPago } from '../../../interfaces';
+import { CategoriaService } from '../../../services/categoria.service';
+import { AuthService } from '../../../services/auth.service';
+import { Venta, DetalleVenta, Cliente, Almacen, Caja, TipoVenta, TipoPago, Categoria } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 @Component({
@@ -40,6 +42,7 @@ export class VentasComponent implements OnInit {
   isLoading = false;
   currentId: number | null = null;
   currentUserId = 1; // TODO: Obtener del servicio de autenticación
+  currentUserSucursalId: number | null = null;
   isHistorialView = false; // Determinar si estamos en la vista de historial
   
   clienteBusqueda: string = '';
@@ -49,6 +52,13 @@ export class VentasComponent implements OnInit {
   busquedaProducto: string = '';
   productoSeleccionado: ProductoInventario | null = null;
   mostrarSugerenciasProducto: boolean = false;
+  codigoRapido: string = ''; // Para agregar rápido por código
+  
+  // Filtros
+  categorias: Categoria[] = [];
+  categoriaSeleccionada: number | null = null;
+  mostrarMenuAlmacenes: boolean = false;
+  productosFiltradosPorCategoria: ProductoInventario[] = [];
 
   constructor(
     private ventaService: VentaService,
@@ -58,6 +68,8 @@ export class VentasComponent implements OnInit {
     private tipoVentaService: TipoVentaService,
     private tipoPagoService: TipoPagoService,
     private creditoVentaService: CreditoVentaService,
+    private categoriaService: CategoriaService,
+    private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
     private fb: FormBuilder
@@ -155,6 +167,13 @@ export class VentasComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Obtener usuario actual y su sucursal
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser) {
+      this.currentUserId = currentUser.id;
+      this.currentUserSucursalId = currentUser.sucursal_id || null;
+    }
+
     // Detectar si estamos en la vista de historial o nueva venta
     this.route.url.subscribe(url => {
       const path = url[0]?.path;
@@ -185,6 +204,10 @@ export class VentasComponent implements OnInit {
     return this.form.get('detalles') as FormArray;
   }
 
+  trackByIndex(index: number): number {
+    return index;
+  }
+
   loadDependencies(): void {
     // Cargar clientes
     this.clienteService.getAll().subscribe({
@@ -198,8 +221,17 @@ export class VentasComponent implements OnInit {
     this.almacenService.getAll().subscribe({
       next: (response: any) => {
         this.almacenes = Array.isArray(response) ? response : (response.data || []);
+        this.seleccionarAlmacenPorDefecto();
       },
       error: (error) => console.error('Error al cargar almacenes:', error)
+    });
+
+    // Cargar categorías
+    this.categoriaService.getAll().subscribe({
+      next: (response: any) => {
+        this.categorias = Array.isArray(response) ? response : (response.data || []);
+      },
+      error: (error) => console.error('Error al cargar categorías:', error)
     });
 
     // Cargar tipos de venta
@@ -303,6 +335,34 @@ export class VentasComponent implements OnInit {
     } else {
       this.productosInventario = [];
       this.productosFiltrados = [];
+      this.productosFiltradosPorCategoria = [];
+    }
+  }
+
+  seleccionarAlmacenPorDefecto(): void {
+    // Si ya hay un almacén seleccionado, no cambiar
+    if (this.form.get('almacen_id')?.value) {
+      return;
+    }
+
+    // Si el usuario tiene una sucursal asignada, buscar el primer almacén de esa sucursal
+    if (this.currentUserSucursalId) {
+      const almacenPorDefecto = this.almacenes.find(almacen => 
+        almacen.sucursal_id === this.currentUserSucursalId && almacen.estado !== false
+      );
+      
+      if (almacenPorDefecto) {
+        this.form.patchValue({ almacen_id: almacenPorDefecto.id });
+        this.onAlmacenChange();
+        return;
+      }
+    }
+
+    // Si no hay almacén por defecto, seleccionar el primero disponible
+    const primerAlmacen = this.almacenes.find(almacen => almacen.estado !== false);
+    if (primerAlmacen) {
+      this.form.patchValue({ almacen_id: primerAlmacen.id });
+      this.onAlmacenChange();
     }
   }
 
@@ -310,12 +370,13 @@ export class VentasComponent implements OnInit {
     this.ventaService.getProductosInventario(almacenId).subscribe({
       next: (productos) => {
         this.productosInventario = productos;
-        this.productosFiltrados = productos;
+        this.aplicarFiltros();
       },
       error: (error) => {
         console.error('Error al cargar productos del inventario:', error);
         this.productosInventario = [];
         this.productosFiltrados = [];
+        this.productosFiltradosPorCategoria = [];
       }
     });
   }
@@ -364,16 +425,127 @@ export class VentasComponent implements OnInit {
   buscarProducto(event: any): void {
     const valor = event.target.value.toLowerCase().trim();
     this.busquedaProducto = valor;
-    
-    if (valor.length > 0) {
-      this.productosFiltrados = this.productosInventario.filter(producto =>
-        producto.articulo?.nombre?.toLowerCase().includes(valor) ||
-        producto.articulo?.codigo?.toLowerCase().includes(valor)
+    this.aplicarFiltros();
+  }
+
+  aplicarFiltros(): void {
+    let productos = [...this.productosInventario];
+
+    // Filtro por categoría
+    if (this.categoriaSeleccionada) {
+      productos = productos.filter(producto =>
+        producto.articulo?.categoria_id === this.categoriaSeleccionada
       );
-      this.mostrarSugerenciasProducto = this.productosFiltrados.length > 0;
+    }
+
+    // Filtro por búsqueda de texto
+    if (this.busquedaProducto.length > 0) {
+      productos = productos.filter(producto =>
+        producto.articulo?.nombre?.toLowerCase().includes(this.busquedaProducto.toLowerCase()) ||
+        producto.articulo?.codigo?.toLowerCase().includes(this.busquedaProducto.toLowerCase())
+      );
+    }
+
+    this.productosFiltrados = productos;
+    this.productosFiltradosPorCategoria = productos;
+    this.mostrarSugerenciasProducto = this.busquedaProducto.length > 0 && this.productosFiltrados.length > 0;
+  }
+
+  seleccionarCategoria(categoriaId: number | null): void {
+    this.categoriaSeleccionada = categoriaId;
+    this.aplicarFiltros();
+  }
+
+  toggleMenuAlmacenes(): void {
+    this.mostrarMenuAlmacenes = !this.mostrarMenuAlmacenes;
+  }
+
+  @HostListener('document:click', ['$event'])
+  cerrarMenus(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (this.mostrarMenuAlmacenes && !target.closest('.menu-almacenes')) {
+      this.mostrarMenuAlmacenes = false;
+    }
+  }
+
+  cambiarAlmacen(almacenId: number): void {
+    this.form.patchValue({ almacen_id: almacenId });
+    this.onAlmacenChange();
+    this.mostrarMenuAlmacenes = false;
+  }
+
+  getAlmacenSeleccionadoNombre(): string {
+    const almacenId = this.form.get('almacen_id')?.value;
+    if (!almacenId) return '';
+    const almacen = this.almacenes.find(a => a.id === almacenId);
+    return almacen?.nombre_almacen || '';
+  }
+
+  seleccionarTipoVenta(tipoVentaId: number): void {
+    console.log('Seleccionando tipo venta:', tipoVentaId);
+    this.form.patchValue({ tipo_venta_id: tipoVentaId });
+    this.form.get('tipo_venta_id')?.updateValueAndValidity();
+    console.log('Tipo venta actualizado:', this.form.get('tipo_venta_id')?.value);
+  }
+
+  seleccionarTipoPago(tipoPagoId: number): void {
+    console.log('Seleccionando tipo pago:', tipoPagoId);
+    this.form.patchValue({ tipo_pago_id: tipoPagoId });
+    this.form.get('tipo_pago_id')?.updateValueAndValidity();
+    console.log('Tipo pago actualizado:', this.form.get('tipo_pago_id')?.value);
+  }
+
+  getIconoTipoVenta(tipoVenta: any): string {
+    const nombre = (tipoVenta.nombre_tipo_ventas || tipoVenta.nombre || '').toLowerCase();
+    
+    if (nombre.includes('contado') || nombre.includes('efectivo')) {
+      // Icono de dinero/efectivo
+      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd" />
+      </svg>`;
+    } else if (nombre.includes('credito') || nombre.includes('crédito')) {
+      // Icono de tarjeta/crédito
+      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+        <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" />
+      </svg>`;
     } else {
-      this.productosFiltrados = this.productosInventario;
-      this.mostrarSugerenciasProducto = false;
+      // Icono por defecto
+      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+        <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" />
+      </svg>`;
+    }
+  }
+
+  getIconoTipoPago(tipoPago: any): string {
+    const nombre = (tipoPago.nombre_tipo_pago || tipoPago.nombre || '').toLowerCase();
+    
+    if (nombre.includes('qr') || nombre.includes('qrcode')) {
+      // Icono de QR
+      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zM13 3a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1z" clip-rule="evenodd" />
+        <path d="M11 4a1 1 0 10-2 0v1a1 1 0 002 0V4zM10 7a1 1 0 011 1v1h2a1 1 0 110 2h-3a1 1 0 01-1-1V8a1 1 0 011-1zM16 9a1 1 0 100 2 1 1 0 000-2zM9 13a1 1 0 011-1h1a1 1 0 110 2v2a1 1 0 11-2 0v-3zM7 11a1 1 0 100-2H4a1 1 0 100 2h3zM17 13a1 1 0 01-1 1h-2a1 1 0 110-2h2a1 1 0 011 1zM16 17a1 1 0 100-2h-3a1 1 0 100 2h3z" />
+      </svg>`;
+    } else if (nombre.includes('contado') || nombre.includes('efectivo') || nombre.includes('cash')) {
+      // Icono de efectivo/dinero
+      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd" />
+      </svg>`;
+    } else if (nombre.includes('tarjeta') || nombre.includes('card')) {
+      // Icono de tarjeta
+      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+        <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" />
+      </svg>`;
+    } else {
+      // Icono por defecto (carrito)
+      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+        <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
+      </svg>`;
     }
   }
 
@@ -386,7 +558,7 @@ export class VentasComponent implements OnInit {
   limpiarBusquedaProducto(): void {
     this.productoSeleccionado = null;
     this.busquedaProducto = '';
-    this.productosFiltrados = this.productosInventario;
+    this.aplicarFiltros();
   }
 
   onFocusProducto(): void {
@@ -401,13 +573,15 @@ export class VentasComponent implements OnInit {
     }, 200);
   }
 
-  agregarProductoAVenta(): void {
-    if (!this.productoSeleccionado) {
+  agregarProductoAVenta(producto?: ProductoInventario): void {
+    const productoAAgregar = producto || this.productoSeleccionado;
+    
+    if (!productoAAgregar) {
       alert('Por favor seleccione un producto del catálogo');
       return;
     }
 
-    const stockDisponible = this.productoSeleccionado.stock_disponible;
+    const stockDisponible = productoAAgregar.stock_disponible;
     if (stockDisponible <= 0) {
       alert('Este producto no tiene stock disponible');
       return;
@@ -415,19 +589,35 @@ export class VentasComponent implements OnInit {
 
     // Verificar si el producto ya está en los detalles
     const existe = this.detalles.controls.some(control => 
-      control.get('articulo_id')?.value === this.productoSeleccionado?.articulo_id
+      control.get('articulo_id')?.value === productoAAgregar.articulo_id
     );
 
     if (existe) {
-      alert('Este producto ya está agregado a la venta');
-      return;
+      // Si ya existe, incrementar la cantidad
+      const detalleExistente = this.detalles.controls.find(control => 
+        control.get('articulo_id')?.value === productoAAgregar.articulo_id
+      );
+      if (detalleExistente) {
+        const cantidadActual = Number(detalleExistente.get('cantidad')?.value || 0);
+        const nuevaCantidad = cantidadActual + 1;
+        if (nuevaCantidad <= stockDisponible) {
+          detalleExistente.patchValue({ cantidad: nuevaCantidad });
+          this.calcularSubtotal(detalleExistente as FormGroup);
+          this.limpiarBusquedaProducto();
+          this.codigoRapido = '';
+          return;
+        } else {
+          alert(`No hay suficiente stock. Disponible: ${stockDisponible}`);
+          return;
+        }
+      }
     }
 
-    const precioVenta = this.productoSeleccionado.articulo?.precio_venta || 
-                       this.productoSeleccionado.articulo?.precio_uno || 0;
+    const precioVenta = productoAAgregar.articulo?.precio_venta || 
+                       productoAAgregar.articulo?.precio_uno || 0;
 
     const detalle = this.fb.group({
-      articulo_id: [this.productoSeleccionado.articulo_id, Validators.required],
+      articulo_id: [productoAAgregar.articulo_id, Validators.required],
       cantidad: [1, [Validators.required, Validators.min(1), Validators.max(stockDisponible)]],
       precio: [precioVenta, [Validators.required, Validators.min(0)]],
       descuento: [0, [Validators.min(0)]],
@@ -442,6 +632,23 @@ export class VentasComponent implements OnInit {
     this.detalles.push(detalle);
     this.calcularTotal();
     this.limpiarBusquedaProducto();
+    this.codigoRapido = '';
+  }
+
+  agregarRapidoPorCodigo(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && this.codigoRapido.trim()) {
+      const codigo = this.codigoRapido.trim().toLowerCase();
+      const producto = this.productosInventario.find(p => 
+        p.articulo?.codigo?.toLowerCase() === codigo
+      );
+      
+      if (producto) {
+        this.agregarProductoAVenta(producto);
+      } else {
+        alert(`No se encontró un producto con el código "${this.codigoRapido}"`);
+        this.codigoRapido = '';
+      }
+    }
   }
 
   calcularSubtotal(detalle: FormGroup): void {
@@ -476,6 +683,11 @@ export class VentasComponent implements OnInit {
   }
 
   save(): void {
+    console.log('=== INICIANDO SAVE() ===');
+    console.log('Form values:', this.form.value);
+    console.log('Form valid:', this.form.valid);
+    console.log('Form errors:', this.form.errors);
+    
     if (this.detalles.length === 0) {
       alert('Debe agregar al menos un producto a la venta');
       return;
@@ -499,10 +711,15 @@ export class VentasComponent implements OnInit {
 
     // Validar otros campos requeridos (sin incluir campos de crédito si no es crédito)
     const camposRequeridos = ['cliente_id', 'tipo_venta_id', 'tipo_pago_id', 'almacen_id', 'caja_id'];
-    const camposFaltantes = camposRequeridos.filter(campo => !this.form.get(campo)?.value);
+    const camposFaltantes = camposRequeridos.filter(campo => {
+      const valor = this.form.get(campo)?.value;
+      console.log(`Campo ${campo}:`, valor, 'Tipo:', typeof valor);
+      return !valor;
+    });
     
     if (camposFaltantes.length > 0) {
-      alert('Por favor complete todos los campos requeridos');
+      console.error('Campos faltantes:', camposFaltantes);
+      alert(`Por favor complete todos los campos requeridos. Faltan: ${camposFaltantes.join(', ')}`);
       return;
     }
 
@@ -665,11 +882,17 @@ export class VentasComponent implements OnInit {
     this.busquedaProducto = '';
     this.productosInventario = [];
     this.productosFiltrados = [];
+    this.productosFiltradosPorCategoria = [];
+    this.categoriaSeleccionada = null;
+    this.mostrarMenuAlmacenes = false;
     this.esVentaCredito = false;
     this.isModalCreditoOpen = false;
     
     // Re-seleccionar caja abierta
     this.seleccionarCajaAbierta();
+    
+    // Re-seleccionar almacén por defecto
+    this.seleccionarAlmacenPorDefecto();
   }
 
   closeModal(): void {

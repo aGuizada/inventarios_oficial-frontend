@@ -28,7 +28,15 @@ export class TraspasoService {
         return this.http.post<ApiResponse<any>>(`${this.apiUrl}/${id}/aprobar`, {});
     }
 
+    recibir(id: number): Observable<ApiResponse<any>> {
+        return this.http.post<ApiResponse<any>>(`${this.apiUrl}/${id}/recibir`, {});
+    }
+
     rechazar(id: number, motivo: string): Observable<ApiResponse<any>> {
         return this.http.post<ApiResponse<any>>(`${this.apiUrl}/${id}/rechazar`, { motivo });
+    }
+
+    update(id: number, traspaso: Partial<Traspaso>): Observable<ApiResponse<Traspaso>> {
+        return this.http.put<ApiResponse<Traspaso>>(`${this.apiUrl}/${id}`, traspaso);
     }
 }

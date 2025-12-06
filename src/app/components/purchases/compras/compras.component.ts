@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
 import { CompraService } from '../../../services/compra.service';
 import { ProveedorService } from '../../../services/proveedor.service';
 import { AlmacenService } from '../../../services/almacen.service';
@@ -25,6 +26,7 @@ export class ComprasComponent implements OnInit {
   form: FormGroup;
   detallesFormArray: FormArray;
   isModalOpen = false;
+  isHistorialView = false; // Determinar si estamos en la vista de historial
   isEditing = false;
   isLoading = false;
   currentId: number | null = null;
@@ -44,6 +46,8 @@ export class ComprasComponent implements OnInit {
     private proveedorService: ProveedorService,
     private almacenService: AlmacenService,
     private articuloService: ArticuloService,
+    private router: Router,
+    private route: ActivatedRoute,
     private fb: FormBuilder
   ) {
     this.detallesFormArray = this.fb.array([]);
@@ -65,11 +69,26 @@ export class ComprasComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadCompras();
-    this.loadDependencies();
-    // Mostrar el formulario por defecto
-    this.isModalOpen = true;
-    this.isEditing = false;
+    // Detectar si estamos en la vista de historial o nueva compra
+    this.route.url.subscribe(url => {
+      const path = url[0]?.path;
+      this.isHistorialView = path === 'historial';
+      
+      if (this.isHistorialView) {
+        // En historial, solo cargar las compras
+        this.isModalOpen = false;
+        this.loadCompras();
+      } else {
+        // En nueva compra, cargar todo para el formulario
+        this.isModalOpen = true;
+        this.loadDependencies();
+        this.loadCompras(); // También cargar compras para referencia
+      }
+    });
+  }
+
+  navegarANuevaCompra(): void {
+    this.router.navigate(['/compras/nueva']);
   }
 
   loadDependencies(): void {
@@ -183,44 +202,47 @@ export class ComprasComponent implements OnInit {
   }
 
   edit(compra: Compra): void {
-    this.isModalOpen = true;
-    this.isEditing = true;
-    this.currentId = compra.id;
-    this.detallesFormArray.clear();
-    
-    // Limpiar búsqueda de artículos
-    this.busquedaArticulo = '';
-    this.articulosFiltrados = this.articulos || [];
-    this.mostrarSugerenciasArticulo = false;
-    this.articuloSeleccionado = null;
-    
-    const proveedor = compra.proveedor || this.proveedores.find(p => p.id === compra.proveedor_id);
-    this.proveedorSeleccionado = proveedor || null;
-    this.proveedorBusqueda = proveedor ? proveedor.nombre : '';
-    this.mostrarSugerenciasProveedor = false;
-    
-    this.form.patchValue({
-      proveedor_id: compra.proveedor_id || '',
-      proveedor_nombre: proveedor ? proveedor.nombre : '',
-      user_id: compra.user_id,
-      almacen_id: compra.almacen_id,
-      fecha_hora: compra.fecha_hora ? new Date(compra.fecha_hora).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
-      total: compra.total,
-      tipo_comprobante: compra.tipo_comprobante || '',
-      serie_comprobante: compra.serie_comprobante || '',
-      num_comprobante: compra.num_comprobante || '',
-      descuento_global: compra.descuento_global || 0,
-      tipo_compra: compra.tipo_compra || 'contado',
-      estado: compra.estado || ''
-    });
-
-    if (compra.detalles && compra.detalles.length > 0) {
-      compra.detalles.forEach(detalle => {
-        if (detalle.articulo_id) {
-          this.addDetalle(detalle);
-        }
+    // Navegar a nueva compra para editar
+    this.router.navigate(['/compras/nueva']).then(() => {
+      this.isModalOpen = true;
+      this.isEditing = true;
+      this.currentId = compra.id;
+      this.detallesFormArray.clear();
+      
+      // Limpiar búsqueda de artículos
+      this.busquedaArticulo = '';
+      this.articulosFiltrados = this.articulos || [];
+      this.mostrarSugerenciasArticulo = false;
+      this.articuloSeleccionado = null;
+      
+      const proveedor = compra.proveedor || this.proveedores.find(p => p.id === compra.proveedor_id);
+      this.proveedorSeleccionado = proveedor || null;
+      this.proveedorBusqueda = proveedor ? proveedor.nombre : '';
+      this.mostrarSugerenciasProveedor = false;
+      
+      this.form.patchValue({
+        proveedor_id: compra.proveedor_id || '',
+        proveedor_nombre: proveedor ? proveedor.nombre : '',
+        user_id: compra.user_id,
+        almacen_id: compra.almacen_id,
+        fecha_hora: compra.fecha_hora ? new Date(compra.fecha_hora).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+        total: compra.total,
+        tipo_comprobante: compra.tipo_comprobante || '',
+        serie_comprobante: compra.serie_comprobante || '',
+        num_comprobante: compra.num_comprobante || '',
+        descuento_global: compra.descuento_global || 0,
+        tipo_compra: compra.tipo_compra || 'contado',
+        estado: compra.estado || ''
       });
-    }
+
+      if (compra.detalles && compra.detalles.length > 0) {
+        compra.detalles.forEach(detalle => {
+          if (detalle.articulo_id) {
+            this.addDetalle(detalle);
+          }
+        });
+      }
+    });
   }
 
   get detalles(): FormArray {
@@ -349,7 +371,11 @@ export class ComprasComponent implements OnInit {
       almacen_id: Number(formValue.almacen_id),
       fecha_hora: fechaHora,
       total: Number(formValue.total),
-      tipo_compra: formValue.tipo_compra || 'contado',
+      tipo_compra: formValue.tipo_compra || 'contado', // Enviar en minúsculas, el backend lo convertirá a mayúsculas
+      // Siempre enviar campos de comprobante (el backend asignará valores por defecto si están vacíos)
+      tipo_comprobante: formValue.tipo_comprobante?.trim() || '',
+      serie_comprobante: formValue.serie_comprobante?.trim() || null,
+      num_comprobante: formValue.num_comprobante?.trim() || '',
       detalles: formValue.detalles.map((detalle: any) => {
         const articuloId = Number(detalle.articulo_id);
         const cantidad = Number(detalle.cantidad) || 1;
@@ -370,16 +396,7 @@ export class ComprasComponent implements OnInit {
       compraData.proveedor_id = Number(this.form.get('proveedor_id')?.value);
     }
 
-    // Agregar campos opcionales solo si tienen valor
-    if (formValue.tipo_comprobante && formValue.tipo_comprobante.trim() !== '') {
-      compraData.tipo_comprobante = formValue.tipo_comprobante.trim();
-    }
-    if (formValue.serie_comprobante && formValue.serie_comprobante.trim() !== '') {
-      compraData.serie_comprobante = formValue.serie_comprobante.trim();
-    }
-    if (formValue.num_comprobante && formValue.num_comprobante.trim() !== '') {
-      compraData.num_comprobante = formValue.num_comprobante.trim();
-    }
+    // Agregar campos opcionales
     if (formValue.descuento_global && formValue.descuento_global > 0) {
       compraData.descuento_global = Number(formValue.descuento_global);
     }
@@ -405,7 +422,13 @@ export class ComprasComponent implements OnInit {
         .subscribe({
           next: () => {
             this.loadCompras();
-            this.closeModal();
+            if (!this.isHistorialView) {
+              // Si estamos en nueva compra, navegar al historial después de guardar
+              this.router.navigate(['/compras/historial']);
+            } else {
+              // Si estamos en historial, solo cerrar el modal
+              this.closeModal();
+            }
           },
           error: (error) => {
             console.error('Error updating compra', error);
@@ -433,7 +456,13 @@ export class ComprasComponent implements OnInit {
         .subscribe({
           next: () => {
             this.loadCompras();
-            this.closeModal();
+            if (!this.isHistorialView) {
+              // Si estamos en nueva compra, navegar al historial después de guardar
+              this.router.navigate(['/compras/historial']);
+            } else {
+              // Si estamos en historial, solo cerrar el modal
+              this.closeModal();
+            }
           },
           error: (error) => {
             console.error('Error creating compra', error);
