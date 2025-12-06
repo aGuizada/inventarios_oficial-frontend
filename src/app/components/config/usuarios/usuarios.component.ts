@@ -1,45 +1,38 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UserService } from '../../../services/user.service';
 import { RolService } from '../../../services/rol.service';
 import { SucursalService } from '../../../services/sucursal.service';
 import { User, Rol, Sucursal } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
+// Import child components
+import { UsuariosListComponent } from './usuarios-list/usuarios-list.component';
+import { UsuarioFormComponent } from './usuario-form/usuario-form.component';
+
 @Component({
   selector: 'app-usuarios',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    UsuariosListComponent,
+    UsuarioFormComponent
+  ],
   templateUrl: './usuarios.component.html',
 })
 export class UsuariosComponent implements OnInit {
   usuarios: User[] = [];
   roles: Rol[] = [];
   sucursales: Sucursal[] = [];
-  form: FormGroup;
-  isModalOpen = false;
-  isEditing = false;
   isLoading = false;
-  currentId: number | null = null;
+  isFormModalOpen = false;
+  selectedUser: User | null = null;
 
   constructor(
     private userService: UserService,
     private rolService: RolService,
-    private sucursalService: SucursalService,
-    private fb: FormBuilder
-  ) {
-    this.form = this.fb.group({
-      name: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      usuario: ['', Validators.required],
-      password: [''], // Optional for edit, required for create (handled in save)
-      telefono: [''],
-      rol_id: ['', Validators.required],
-      sucursal_id: ['', Validators.required],
-      estado: [true]
-    });
-  }
+    private sucursalService: SucursalService
+  ) { }
 
   ngOnInit(): void {
     this.loadUsuarios();
@@ -63,70 +56,44 @@ export class UsuariosComponent implements OnInit {
       });
   }
 
-  openModal(): void {
-    this.isModalOpen = true;
-    this.isEditing = false;
-    this.currentId = null;
-    this.form.reset({ estado: true });
-    this.form.get('password')?.setValidators([Validators.required]);
-    this.form.get('password')?.updateValueAndValidity();
+  openFormModal(): void {
+    this.selectedUser = null;
+    this.isFormModalOpen = true;
   }
 
-  closeModal(): void {
-    this.isModalOpen = false;
-    this.form.reset();
+  closeFormModal(): void {
+    this.isFormModalOpen = false;
+    this.selectedUser = null;
   }
 
-  edit(user: User): void {
-    this.isModalOpen = true;
-    this.isEditing = true;
-    this.currentId = user.id;
-    this.form.patchValue({
-      name: user.name,
-      email: user.email,
-      usuario: user.usuario,
-      telefono: user.telefono,
-      rol_id: user.rol_id,
-      sucursal_id: user.sucursal_id,
-      estado: user.estado
-    });
-    this.form.get('password')?.clearValidators();
-    this.form.get('password')?.updateValueAndValidity();
+  onEdit(user: User): void {
+    this.selectedUser = user;
+    this.isFormModalOpen = true;
   }
 
-  save(): void {
-    if (this.form.invalid) return;
-
-    const userData = this.form.value;
-    if (!userData.password) {
-      delete userData.password;
-    }
-
-    if (this.isEditing && this.currentId) {
-      this.userService.update(this.currentId, userData).subscribe({
-        next: () => {
-          this.loadUsuarios();
-          this.closeModal();
-        },
-        error: (error) => console.error('Error updating user', error)
-      });
-    } else {
-      this.userService.create(userData).subscribe({
-        next: () => {
-          this.loadUsuarios();
-          this.closeModal();
-        },
-        error: (error) => console.error('Error creating user', error)
-      });
-    }
-  }
-
-  delete(id: number): void {
+  onDelete(id: number): void {
     if (confirm('¿Está seguro de eliminar este usuario?')) {
       this.userService.delete(id).subscribe({
         next: () => this.loadUsuarios(),
         error: (error) => console.error('Error deleting user', error)
       });
     }
+  }
+
+  onSave(userData: User): void {
+    this.isLoading = true;
+    const request = this.selectedUser && this.selectedUser.id
+      ? this.userService.update(this.selectedUser.id, userData)
+      : this.userService.create(userData);
+
+    request
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: () => {
+          this.loadUsuarios();
+          this.closeFormModal();
+        },
+        error: (error) => console.error('Error saving user', error)
+      });
   }
 }

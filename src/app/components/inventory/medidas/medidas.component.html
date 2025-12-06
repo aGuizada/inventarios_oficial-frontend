@@ -1,136 +1,58 @@
-<div class="p-6">
-    <!-- Header -->
+<div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h2 class="text-2xl font-bold text-slate-800">Medidas</h2>
+            <h1 class="text-2xl font-bold text-gray-800">Gestión de Medidas</h1>
             <p class="text-slate-500 text-sm">Gestiona las unidades de medida</p>
         </div>
-        <button (click)="openModal()"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm">
-            <i class="fas fa-plus"></i>
+        <button (click)="openFormModal()"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                    clip-rule="evenodd" />
+            </svg>
             Nueva Medida
         </button>
     </div>
 
     <!-- Success Message -->
-    <div *ngIf="successMessage"
-        class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
+    @if (successMessage) {
+    <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
         <i class="fas fa-check-circle"></i>
         {{ successMessage }}
     </div>
+    }
 
     <!-- Error Message -->
-    <div *ngIf="errorMessage"
-        class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+    @if (errorMessage) {
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
         <i class="fas fa-exclamation-circle"></i>
         {{ errorMessage }}
     </div>
+    }
 
-    <!-- Loading State -->
-    <div *ngIf="isLoading && medidas.length === 0" class="flex justify-center items-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-    </div>
-
-    <!-- Table -->
-    <div *ngIf="!isLoading || medidas.length > 0"
-        class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-        <table class="min-w-full divide-y divide-slate-200">
-            <thead class="bg-slate-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ID</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Nombre
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                        Abreviatura</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Fecha
-                        Creación</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-                        Acciones</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-slate-200">
-                <tr *ngFor="let medida of medidas" class="hover:bg-slate-50 transition-colors">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{{ medida.id }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-slate-900">{{ medida.nombre_medida }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
-                            {{ medida.abreviatura || '-' }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{{ medida.created_at | date:'short'
-                        }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button (click)="openModal(medida)" class="text-blue-600 hover:text-blue-900 mr-3">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button (click)="deleteMedida(medida.id)" class="text-red-600 hover:text-red-900">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-                <tr *ngIf="!isLoading && medidas && medidas.length === 0">
-                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
-                        <i class="fas fa-inbox text-4xl mb-3 text-slate-300"></i>
-                        <p>No hay medidas registradas</p>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <!-- List Component -->
+    <app-medidas-list [medidas]="medidas" [isLoading]="isLoading" (edit)="onEdit($event)"
+        (delete)="onDelete($event)">
+    </app-medidas-list>
 </div>
 
-<!-- Modal -->
-<div *ngIf="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
-        <div class="flex justify-between items-center p-6 border-b border-slate-200">
-            <h3 class="text-lg font-semibold text-slate-800">
-                {{ isEditMode ? 'Editar Medida' : 'Nueva Medida' }}
-            </h3>
-            <button (click)="closeModal()" class="text-slate-400 hover:text-slate-600">
-                <i class="fas fa-times"></i>
-            </button>
+<!-- Form Modal -->
+@if (isFormModalOpen) {
+<div class="fixed inset-0 overflow-y-auto z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
+            (click)="closeFormModal()"></div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div
+            class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+            <!-- Form Component -->
+            <app-medida-form [medida]="selectedMedida" (save)="onSave($event)" (cancel)="closeFormModal()">
+            </app-medida-form>
         </div>
-
-        <form [formGroup]="medidaForm" (ngSubmit)="onSubmit()" class="p-6">
-            <!-- Nombre -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-slate-700 mb-1">Nombre *</label>
-                <input type="text" formControlName="nombre_medida"
-                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    [class.border-red-300]="medidaForm.get('nombre_medida')?.invalid && medidaForm.get('nombre_medida')?.touched"
-                    placeholder="Ej: Kilogramo">
-                <div *ngIf="medidaForm.get('nombre_medida')?.invalid && medidaForm.get('nombre_medida')?.touched"
-                    class="mt-1 text-xs text-red-500">
-                    <span *ngIf="medidaForm.get('nombre_medida')?.errors?.['required']">El nombre es requerido</span>
-                    <span *ngIf="medidaForm.get('nombre_medida')?.errors?.['minlength']">Mínimo 2 caracteres</span>
-                </div>
-            </div>
-
-            <!-- Abreviatura -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-slate-700 mb-1">Abreviatura</label>
-                <input type="text" formControlName="abreviatura"
-                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Ej: Kg">
-                <div *ngIf="medidaForm.get('abreviatura')?.invalid && medidaForm.get('abreviatura')?.touched"
-                    class="mt-1 text-xs text-red-500">
-                    <span *ngIf="medidaForm.get('abreviatura')?.errors?.['maxlength']">Máximo 10 caracteres</span>
-                </div>
-            </div>
-
-            <!-- Buttons -->
-            <div class="flex gap-3">
-                <button type="button" (click)="closeModal()"
-                    class="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
-                    Cancelar
-                </button>
-                <button type="submit" [disabled]="medidaForm.invalid || isLoading"
-                    class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    {{ isLoading ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear') }}
-                </button>
-            </div>
-        </form>
     </div>
 </div>
+}

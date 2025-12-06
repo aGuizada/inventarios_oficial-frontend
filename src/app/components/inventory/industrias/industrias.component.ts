@@ -1,34 +1,34 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { IndustriaService } from '../../../services/industria.service';
 import { Industria } from '../../../interfaces';
+import { finalize } from 'rxjs/operators';
+
+// Import child components
+import { IndustriasListComponent } from './industrias-list/industrias-list.component';
+import { IndustriaFormComponent } from './industria-form/industria-form.component';
 
 @Component({
   selector: 'app-industrias',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    IndustriasListComponent,
+    IndustriaFormComponent
+  ],
   templateUrl: './industrias.component.html',
 })
 export class IndustriasComponent implements OnInit {
   industrias: Industria[] = [];
-  industriaForm: FormGroup;
   isLoading = false;
-  isModalOpen = false;
-  isEditMode = false;
-  selectedIndustriaId: number | null = null;
+  isFormModalOpen = false;
+  selectedIndustria: Industria | null = null;
   errorMessage = '';
   successMessage = '';
 
   constructor(
-    private industriaService: IndustriaService,
-    private fb: FormBuilder
-  ) {
-    this.industriaForm = this.fb.group({
-      nombre: ['', [Validators.required, Validators.minLength(3)]],
-      descripcion: ['']
-    });
-  }
+    private industriaService: IndustriaService
+  ) { }
 
   ngOnInit(): void {
     this.loadIndustrias();
@@ -36,72 +36,39 @@ export class IndustriasComponent implements OnInit {
 
   loadIndustrias(): void {
     this.isLoading = true;
-    this.industriaService.getAll().subscribe({
-      next: (response) => {
-        this.industrias = response.data;
-        this.isLoading = false;
-      },
-      error: (error) => {
-        this.errorMessage = 'Error al cargar industrias';
-        this.isLoading = false;
-      }
-    });
+    this.industriaService.getAll()
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (response) => {
+          this.industrias = response.data;
+        },
+        error: (error) => {
+          this.errorMessage = 'Error al cargar industrias';
+          console.error('Error loading industrias', error);
+        }
+      });
   }
 
-  openModal(industria?: Industria): void {
-    this.isModalOpen = true;
+  openFormModal(): void {
+    this.selectedIndustria = null;
+    this.isFormModalOpen = true;
     this.errorMessage = '';
     this.successMessage = '';
-
-    if (industria) {
-      this.isEditMode = true;
-      this.selectedIndustriaId = industria.id;
-      this.industriaForm.patchValue({
-        nombre: industria.nombre,
-        descripcion: industria.descripcion
-      });
-    } else {
-      this.isEditMode = false;
-      this.selectedIndustriaId = null;
-      this.industriaForm.reset();
-    }
   }
 
-  closeModal(): void {
-    this.isModalOpen = false;
-    this.industriaForm.reset();
-    this.isEditMode = false;
-    this.selectedIndustriaId = null;
+  closeFormModal(): void {
+    this.isFormModalOpen = false;
+    this.selectedIndustria = null;
   }
 
-  onSubmit(): void {
-    if (this.industriaForm.invalid) {
-      this.industriaForm.markAllAsTouched();
-      return;
-    }
-
-    this.isLoading = true;
-    const industriaData = this.industriaForm.value;
-
-    const request = this.isEditMode && this.selectedIndustriaId
-      ? this.industriaService.update(this.selectedIndustriaId, industriaData)
-      : this.industriaService.create(industriaData);
-
-    request.subscribe({
-      next: () => {
-        this.successMessage = `Industria ${this.isEditMode ? 'actualizada' : 'creada'} exitosamente`;
-        this.loadIndustrias();
-        this.closeModal();
-        setTimeout(() => this.successMessage = '', 3000);
-      },
-      error: (error) => {
-        this.errorMessage = error.error?.message || 'Error al guardar la industria';
-        this.isLoading = false;
-      }
-    });
+  onEdit(industria: Industria): void {
+    this.selectedIndustria = industria;
+    this.isFormModalOpen = true;
+    this.errorMessage = '';
+    this.successMessage = '';
   }
 
-  deleteIndustria(id: number): void {
+  onDelete(id: number): void {
     if (confirm('¿Estás seguro de eliminar esta industria?')) {
       this.industriaService.delete(id).subscribe({
         next: () => {
@@ -111,8 +78,31 @@ export class IndustriasComponent implements OnInit {
         },
         error: (error) => {
           this.errorMessage = error.error?.message || 'Error al eliminar la industria';
+          console.error('Error deleting industria', error);
         }
       });
     }
+  }
+
+  onSave(industriaData: Industria): void {
+    this.isLoading = true;
+    const request = this.selectedIndustria && this.selectedIndustria.id
+      ? this.industriaService.update(this.selectedIndustria.id, industriaData)
+      : this.industriaService.create(industriaData);
+
+    request
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: () => {
+          this.successMessage = `Industria ${this.selectedIndustria ? 'actualizada' : 'creada'} exitosamente`;
+          this.loadIndustrias();
+          this.closeFormModal();
+          setTimeout(() => this.successMessage = '', 3000);
+        },
+        error: (error) => {
+          this.errorMessage = error.error?.message || 'Error al guardar la industria';
+          console.error('Error saving industria', error);
+        }
+      });
   }
 }

@@ -1,34 +1,32 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RolService } from '../../../services/rol.service';
 import { Rol } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
+// Import child components
+import { RolesListComponent } from './roles-list/roles-list.component';
+import { RolFormComponent } from './rol-form/rol-form.component';
+
 @Component({
   selector: 'app-roles',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    RolesListComponent,
+    RolFormComponent
+  ],
   templateUrl: './roles.component.html',
 })
 export class RolesComponent implements OnInit {
   roles: Rol[] = [];
-  form: FormGroup;
-  isModalOpen = false;
-  isEditing = false;
   isLoading = false;
-  currentId: number | null = null;
+  isFormModalOpen = false;
+  selectedRol: Rol | null = null;
 
   constructor(
-    private rolService: RolService,
-    private fb: FormBuilder
-  ) {
-    this.form = this.fb.group({
-      nombre: ['', Validators.required],
-      descripcion: [''],
-      estado: [true]
-    });
-  }
+    private rolService: RolService
+  ) { }
 
   ngOnInit(): void {
     this.loadRoles();
@@ -46,59 +44,44 @@ export class RolesComponent implements OnInit {
       });
   }
 
-  openModal(): void {
-    this.isModalOpen = true;
-    this.isEditing = false;
-    this.currentId = null;
-    this.form.reset({ estado: true });
+  openFormModal(): void {
+    this.selectedRol = null;
+    this.isFormModalOpen = true;
   }
 
-  closeModal(): void {
-    this.isModalOpen = false;
-    this.form.reset();
+  closeFormModal(): void {
+    this.isFormModalOpen = false;
+    this.selectedRol = null;
   }
 
-  edit(rol: Rol): void {
-    this.isModalOpen = true;
-    this.isEditing = true;
-    this.currentId = rol.id;
-    this.form.patchValue({
-      nombre: rol.nombre,
-      descripcion: rol.descripcion,
-      estado: rol.estado
-    });
+  onEdit(rol: Rol): void {
+    this.selectedRol = rol;
+    this.isFormModalOpen = true;
   }
 
-  save(): void {
-    if (this.form.invalid) return;
-
-    const rolData = this.form.value;
-
-    if (this.isEditing && this.currentId) {
-      this.rolService.update(this.currentId, rolData).subscribe({
-        next: () => {
-          this.loadRoles();
-          this.closeModal();
-        },
-        error: (error) => console.error('Error updating rol', error)
-      });
-    } else {
-      this.rolService.create(rolData).subscribe({
-        next: () => {
-          this.loadRoles();
-          this.closeModal();
-        },
-        error: (error) => console.error('Error creating rol', error)
-      });
-    }
-  }
-
-  delete(id: number): void {
+  onDelete(id: number): void {
     if (confirm('¿Está seguro de eliminar este rol?')) {
       this.rolService.delete(id).subscribe({
         next: () => this.loadRoles(),
         error: (error) => console.error('Error deleting rol', error)
       });
     }
+  }
+
+  onSave(rolData: Rol): void {
+    this.isLoading = true;
+    const request = this.selectedRol && this.selectedRol.id
+      ? this.rolService.update(this.selectedRol.id, rolData)
+      : this.rolService.create(rolData);
+
+    request
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: () => {
+          this.loadRoles();
+          this.closeFormModal();
+        },
+        error: (error) => console.error('Error saving rol', error)
+      });
   }
 }

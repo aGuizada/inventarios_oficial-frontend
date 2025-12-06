@@ -8,6 +8,11 @@ import { ClienteService } from '../../services/cliente.service';
 import { Venta, Inventario, Compra, Cliente, Articulo } from '../../interfaces';
 import { finalize } from 'rxjs/operators';
 
+// Import child components
+import { StatsCardsComponent } from './stats-cards/stats-cards.component';
+import { RecentSalesComponent } from './recent-sales/recent-sales.component';
+import { LowStockComponent } from './low-stock/low-stock.component';
+
 interface ProductoVendido {
   articulo_id: number;
   articulo?: Articulo;
@@ -32,7 +37,12 @@ interface ClienteFrecuente {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    StatsCardsComponent,
+    RecentSalesComponent,
+    LowStockComponent
+  ],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit {
@@ -233,6 +243,15 @@ export class DashboardComponent implements OnInit {
       .slice(0, 5);
   }
 
+
+  navegarAVentas(): void {
+    this.router.navigate(['/ventas/historial']);
+  }
+
+  navegarAInventario(): void {
+    this.router.navigate(['/inventario/stock']);
+  }
+
   getNombreArticulo(articuloId: number, articulo?: Articulo): string {
     if (articulo?.nombre) return articulo.nombre;
     return `Artículo #${articuloId}`;
@@ -241,19 +260,5 @@ export class DashboardComponent implements OnInit {
   getNombreCliente(clienteId: number, cliente?: Cliente): string {
     if (cliente?.nombre) return cliente.nombre;
     return `Cliente #${clienteId}`;
-  }
-
-  getNombreTipoVenta(venta: any): string {
-    const tipoVenta = venta.tipo_venta || venta.tipoVenta;
-    if (!tipoVenta) return 'N/A';
-    return tipoVenta.nombre_tipo_ventas || tipoVenta.nombre || 'N/A';
-  }
-
-  navegarAVentas(): void {
-    this.router.navigate(['/ventas/historial']);
-  }
-
-  navegarAInventario(): void {
-    this.router.navigate(['/inventario/stock']);
   }
 }

@@ -1,51 +1,36 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ArqueoCajaService } from '../../../services/arqueo-caja.service';
 import { CajaService } from '../../../services/caja.service';
 import { AuthService } from '../../../services/auth.service';
 import { ArqueoCaja, Caja } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
+// Import child components
+import { ArqueosListComponent } from './arqueos-list/arqueos-list.component';
+import { ArqueoFormComponent } from './arqueo-form/arqueo-form.component';
+
 @Component({
   selector: 'app-arqueo-caja',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    ArqueosListComponent,
+    ArqueoFormComponent
+  ],
   templateUrl: './arqueo-caja.component.html',
 })
 export class ArqueoCajaComponent implements OnInit {
   arqueos: ArqueoCaja[] = [];
   cajas: Caja[] = [];
-  form: FormGroup;
-  isModalOpen = false;
+  isFormModalOpen = false;
   isLoading = false;
-  totalCalculado = 0;
 
   constructor(
     private arqueoService: ArqueoCajaService,
     private cajaService: CajaService,
-    private authService: AuthService,
-    private fb: FormBuilder
-  ) {
-    this.form = this.fb.group({
-      caja_id: ['', Validators.required],
-      billete200: [0, [Validators.required, Validators.min(0)]],
-      billete100: [0, [Validators.required, Validators.min(0)]],
-      billete50: [0, [Validators.required, Validators.min(0)]],
-      billete20: [0, [Validators.required, Validators.min(0)]],
-      billete10: [0, [Validators.required, Validators.min(0)]],
-      moneda5: [0, [Validators.required, Validators.min(0)]],
-      moneda2: [0, [Validators.required, Validators.min(0)]],
-      moneda1: [0, [Validators.required, Validators.min(0)]],
-      moneda050: [0, [Validators.required, Validators.min(0)]],
-      moneda020: [0, [Validators.required, Validators.min(0)]],
-      moneda010: [0, [Validators.required, Validators.min(0)]],
-    });
-
-    this.form.valueChanges.subscribe(() => {
-      this.calculateTotal();
-    });
-  }
+    private authService: AuthService
+  ) { }
 
   ngOnInit(): void {
     this.loadArqueos();
@@ -68,51 +53,29 @@ export class ArqueoCajaComponent implements OnInit {
       });
   }
 
-  calculateTotal(): void {
-    const v = this.form.value;
-    this.totalCalculado =
-      (v.billete200 || 0) * 200 +
-      (v.billete100 || 0) * 100 +
-      (v.billete50 || 0) * 50 +
-      (v.billete20 || 0) * 20 +
-      (v.billete10 || 0) * 10 +
-      (v.moneda5 || 0) * 5 +
-      (v.moneda2 || 0) * 2 +
-      (v.moneda1 || 0) * 1 +
-      (v.moneda050 || 0) * 0.50 +
-      (v.moneda020 || 0) * 0.20 +
-      (v.moneda010 || 0) * 0.10;
+  openFormModal(): void {
+    this.isFormModalOpen = true;
   }
 
-  openModal(): void {
-    this.isModalOpen = true;
-    this.form.reset({
-      billete200: 0, billete100: 0, billete50: 0, billete20: 0, billete10: 0,
-      moneda5: 0, moneda2: 0, moneda1: 0, moneda050: 0, moneda020: 0, moneda010: 0
-    });
-    this.totalCalculado = 0;
+  closeFormModal(): void {
+    this.isFormModalOpen = false;
   }
 
-  closeModal(): void {
-    this.isModalOpen = false;
-    this.form.reset();
-  }
-
-  save(): void {
-    if (this.form.invalid) return;
-
-    const arqueoData = {
-      ...this.form.value,
-      user_id: this.authService.getCurrentUser()?.id,
-      total_efectivo: this.totalCalculado
+  onSave(arqueoData: any): void {
+    const data = {
+      ...arqueoData,
+      user_id: this.authService.getCurrentUser()?.id
     };
 
-    this.arqueoService.create(arqueoData).subscribe({
-      next: () => {
-        this.loadArqueos();
-        this.closeModal();
-      },
-      error: (error: any) => console.error('Error creating arqueo', error)
-    });
+    this.isLoading = true;
+    this.arqueoService.create(data)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: () => {
+          this.loadArqueos();
+          this.closeFormModal();
+        },
+        error: (error: any) => console.error('Error creating arqueo', error)
+      });
   }
 }

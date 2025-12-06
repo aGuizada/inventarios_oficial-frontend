@@ -1,40 +1,36 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TransaccionCajaService } from '../../../services/transaccion-caja.service';
 import { CajaService } from '../../../services/caja.service';
 import { AuthService } from '../../../services/auth.service';
 import { TransaccionCaja, Caja } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
+// Import child components
+import { TransaccionesListComponent } from './transacciones-list/transacciones-list.component';
+import { TransaccionFormComponent } from './transaccion-form/transaccion-form.component';
+
 @Component({
   selector: 'app-transacciones',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    TransaccionesListComponent,
+    TransaccionFormComponent
+  ],
   templateUrl: './transacciones.component.html',
 })
 export class TransaccionesComponent implements OnInit {
   transacciones: TransaccionCaja[] = [];
   cajas: Caja[] = [];
-  form: FormGroup;
-  isModalOpen = false;
+  isFormModalOpen = false;
   isLoading = false;
 
   constructor(
     private transaccionService: TransaccionCajaService,
     private cajaService: CajaService,
-    private authService: AuthService,
-    private fb: FormBuilder
-  ) {
-    this.form = this.fb.group({
-      caja_id: ['', Validators.required],
-      transaccion: ['ingreso', Validators.required], // ingreso | egreso
-      importe: ['', [Validators.required, Validators.min(0.01)]],
-      descripcion: ['', Validators.required],
-      referencia: [''],
-      fecha: [new Date().toISOString().substring(0, 10), Validators.required]
-    });
-  }
+    private authService: AuthService
+  ) { }
 
   ngOnInit(): void {
     this.loadTransacciones();
@@ -57,33 +53,29 @@ export class TransaccionesComponent implements OnInit {
       });
   }
 
-  openModal(): void {
-    this.isModalOpen = true;
-    this.form.reset({
-      transaccion: 'ingreso',
-      fecha: new Date().toISOString().substring(0, 10)
-    });
+  openFormModal(): void {
+    this.isFormModalOpen = true;
   }
 
-  closeModal(): void {
-    this.isModalOpen = false;
-    this.form.reset();
+  closeFormModal(): void {
+    this.isFormModalOpen = false;
   }
 
-  save(): void {
-    if (this.form.invalid) return;
-
-    const transaccionData = {
-      ...this.form.value,
+  onSave(transaccionData: any): void {
+    const data = {
+      ...transaccionData,
       user_id: this.authService.getCurrentUser()?.id
     };
 
-    this.transaccionService.create(transaccionData).subscribe({
-      next: () => {
-        this.loadTransacciones();
-        this.closeModal();
-      },
-      error: (error) => console.error('Error creating transaccion', error)
-    });
+    this.isLoading = true;
+    this.transaccionService.create(data)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: () => {
+          this.loadTransacciones();
+          this.closeFormModal();
+        },
+        error: (error) => console.error('Error creating transaccion', error)
+      });
   }
 }

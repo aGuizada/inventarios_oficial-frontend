@@ -1,0 +1,44 @@
+@if (isLoading) {
+<div class="flex justify-center items-center py-8">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+</div>
+}
+
+@if (!isLoading) {
+<div class="bg-white shadow-md rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Caja</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha
+                    </th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total
+                        Efectivo</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @for (arqueo of arqueos; track arqueo.id) {
+                <tr class="hover:bg-gray-50 transition duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Caja #{{ arqueo.caja_id }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ arqueo.user?.name || 'N/A' }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ arqueo.created_at | date:'short' }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-green-600">{{
+                        arqueo.total_efectivo | currency }}</td>
+                </tr>
+                } @empty {
+                <tr>
+                    <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No hay arqueos registrados.
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+}
+

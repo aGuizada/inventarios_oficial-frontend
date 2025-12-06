@@ -8,10 +8,13 @@ import { AlmacenService } from '../../../services/almacen.service';
 import { Traspaso, DetalleTraspaso, Sucursal, Almacen, ApiResponse } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
+// Import child components
+import { TraspasosListComponent } from './traspasos-list/traspasos-list.component';
+
 @Component({
   selector: 'app-traspasos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, TraspasosListComponent],
   templateUrl: './traspasos.component.html',
 })
 export class TraspasosComponent implements OnInit {
@@ -206,31 +209,6 @@ export class TraspasosComponent implements OnInit {
       });
   }
 
-  getEstadoColor(estado: string): string {
-    const colores: { [key: string]: string } = {
-      'PENDIENTE': 'bg-yellow-100 text-yellow-800',
-      'APROBADO': 'bg-blue-100 text-blue-800',
-      'EN_TRANSITO': 'bg-purple-100 text-purple-800',
-      'RECIBIDO': 'bg-green-100 text-green-800',
-      'RECHAZADO': 'bg-red-100 text-red-800'
-    };
-    return colores[estado] || 'bg-gray-100 text-gray-800';
-  }
-
-  getSucursalNombre(traspaso: Traspaso, tipo: 'origen' | 'destino'): string {
-    // Primero intentar obtener desde la relación cargada (si viene del backend)
-    if (tipo === 'origen' && traspaso.sucursal_origen) {
-      return traspaso.sucursal_origen.nombre;
-    }
-    if (tipo === 'destino' && traspaso.sucursal_destino) {
-      return traspaso.sucursal_destino.nombre;
-    }
-    
-    // Si no está cargada la relación, buscar en el array de sucursales usando el ID
-    const sucursalId = tipo === 'origen' ? traspaso.sucursal_origen_id : traspaso.sucursal_destino_id;
-    const sucursal = this.sucursales.find(s => s.id === sucursalId);
-    return sucursal?.nombre || 'N/A';
-  }
 
   cargarSucursales(): void {
     this.sucursalService.getAll().subscribe({

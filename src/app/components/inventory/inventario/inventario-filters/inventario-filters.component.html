@@ -1,0 +1,27 @@
+<div class="bg-white p-4 rounded-lg shadow-md mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+            <label for="almacen" class="block text-sm font-medium text-gray-700 mb-2">Filtrar por Almacén</label>
+            <select id="almacen" [value]="almacenSeleccionado || ''" (change)="onAlmacenChange($event)"
+                class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                <option value="">Todos los almacenes</option>
+                @for (almacen of almacenes; track almacen.id) {
+                <option [value]="almacen.id">{{ almacen.nombre_almacen }}</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label for="busqueda" class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
+            <input type="text" id="busqueda" [value]="busqueda" (input)="onBusquedaChange($event)"
+                placeholder="Buscar por nombre o código..."
+                class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        </div>
+        <div class="flex items-end">
+            <button (click)="onClearFilters()"
+                class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition duration-300">
+                Limpiar Filtros
+            </button>
+        </div>
+    </div>
+</div>
+

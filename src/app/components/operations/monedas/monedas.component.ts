@@ -1,49 +1,41 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
 import { MonedaService } from '../../../services/moneda.service';
 import { EmpresaService } from '../../../services/empresa.service';
 import { Moneda, Empresa, ApiResponse } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
+// Import child components
+import { MonedasListComponent } from './monedas-list/monedas-list.component';
+import { MonedaFormComponent } from './moneda-form/moneda-form.component';
+import { TipoCambioFormComponent } from './tipo-cambio-form/tipo-cambio-form.component';
+
 @Component({
   selector: 'app-monedas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    MonedasListComponent,
+    MonedaFormComponent,
+    TipoCambioFormComponent
+  ],
   templateUrl: './monedas.component.html',
 })
 export class MonedasComponent implements OnInit {
   monedas: Moneda[] = [];
   empresas: Empresa[] = [];
-  form: FormGroup;
-  formTipoCambio: FormGroup;
-  isModalOpen = false;
-  isEditing = false;
+  isFormModalOpen = false;
+  isTipoCambioModalOpen = false;
   isLoading = false;
-  currentId: number | null = null;
+  selectedMoneda: Moneda | null = null;
+  monedaSeleccionada: Moneda | null = null;
   errorMessage: string = '';
   successMessage: string = '';
-  isModalTipoCambioOpen = false;
-  monedaSeleccionada: Moneda | null = null;
 
   constructor(
     private monedaService: MonedaService,
-    private empresaService: EmpresaService,
-    private fb: FormBuilder
-  ) {
-    this.form = this.fb.group({
-      empresa_id: ['', [Validators.required]],
-      nombre: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-      pais: ['', [Validators.maxLength(50)]],
-      simbolo: ['', [Validators.maxLength(10)]],
-      tipo_cambio: [1, [Validators.required, Validators.min(0.0001)]],
-      estado: [true]
-    });
-
-    this.formTipoCambio = this.fb.group({
-      nuevoTipoCambio: [0, [Validators.required, Validators.min(0.0001)]]
-    });
-  }
+    private empresaService: EmpresaService
+  ) { }
 
   ngOnInit(): void {
     // Cargar empresas primero para que estén disponibles cuando se carguen las monedas
@@ -116,86 +108,54 @@ export class MonedasComponent implements OnInit {
       });
   }
 
-  abrirModalCrear(): void {
-    this.isEditing = false;
-    this.currentId = null;
-    this.form.reset({
-      empresa_id: '',
-      nombre: '',
-      pais: '',
-      simbolo: '',
-      tipo_cambio: 1,
-      estado: true
-    });
-    this.form.markAsUntouched();
-    this.limpiarMensajes();
-    this.isModalOpen = true;
-  }
-
-  abrirModalEditar(moneda: Moneda): void {
-    this.isEditing = true;
-    this.currentId = moneda.id;
-    this.form.patchValue({
-      empresa_id: moneda.empresa_id,
-      nombre: moneda.nombre,
-      pais: moneda.pais || '',
-      simbolo: moneda.simbolo,
-      tipo_cambio: moneda.tipo_cambio,
-      estado: moneda.estado !== undefined ? moneda.estado : true
-    });
-    this.form.markAsUntouched();
-    this.limpiarMensajes();
-    this.isModalOpen = true;
-  }
-
-  cerrarModal(): void {
-    this.isModalOpen = false;
-    this.isEditing = false;
-    this.currentId = null;
-    this.form.reset();
+  openFormModal(): void {
+    this.selectedMoneda = null;
+    this.isFormModalOpen = true;
     this.limpiarMensajes();
   }
 
-  guardar(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      this.mostrarError('Por favor, complete todos los campos requeridos correctamente.');
-      return;
-    }
+  closeFormModal(): void {
+    this.isFormModalOpen = false;
+    this.selectedMoneda = null;
+    this.limpiarMensajes();
+  }
 
+  onEdit(moneda: Moneda): void {
+    this.selectedMoneda = moneda;
+    this.isFormModalOpen = true;
+    this.limpiarMensajes();
+  }
+
+  onSave(monedaData: Moneda): void {
     this.isLoading = true;
-    const monedaData = this.form.value;
-
-    const operacion = this.isEditing && this.currentId
-      ? this.monedaService.update(this.currentId, monedaData)
+    const operacion = this.selectedMoneda && this.selectedMoneda.id
+      ? this.monedaService.update(this.selectedMoneda.id, monedaData)
       : this.monedaService.create(monedaData);
 
     operacion
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response: ApiResponse<Moneda> | Moneda) => {
-          // El backend puede devolver directamente el objeto o envuelto en ApiResponse
           if (response && 'success' in response) {
             if (response.success) {
               this.mostrarExito(
-                this.isEditing 
+                this.selectedMoneda 
                   ? 'Moneda actualizada exitosamente' 
                   : 'Moneda creada exitosamente'
               );
               this.cargarMonedas();
-              this.cerrarModal();
+              this.closeFormModal();
             } else {
               this.mostrarError(response.message || 'Error al guardar la moneda');
             }
           } else {
-            // Respuesta directa del backend
             this.mostrarExito(
-              this.isEditing 
+              this.selectedMoneda 
                 ? 'Moneda actualizada exitosamente' 
                 : 'Moneda creada exitosamente'
             );
             this.cargarMonedas();
-            this.cerrarModal();
+            this.closeFormModal();
           }
         },
         error: (error) => {
@@ -203,7 +163,6 @@ export class MonedasComponent implements OnInit {
           let mensaje = 'Error al guardar la moneda. Por favor, intente nuevamente.';
           
           if (error.error) {
-            // Si hay errores de validación del backend
             if (error.error.errors) {
               const errores = Object.values(error.error.errors).flat();
               mensaje = errores.join(', ');
@@ -217,7 +176,7 @@ export class MonedasComponent implements OnInit {
       });
   }
 
-  eliminar(moneda: Moneda): void {
+  onDelete(moneda: Moneda): void {
     if (!confirm(`¿Está seguro de que desea eliminar la moneda "${moneda.nombre}"?`)) {
       return;
     }
@@ -227,7 +186,6 @@ export class MonedasComponent implements OnInit {
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response: ApiResponse<any> | any) => {
-          // El backend puede devolver directamente o envuelto en ApiResponse
           if (response && 'success' in response) {
             if (response.success) {
               this.mostrarExito('Moneda eliminada exitosamente');
@@ -236,7 +194,6 @@ export class MonedasComponent implements OnInit {
               this.mostrarError(response.message || 'Error al eliminar la moneda');
             }
           } else {
-            // Respuesta directa del backend (204 No Content o similar)
             this.mostrarExito('Moneda eliminada exitosamente');
             this.cargarMonedas();
           }
@@ -298,87 +255,26 @@ export class MonedasComponent implements OnInit {
     this.successMessage = '';
   }
 
-  getFieldError(fieldName: string): string {
-    const field = this.form.get(fieldName);
-    if (field?.errors && field.touched) {
-      if (field.errors['required']) {
-        return `${this.getFieldLabel(fieldName)} es requerido`;
-      }
-      if (field.errors['minlength']) {
-        return `${this.getFieldLabel(fieldName)} debe tener al menos ${field.errors['minlength'].requiredLength} caracteres`;
-      }
-      if (field.errors['maxlength']) {
-        return `${this.getFieldLabel(fieldName)} debe tener máximo ${field.errors['maxlength'].requiredLength} caracteres`;
-      }
-      if (field.errors['min']) {
-        return `${this.getFieldLabel(fieldName)} debe ser mayor a ${field.errors['min'].min}`;
-      }
-    }
-    return '';
-  }
 
-  getFieldLabel(fieldName: string): string {
-    const labels: { [key: string]: string } = {
-      empresa_id: 'Empresa',
-      nombre: 'Nombre',
-      pais: 'País',
-      simbolo: 'Símbolo',
-      tipo_cambio: 'Tipo de cambio',
-      estado: 'Estado'
-    };
-    return labels[fieldName] || fieldName;
-  }
-
-  isFieldInvalid(fieldName: string): boolean {
-    const field = this.form.get(fieldName);
-    return !!(field?.invalid && field.touched);
-  }
-
-  actualizarTipoCambioRapido(moneda: Moneda): void {
+  onUpdateTipoCambio(moneda: Moneda): void {
     this.monedaSeleccionada = moneda;
-    this.formTipoCambio.patchValue({
-      nuevoTipoCambio: moneda.tipo_cambio
-    });
-    this.isModalTipoCambioOpen = true;
+    this.isTipoCambioModalOpen = true;
     this.limpiarMensajes();
   }
 
-  cerrarModalTipoCambio(): void {
-    this.isModalTipoCambioOpen = false;
+  closeTipoCambioModal(): void {
+    this.isTipoCambioModalOpen = false;
     this.monedaSeleccionada = null;
-    this.formTipoCambio.reset({ nuevoTipoCambio: 0 });
   }
 
-  confirmarActualizarTipoCambio(): void {
-    if (this.formTipoCambio.invalid) {
-      this.formTipoCambio.markAllAsTouched();
-      this.mostrarError('Por favor, ingrese un tipo de cambio válido (mayor a 0)');
-      return;
-    }
-
-    const nuevoTipoCambio = this.formTipoCambio.get('nuevoTipoCambio')?.value;
+  onSaveTipoCambio(nuevoTipoCambio: number): void {
     if (!this.monedaSeleccionada || !nuevoTipoCambio || nuevoTipoCambio <= 0) {
       this.mostrarError('El tipo de cambio debe ser mayor a 0');
       return;
     }
 
     this.actualizarTipoCambio(this.monedaSeleccionada, nuevoTipoCambio);
-    this.cerrarModalTipoCambio();
-  }
-
-  getEmpresaNombre(moneda: Moneda): string {
-    // Si tiene la relación empresa cargada
-    if (moneda.empresa && moneda.empresa.nombre) {
-      return moneda.empresa.nombre;
-    }
-    // Si no tiene la relación pero tiene empresa_id, buscar en el array de empresas
-    if (moneda.empresa_id && this.empresas.length > 0) {
-      const empresa = this.empresas.find(e => e.id === moneda.empresa_id);
-      if (empresa) {
-        return empresa.nombre;
-      }
-    }
-    return 'N/A';
+    this.closeTipoCambioModal();
   }
 
 }

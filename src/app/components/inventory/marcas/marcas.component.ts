@@ -1,34 +1,34 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MarcaService } from '../../../services/marca.service';
 import { Marca } from '../../../interfaces';
+import { finalize } from 'rxjs/operators';
+
+// Import child components
+import { MarcasListComponent } from './marcas-list/marcas-list.component';
+import { MarcaFormComponent } from './marca-form/marca-form.component';
 
 @Component({
   selector: 'app-marcas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    MarcasListComponent,
+    MarcaFormComponent
+  ],
   templateUrl: './marcas.component.html',
 })
 export class MarcasComponent implements OnInit {
   marcas: Marca[] = [];
-  marcaForm: FormGroup;
   isLoading = false;
-  isModalOpen = false;
-  isEditMode = false;
-  selectedMarcaId: number | null = null;
+  isFormModalOpen = false;
+  selectedMarca: Marca | null = null;
   errorMessage = '';
   successMessage = '';
 
   constructor(
-    private marcaService: MarcaService,
-    private fb: FormBuilder
-  ) {
-    this.marcaForm = this.fb.group({
-      nombre: ['', [Validators.required, Validators.minLength(2)]],
-      descripcion: ['']
-    });
-  }
+    private marcaService: MarcaService
+  ) { }
 
   ngOnInit(): void {
     this.loadMarcas();
@@ -36,72 +36,39 @@ export class MarcasComponent implements OnInit {
 
   loadMarcas(): void {
     this.isLoading = true;
-    this.marcaService.getAll().subscribe({
-      next: (response) => {
-        this.marcas = response.data;
-        this.isLoading = false;
-      },
-      error: (error) => {
-        this.errorMessage = 'Error al cargar marcas';
-        this.isLoading = false;
-      }
-    });
+    this.marcaService.getAll()
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (response) => {
+          this.marcas = response.data;
+        },
+        error: (error) => {
+          this.errorMessage = 'Error al cargar marcas';
+          console.error('Error loading marcas', error);
+        }
+      });
   }
 
-  openModal(marca?: Marca): void {
-    this.isModalOpen = true;
+  openFormModal(): void {
+    this.selectedMarca = null;
+    this.isFormModalOpen = true;
     this.errorMessage = '';
     this.successMessage = '';
-
-    if (marca) {
-      this.isEditMode = true;
-      this.selectedMarcaId = marca.id;
-      this.marcaForm.patchValue({
-        nombre: marca.nombre,
-        descripcion: marca.descripcion
-      });
-    } else {
-      this.isEditMode = false;
-      this.selectedMarcaId = null;
-      this.marcaForm.reset();
-    }
   }
 
-  closeModal(): void {
-    this.isModalOpen = false;
-    this.marcaForm.reset();
-    this.isEditMode = false;
-    this.selectedMarcaId = null;
+  closeFormModal(): void {
+    this.isFormModalOpen = false;
+    this.selectedMarca = null;
   }
 
-  onSubmit(): void {
-    if (this.marcaForm.invalid) {
-      this.marcaForm.markAllAsTouched();
-      return;
-    }
-
-    this.isLoading = true;
-    const marcaData = this.marcaForm.value;
-
-    const request = this.isEditMode && this.selectedMarcaId
-      ? this.marcaService.update(this.selectedMarcaId, marcaData)
-      : this.marcaService.create(marcaData);
-
-    request.subscribe({
-      next: () => {
-        this.successMessage = `Marca ${this.isEditMode ? 'actualizada' : 'creada'} exitosamente`;
-        this.loadMarcas();
-        this.closeModal();
-        setTimeout(() => this.successMessage = '', 3000);
-      },
-      error: (error) => {
-        this.errorMessage = error.error?.message || 'Error al guardar la marca';
-        this.isLoading = false;
-      }
-    });
+  onEdit(marca: Marca): void {
+    this.selectedMarca = marca;
+    this.isFormModalOpen = true;
+    this.errorMessage = '';
+    this.successMessage = '';
   }
 
-  deleteMarca(id: number): void {
+  onDelete(id: number): void {
     if (confirm('¿Estás seguro de eliminar esta marca?')) {
       this.marcaService.delete(id).subscribe({
         next: () => {
@@ -111,8 +78,31 @@ export class MarcasComponent implements OnInit {
         },
         error: (error) => {
           this.errorMessage = error.error?.message || 'Error al eliminar la marca';
+          console.error('Error deleting marca', error);
         }
       });
     }
+  }
+
+  onSave(marcaData: Marca): void {
+    this.isLoading = true;
+    const request = this.selectedMarca && this.selectedMarca.id
+      ? this.marcaService.update(this.selectedMarca.id, marcaData)
+      : this.marcaService.create(marcaData);
+
+    request
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: () => {
+          this.successMessage = `Marca ${this.selectedMarca ? 'actualizada' : 'creada'} exitosamente`;
+          this.loadMarcas();
+          this.closeFormModal();
+          setTimeout(() => this.successMessage = '', 3000);
+        },
+        error: (error) => {
+          this.errorMessage = error.error?.message || 'Error al guardar la marca';
+          console.error('Error saving marca', error);
+        }
+      });
   }
 }

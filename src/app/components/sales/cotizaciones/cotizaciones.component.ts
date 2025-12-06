@@ -8,10 +8,13 @@ import { ArticuloService } from '../../../services/articulo.service';
 import { Cotizacion, DetalleCotizacion, Cliente, Almacen, Articulo } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
+// Import child components
+import { CotizacionesListComponent } from './cotizaciones-list/cotizaciones-list.component';
+
 @Component({
   selector: 'app-cotizaciones',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, CotizacionesListComponent],
   templateUrl: './cotizaciones.component.html',
 })
 export class CotizacionesComponent implements OnInit {

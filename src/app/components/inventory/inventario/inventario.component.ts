@@ -1,15 +1,22 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { InventarioService } from '../../../services/inventario.service';
 import { AlmacenService } from '../../../services/almacen.service';
 import { Inventario, Almacen, ApiResponse } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
+// Import child components
+import { InventarioListComponent } from './inventario-list/inventario-list.component';
+import { InventarioFiltersComponent } from './inventario-filters/inventario-filters.component';
+
 @Component({
   selector: 'app-inventario',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    InventarioListComponent,
+    InventarioFiltersComponent
+  ],
   templateUrl: './inventario.component.html',
 })
 export class InventarioComponent implements OnInit {
@@ -65,19 +72,18 @@ export class InventarioComponent implements OnInit {
       });
   }
 
-  filtrarPorAlmacen(almacenId: any): void {
-    // Convertir a número si viene como string del select
-    if (almacenId === null || almacenId === '' || almacenId === 'null') {
-      this.almacenSeleccionado = null;
-    } else {
-      this.almacenSeleccionado = typeof almacenId === 'string' ? parseInt(almacenId, 10) : Number(almacenId);
-    }
-    console.log('Almacén seleccionado:', this.almacenSeleccionado, 'Tipo:', typeof this.almacenSeleccionado);
+  onAlmacenChange(almacenId: number | null): void {
+    this.almacenSeleccionado = almacenId;
     this.aplicarFiltros();
   }
 
-  buscar(): void {
+  onBusquedaChange(busqueda: string): void {
+    this.busqueda = busqueda;
     this.aplicarFiltros();
+  }
+
+  onClearFilters(): void {
+    this.limpiarFiltros();
   }
 
   aplicarFiltros(): void {
@@ -124,10 +130,5 @@ export class InventarioComponent implements OnInit {
 
   getTotalSaldoStock(): number {
     return this.inventariosFiltrados.reduce((sum, inv) => sum + inv.saldo_stock, 0);
-  }
-
-  getNombreAlmacen(almacenId: number): string {
-    const almacen = this.almacenes.find(a => a.id === almacenId);
-    return almacen?.nombre_almacen || 'N/A';
   }
 }

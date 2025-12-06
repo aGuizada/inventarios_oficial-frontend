@@ -1,0 +1,152 @@
+@if (credito) {
+<div class="mt-3">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-semibold text-gray-900">
+            Pagar Cuotas - Crédito #{{ credito.id }}
+        </h3>
+        <button type="button" (click)="onClose()" class="text-gray-400 hover:text-gray-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Información del Crédito -->
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+        <div class="grid grid-cols-3 gap-4 text-sm">
+            <div>
+                <span class="font-semibold text-gray-700">Total:</span>
+                <p class="text-gray-900">{{ credito.total | currency }}</p>
+            </div>
+            <div>
+                <span class="font-semibold text-gray-700">Cuotas Pendientes:</span>
+                <p class="text-red-600 font-bold">{{ getCuotasPendientes(credito) }}</p>
+            </div>
+            <div>
+                <span class="font-semibold text-gray-700">Cuotas Pagadas:</span>
+                <p class="text-green-600 font-bold">{{ getCuotasPagadas(credito) }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Cuotas -->
+    <div class="mb-4">
+        <h4 class="text-lg font-semibold text-gray-800 mb-2">Cuotas Pendientes</h4>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">N° Cuota</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Pago</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Saldo Restante</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acción</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @if (cuotas.length > 0) {
+                    @for (cuota of cuotas; track cuota.id) {
+                    <tr [class.bg-yellow-50]="cuota.estado === 'Pendiente'"
+                        [class.bg-green-50]="cuota.estado === 'Pagado'" class="hover:bg-gray-50">
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            {{ cuota.numero_cuota }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">
+                            {{ cuota.precio_cuota | currency }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {{ cuota.fecha_pago | date:'short' }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {{ cuota.saldo_restante | currency }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-center">
+                            @if (cuota.estado !== 'Pagado') {
+                            <button (click)="onOpenPay(cuota)"
+                                class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700">
+                                Pagar
+                            </button>
+                            } @else {
+                            <span class="text-xs text-green-600 font-semibold">
+                                ✓ Pagada
+                            </span>
+                            }
+                        </td>
+                    </tr>
+                    }
+                    } @else {
+                    <tr>
+                        <td colspan="5" class="px-4 py-4 text-center text-sm text-gray-500">
+                            <div class="flex flex-col items-center">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                                <span>No hay cuotas registradas. Las cuotas se generarán automáticamente.</span>
+                                @if (credito) {
+                                <button (click)="onGenerateCuotas()"
+                                    class="mt-2 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Generar Cuotas
+                                </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+}
+
+<!-- Modal de Pago de Cuota Individual -->
+@if (cuotaAPagar) {
+<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+    style="z-index: 9999;" (click)="onClosePay()">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white"
+        (click)="$event.stopPropagation()">
+        <div class="mt-3">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Pagar Cuota #{{ cuotaAPagar.numero_cuota }}</h3>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Monto a Pagar</label>
+                    <input type="number" [(ngModel)]="montoPago" min="0.01" step="0.01"
+                        class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <p class="mt-1 text-xs text-gray-500">
+                        Monto de la cuota: {{ cuotaAPagar.precio_cuota | currency }}
+                    </p>
+                </div>
+
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-600">Saldo Restante:</span>
+                        <span class="font-semibold">{{ cuotaAPagar.saldo_restante | currency }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">Después del pago:</span>
+                        <span class="font-semibold text-green-600">
+                            {{ (cuotaAPagar.saldo_restante - montoPago) | currency }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end space-x-3">
+                <button type="button" (click)="onClosePay()"
+                    class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    Cancelar
+                </button>
+                <button type="button" (click)="onPay()" [disabled]="isPaying || montoPago <= 0"
+                    class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    @if (isPaying) {
+                    <span>Procesando...</span>
+                    } @else {
+                    <span>Pagar</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+}
+

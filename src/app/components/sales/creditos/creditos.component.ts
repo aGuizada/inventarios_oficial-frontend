@@ -1,16 +1,25 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { CreditoVentaService } from '../../../services/credito-venta.service';
 import { CuotaCreditoService } from '../../../services/cuota-credito.service';
 import { VentaService } from '../../../services/venta.service';
 import { CreditoVenta, CuotaCredito } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
+// Import child components
+import { CreditosListComponent } from './creditos-list/creditos-list.component';
+import { CreditoDetailComponent } from './credito-detail/credito-detail.component';
+import { CreditoPagoComponent } from './credito-pago/credito-pago.component';
+
 @Component({
   selector: 'app-creditos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    CreditosListComponent,
+    CreditoDetailComponent,
+    CreditoPagoComponent
+  ],
   templateUrl: './creditos.component.html',
 })
 export class CreditosComponent implements OnInit {
@@ -18,18 +27,16 @@ export class CreditosComponent implements OnInit {
   isLoading = false;
   creditoSeleccionado: CreditoVenta | null = null;
   cuotas: CuotaCredito[] = [];
-  isModalOpen = false;
-  isModalPagoCuotasOpen = false;
+  isDetailModalOpen = false;
+  isPagoModalOpen = false;
   isPaying = false;
-  cuotaAPagar: CuotaCredito | null = null;
-  montoPago: number = 0;
   currentUserId = 1; // TODO: Obtener del servicio de autenticación
 
   constructor(
     private creditoVentaService: CreditoVentaService,
     private cuotaCreditoService: CuotaCreditoService,
     private ventaService: VentaService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadCreditos();
@@ -62,36 +69,26 @@ export class CreditosComponent implements OnInit {
       });
   }
 
-  verDetalleCredito(credito: CreditoVenta): void {
-    // Si el crédito ya tiene la venta cargada, usarlo directamente
+  onViewDetail(credito: CreditoVenta): void {
     if (credito.venta && credito.venta.detalles) {
       this.creditoSeleccionado = credito;
-      this.isModalOpen = true;
+      this.isDetailModalOpen = true;
       return;
     }
 
-    // Intentar cargar el crédito completo con detalles de la venta
     this.creditoVentaService.getById(credito.id).subscribe({
       next: (response: any) => {
-        console.log('📥 Respuesta completa del backend:', response);
         const creditoCompleto = response.data || response;
         this.creditoSeleccionado = creditoCompleto;
-        console.log('✅ Crédito completo cargado:', creditoCompleto);
-        console.log('📦 Venta:', creditoCompleto.venta);
-        console.log('📋 Detalles de venta:', creditoCompleto.venta?.detalles);
-        console.log('🔢 Cantidad de detalles:', creditoCompleto.venta?.detalles?.length);
-        this.isModalOpen = true;
+        this.isDetailModalOpen = true;
       },
       error: (error) => {
-        console.error('❌ Error al cargar detalle del crédito:', error);
-        console.error('Error completo:', error.error);
-        // Si falla, usar el crédito que ya tenemos y cargar la venta directamente
+        console.error('Error al cargar detalle del crédito:', error);
         this.creditoSeleccionado = credito;
-        // Si tenemos venta_id, intentar cargar la venta directamente
         if (credito.venta_id) {
           this.cargarVentaConDetalles(credito.venta_id);
         }
-        this.isModalOpen = true;
+        this.isDetailModalOpen = true;
       }
     });
   }
@@ -149,59 +146,37 @@ export class CreditosComponent implements OnInit {
     }, 500);
   }
 
-  cerrarModal(): void {
-    this.isModalOpen = false;
+  closeDetailModal(): void {
+    this.isDetailModalOpen = false;
     this.creditoSeleccionado = null;
-    this.cuotas = [];
-    this.cuotaAPagar = null;
-    this.montoPago = 0;
   }
 
-  cerrarModalPagoCuotas(): void {
-    this.isModalPagoCuotasOpen = false;
-    this.creditoSeleccionado = null;
-    this.cuotas = [];
-  }
-
-  abrirModalPago(credito: CreditoVenta): void {
-    // Cargar las cuotas del crédito primero
+  onPay(credito: CreditoVenta): void {
     this.creditoSeleccionado = credito;
-    this.isModalPagoCuotasOpen = true; // Abrir modal inmediatamente
+    this.isPagoModalOpen = true;
     this.loadCuotas(credito.id);
   }
 
-  abrirPagarCuota(cuota: CuotaCredito): void {
-    this.cuotaAPagar = cuota;
-    this.montoPago = cuota.precio_cuota || cuota.saldo_restante || 0;
+  closePagoModal(): void {
+    this.isPagoModalOpen = false;
+    this.creditoSeleccionado = null;
+    this.cuotas = [];
   }
 
-  cerrarPagarCuota(): void {
-    this.cuotaAPagar = null;
-    this.montoPago = 0;
-  }
-
-  pagarCuota(): void {
-    if (!this.cuotaAPagar || this.montoPago <= 0) {
-      alert('Por favor ingrese un monto válido');
-      return;
-    }
-
+  onPayCuota(event: { cuota: CuotaCredito; monto: number }): void {
     this.isPaying = true;
-    this.cuotaCreditoService.pagarCuota(this.cuotaAPagar.id, this.montoPago, this.currentUserId)
+    this.cuotaCreditoService.pagarCuota(event.cuota.id, event.monto, this.currentUserId)
       .pipe(finalize(() => this.isPaying = false))
       .subscribe({
         next: (response: any) => {
-          console.log('Cuota pagada:', response);
           alert('Cuota pagada exitosamente');
-          this.cerrarPagarCuota();
           if (this.creditoSeleccionado) {
             this.loadCuotas(this.creditoSeleccionado.id);
-            this.loadCreditos(); // Recargar créditos para actualizar estado
-            // Verificar si quedan cuotas pendientes
+            this.loadCreditos();
             setTimeout(() => {
               const cuotasPendientes = this.cuotas.filter(c => c.estado !== 'Pagado');
               if (cuotasPendientes.length === 0) {
-                this.cerrarModalPagoCuotas();
+                this.closePagoModal();
               }
             }, 500);
           }
@@ -214,17 +189,10 @@ export class CreditosComponent implements OnInit {
       });
   }
 
-  getCuotasPendientes(credito: CreditoVenta): number {
-    if (!credito.cuotas || credito.cuotas.length === 0) {
-      return credito.numero_cuotas || 0;
-    }
-    return credito.cuotas.filter(c => c.estado !== 'Pagado').length;
+  onGenerateCuotas(creditoId: number): void {
+    setTimeout(() => {
+      this.loadCuotas(creditoId);
+    }, 500);
   }
 
-  getCuotasPagadas(credito: CreditoVenta): number {
-    if (!credito.cuotas || credito.cuotas.length === 0) {
-      return 0;
-    }
-    return credito.cuotas.filter(c => c.estado === 'Pagado').length;
-  }
 }

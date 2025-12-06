@@ -1,0 +1,66 @@
+@if (isLoading) {
+<div class="flex justify-center items-center py-8">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+</div>
+}
+
+@if (!isLoading) {
+<div class="bg-white shadow-md rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sucursal
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apertura
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cierre
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo
+                        Inicial</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado
+                    </th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @for (caja of cajas; track caja.id) {
+                <tr class="hover:bg-gray-50 transition duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{{ caja.id }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ caja.sucursal?.nombre || 'N/A' }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ caja.user?.name || caja.user_id }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ caja.fecha_apertura | date:'short'
+                        }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ caja.fecha_cierre ?
+                        (caja.fecha_cierre | date:'short') : '-' }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ caja.saldo_inicial | currency }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span [class]="isCajaOpen(caja) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                            {{ isCajaOpen(caja) ? 'Abierta' : 'Cerrada' }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        @if (isCajaOpen(caja)) {
+                        <button (click)="onClose(caja)" class="text-red-600 hover:text-red-900">Cerrar Caja</button>
+                        }
+                    </td>
+                </tr>
+                } @empty {
+                <tr>
+                    <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">No hay cajas registradas.</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+}
+

@@ -1,0 +1,96 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="sm:flex sm:items-start">
+            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                    {{ isEditing ? 'Editar Moneda' : 'Nueva Moneda' }}
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label for="empresa_id" class="block text-sm font-medium text-gray-700">
+                            Empresa <span class="text-red-500">*</span>
+                        </label>
+                        <select id="empresa_id" formControlName="empresa_id"
+                            class="mt-1 block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            [class.border-red-500]="isFieldInvalid('empresa_id')"
+                            [class.border-gray-300]="!isFieldInvalid('empresa_id')">
+                            <option value="">Seleccione una empresa</option>
+                            @for (empresa of empresas; track empresa.id) {
+                            <option [value]="empresa.id">{{ empresa.nombre }}</option>
+                            }
+                        </select>
+                        @if (isFieldInvalid('empresa_id')) {
+                        <p class="mt-1 text-xs text-red-600">{{ getFieldError('empresa_id') }}</p>
+                        }
+                    </div>
+
+                    <div>
+                        <label for="nombre" class="block text-sm font-medium text-gray-700">
+                            Nombre <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="nombre" formControlName="nombre"
+                            class="mt-1 block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            [class.border-red-500]="isFieldInvalid('nombre')"
+                            [class.border-gray-300]="!isFieldInvalid('nombre')"
+                            placeholder="Ej: Dólar Estadounidense" maxlength="50">
+                        @if (isFieldInvalid('nombre')) {
+                        <p class="mt-1 text-xs text-red-600">{{ getFieldError('nombre') }}</p>
+                        }
+                    </div>
+
+                    <div>
+                        <label for="pais" class="block text-sm font-medium text-gray-700">País</label>
+                        <input type="text" id="pais" formControlName="pais"
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            placeholder="Ej: Estados Unidos" maxlength="50">
+                    </div>
+
+                    <div>
+                        <label for="simbolo" class="block text-sm font-medium text-gray-700">Símbolo</label>
+                        <input type="text" id="simbolo" formControlName="simbolo"
+                            class="mt-1 block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            [class.border-red-500]="isFieldInvalid('simbolo')"
+                            [class.border-gray-300]="!isFieldInvalid('simbolo')" placeholder="Ej: $"
+                            maxlength="10">
+                        @if (isFieldInvalid('simbolo')) {
+                        <p class="mt-1 text-xs text-red-600">{{ getFieldError('simbolo') }}</p>
+                        }
+                    </div>
+
+                    <div>
+                        <label for="tipo_cambio" class="block text-sm font-medium text-gray-700">
+                            Tipo de Cambio <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" id="tipo_cambio" formControlName="tipo_cambio" step="0.0001"
+                            min="0.0001"
+                            class="mt-1 block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            [class.border-red-500]="isFieldInvalid('tipo_cambio')"
+                            [class.border-gray-300]="!isFieldInvalid('tipo_cambio')" placeholder="Ej: 1.0000">
+                        @if (isFieldInvalid('tipo_cambio')) {
+                        <p class="mt-1 text-xs text-red-600">{{ getFieldError('tipo_cambio') }}</p>
+                        }
+                        <p class="mt-1 text-xs text-gray-500">
+                            Tipo de cambio respecto a la moneda base (debe ser mayor a 0)
+                        </p>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input id="estado" type="checkbox" formControlName="estado"
+                            class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                        <label for="estado" class="ml-2 text-sm text-gray-700">Activo</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+        <button type="submit" [disabled]="form.invalid"
+            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+            {{ isEditing ? 'Actualizar' : 'Crear' }}
+        </button>
+        <button type="button" (click)="onCancel()"
+            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+            Cancelar
+        </button>
+    </div>
+</form>

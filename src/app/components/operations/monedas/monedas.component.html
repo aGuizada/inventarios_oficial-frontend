@@ -1,349 +1,86 @@
 <div class="container mx-auto px-4 py-4">
-  <!-- Header -->
-  <div class="mb-4 flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-gray-800">Gestión de Monedas</h1>
-    <button 
-      (click)="abrirModalCrear()"
-      class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition duration-300 flex items-center">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-      </svg>
-      Nueva Moneda
-    </button>
-  </div>
-
-  <!-- Mensajes de éxito y error -->
-  <div *ngIf="successMessage" class="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md flex items-center justify-between">
-    <div class="flex items-center">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-      </svg>
-      <span>{{ successMessage }}</span>
-    </div>
-    <button (click)="limpiarMensajes()" class="text-green-600 hover:text-green-800">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-      </svg>
-    </button>
-  </div>
-
-  <div *ngIf="errorMessage" class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md flex items-center justify-between">
-    <div class="flex items-center">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-      </svg>
-      <span>{{ errorMessage }}</span>
-    </div>
-    <button (click)="limpiarMensajes()" class="text-red-600 hover:text-red-800">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-      </svg>
-    </button>
-  </div>
-
-  <!-- Tabla de Monedas -->
-  <div class="bg-white shadow-md rounded-lg overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">País</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Símbolo</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Cambio</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr *ngFor="let moneda of monedas" class="hover:bg-gray-50">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">#{{ moneda.id }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ getEmpresaNombre(moneda) }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ moneda.nombre }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ moneda.pais || '-' }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              <span class="text-lg font-semibold">{{ moneda.simbolo || '-' }}</span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              <div class="flex items-center space-x-2">
-                <span class="font-semibold">{{ moneda.tipo_cambio | number:'1.4-4' }}</span>
-                <button 
-                  (click)="actualizarTipoCambioRapido(moneda)"
-                  class="text-blue-600 hover:text-blue-800 text-xs"
-                  title="Actualizar tipo de cambio">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                [class.bg-green-100]="moneda.estado !== false"
-                [class.text-green-800]="moneda.estado !== false"
-                [class.bg-gray-100]="moneda.estado === false"
-                [class.text-gray-800]="moneda.estado === false">
-                {{ moneda.estado !== false ? 'Activo' : 'Inactivo' }}
-              </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-              <div class="flex justify-center space-x-2">
-                <button 
-                  (click)="abrirModalEditar(moneda)"
-                  class="text-blue-600 hover:text-blue-900 mr-3"
-                  title="Editar moneda">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                  </svg>
-                </button>
-                <button 
-                  (click)="eliminar(moneda)"
-                  class="text-red-600 hover:text-red-900"
-                  title="Eliminar moneda">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-            </td>
-          </tr>
-          <tr *ngIf="monedas.length === 0 && !isLoading">
-            <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
-              No hay monedas registradas. Haga clic en "Nueva Moneda" para agregar una.
-            </td>
-          </tr>
-          <tr *ngIf="isLoading">
-            <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
-              <div class="flex justify-center items-center">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span class="ml-2">Cargando monedas...</span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Modal para Crear/Editar Moneda -->
-  <div *ngIf="isModalOpen" 
-    class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
-    (click)="cerrarModal()">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white"
-      (click)="$event.stopPropagation()">
-      <div class="mt-3">
-        <!-- Header del Modal -->
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd" />
+    <!-- Header -->
+    <div class="mb-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-800">Gestión de Monedas</h1>
+        <button (click)="openFormModal()"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition duration-300 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                    clip-rule="evenodd" />
             </svg>
-            {{ isEditing ? 'Editar Moneda' : 'Nueva Moneda' }}
-          </h3>
-          <button type="button" 
-            (click)="cerrarModal()"
-            class="text-gray-400 hover:text-gray-600">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <!-- Formulario -->
-        <form [formGroup]="form" (ngSubmit)="guardar()" class="space-y-4">
-          <!-- Empresa -->
-          <div>
-            <label for="empresa_id" class="block text-sm font-medium text-gray-700 mb-1">
-              Empresa <span class="text-red-500">*</span>
-            </label>
-            <select 
-              id="empresa_id" 
-              formControlName="empresa_id"
-              class="block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              [class.border-red-500]="isFieldInvalid('empresa_id')"
-              [class.border-gray-300]="!isFieldInvalid('empresa_id')">
-              <option value="">Seleccione una empresa</option>
-              <option *ngFor="let empresa of empresas" [value]="empresa.id">
-                {{ empresa.nombre }}
-              </option>
-            </select>
-            <p *ngIf="isFieldInvalid('empresa_id')" class="mt-1 text-xs text-red-600">
-              {{ getFieldError('empresa_id') }}
-            </p>
-          </div>
-
-          <!-- Nombre -->
-          <div>
-            <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">
-              Nombre <span class="text-red-500">*</span>
-            </label>
-            <input 
-              type="text" 
-              id="nombre" 
-              formControlName="nombre"
-              class="block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              [class.border-red-500]="isFieldInvalid('nombre')"
-              [class.border-gray-300]="!isFieldInvalid('nombre')"
-              placeholder="Ej: Dólar Estadounidense"
-              maxlength="50">
-            <p *ngIf="isFieldInvalid('nombre')" class="mt-1 text-xs text-red-600">
-              {{ getFieldError('nombre') }}
-            </p>
-          </div>
-
-          <!-- País -->
-          <div>
-            <label for="pais" class="block text-sm font-medium text-gray-700 mb-1">
-              País
-            </label>
-            <input 
-              type="text" 
-              id="pais" 
-              formControlName="pais"
-              class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              placeholder="Ej: Estados Unidos"
-              maxlength="50">
-          </div>
-
-          <!-- Símbolo -->
-          <div>
-            <label for="simbolo" class="block text-sm font-medium text-gray-700 mb-1">
-              Símbolo
-            </label>
-            <input 
-              type="text" 
-              id="simbolo" 
-              formControlName="simbolo"
-              class="block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              [class.border-red-500]="isFieldInvalid('simbolo')"
-              [class.border-gray-300]="!isFieldInvalid('simbolo')"
-              placeholder="Ej: $"
-              maxlength="10">
-            <p *ngIf="isFieldInvalid('simbolo')" class="mt-1 text-xs text-red-600">
-              {{ getFieldError('simbolo') }}
-            </p>
-          </div>
-
-          <!-- Tipo de Cambio -->
-          <div>
-            <label for="tipo_cambio" class="block text-sm font-medium text-gray-700 mb-1">
-              Tipo de Cambio <span class="text-red-500">*</span>
-            </label>
-            <input 
-              type="number" 
-              id="tipo_cambio" 
-              formControlName="tipo_cambio"
-              step="0.0001"
-              min="0.0001"
-              class="block w-full py-2 px-3 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              [class.border-red-500]="isFieldInvalid('tipo_cambio')"
-              [class.border-gray-300]="!isFieldInvalid('tipo_cambio')"
-              placeholder="Ej: 1.0000">
-            <p *ngIf="isFieldInvalid('tipo_cambio')" class="mt-1 text-xs text-red-600">
-              {{ getFieldError('tipo_cambio') }}
-            </p>
-            <p class="mt-1 text-xs text-gray-500">
-              Tipo de cambio respecto a la moneda base (debe ser mayor a 0)
-            </p>
-          </div>
-
-          <!-- Estado -->
-          <div>
-            <label class="flex items-center">
-              <input 
-                type="checkbox" 
-                formControlName="estado"
-                class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-              <span class="ml-2 text-sm text-gray-700">Activo</span>
-            </label>
-          </div>
-
-          <!-- Footer del Modal -->
-          <div class="mt-6 flex justify-end space-x-3">
-            <button 
-              type="button" 
-              (click)="cerrarModal()"
-              class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-              Cancelar
-            </button>
-            <button 
-              type="submit"
-              [disabled]="isLoading || form.invalid"
-              class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-              <span *ngIf="isLoading" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
-              {{ isLoading ? 'Guardando...' : (isEditing ? 'Actualizar' : 'Crear') }}
-            </button>
-          </div>
-        </form>
-      </div>
+            Nueva Moneda
+        </button>
     </div>
-  </div>
 
-  <!-- Modal para Actualizar Tipo de Cambio Rápido -->
-  <div *ngIf="isModalTipoCambioOpen" 
-    class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
-    (click)="cerrarModalTipoCambio()">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-sm shadow-lg rounded-md bg-white"
-      (click)="$event.stopPropagation()">
-      <div class="mt-3">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900">Actualizar Tipo de Cambio</h3>
-          <button type="button" (click)="cerrarModalTipoCambio()" class="text-gray-400 hover:text-gray-600">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+    <!-- Mensajes de éxito y error -->
+    @if (successMessage) {
+    <div class="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md flex items-center justify-between">
+        <div class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clip-rule="evenodd" />
             </svg>
-          </button>
+            <span>{{ successMessage }}</span>
         </div>
-        <div class="mb-4">
-          <p class="text-sm text-gray-600 mb-2">
-            Moneda: <span class="font-semibold">{{ monedaSeleccionada?.nombre }}</span>
-          </p>
-          <p class="text-sm text-gray-600">
-            Tipo de cambio actual: <span class="font-semibold">{{ monedaSeleccionada?.tipo_cambio | number:'1.4-4' }}</span>
-          </p>
-        </div>
-        <form [formGroup]="formTipoCambio" (ngSubmit)="confirmarActualizarTipoCambio()">
-          <div>
-            <label for="nuevo_tipo_cambio" class="block text-sm font-medium text-gray-700 mb-1">
-              Nuevo Tipo de Cambio <span class="text-red-500">*</span>
-            </label>
-            <input 
-              type="number" 
-              id="nuevo_tipo_cambio"
-              formControlName="nuevoTipoCambio"
-              step="0.0001"
-              min="0.0001"
-              class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              [class.border-red-500]="formTipoCambio.get('nuevoTipoCambio')?.invalid && formTipoCambio.get('nuevoTipoCambio')?.touched"
-              placeholder="Ingrese el nuevo tipo de cambio">
-            <p *ngIf="formTipoCambio.get('nuevoTipoCambio')?.invalid && formTipoCambio.get('nuevoTipoCambio')?.touched" 
-              class="mt-1 text-xs text-red-600">
-              El tipo de cambio es requerido y debe ser mayor a 0
-            </p>
-          </div>
-          <div class="mt-6 flex justify-end space-x-3">
-            <button 
-              type="button" 
-              (click)="cerrarModalTipoCambio()"
-              class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-              Cancelar
-            </button>
-            <button 
-              type="submit"
-              [disabled]="formTipoCambio.invalid || isLoading"
-              class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
-              {{ isLoading ? 'Actualizando...' : 'Actualizar' }}
-            </button>
-          </div>
-        </form>
-      </div>
+        <button (click)="limpiarMensajes()" class="text-green-600 hover:text-green-800">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clip-rule="evenodd" />
+            </svg>
+        </button>
     </div>
-  </div>
+    }
+
+    @if (errorMessage) {
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md flex items-center justify-between">
+        <div class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clip-rule="evenodd" />
+            </svg>
+            <span>{{ errorMessage }}</span>
+        </div>
+        <button (click)="limpiarMensajes()" class="text-red-600 hover:text-red-800">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clip-rule="evenodd" />
+            </svg>
+        </button>
+    </div>
+    }
+
+    <!-- List Component -->
+    <app-monedas-list [monedas]="monedas" [isLoading]="isLoading" [empresas]="empresas"
+        (edit)="onEdit($event)" (delete)="onDelete($event)" (updateTipoCambio)="onUpdateTipoCambio($event)">
+    </app-monedas-list>
 </div>
+
+<!-- Form Modal -->
+@if (isFormModalOpen) {
+<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+    (click)="closeFormModal()">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white"
+        (click)="$event.stopPropagation()">
+        <app-moneda-form [moneda]="selectedMoneda" [empresas]="empresas" (save)="onSave($event)"
+            (cancel)="closeFormModal()">
+        </app-moneda-form>
+    </div>
+</div>
+}
+
+<!-- Tipo Cambio Modal -->
+@if (isTipoCambioModalOpen) {
+<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+    (click)="closeTipoCambioModal()">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-sm shadow-lg rounded-md bg-white"
+        (click)="$event.stopPropagation()">
+        <app-tipo-cambio-form [moneda]="monedaSeleccionada" (save)="onSaveTipoCambio($event)"
+            (cancel)="closeTipoCambioModal()">
+        </app-tipo-cambio-form>
+    </div>
+</div>
+}

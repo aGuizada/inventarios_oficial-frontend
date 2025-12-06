@@ -1,34 +1,34 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MedidaService } from '../../../services/medida.service';
 import { Medida } from '../../../interfaces';
+import { finalize } from 'rxjs/operators';
+
+// Import child components
+import { MedidasListComponent } from './medidas-list/medidas-list.component';
+import { MedidaFormComponent } from './medida-form/medida-form.component';
 
 @Component({
   selector: 'app-medidas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    MedidasListComponent,
+    MedidaFormComponent
+  ],
   templateUrl: './medidas.component.html',
 })
 export class MedidasComponent implements OnInit {
   medidas: Medida[] = [];
-  medidaForm: FormGroup;
   isLoading = false;
-  isModalOpen = false;
-  isEditMode = false;
-  selectedMedidaId: number | null = null;
+  isFormModalOpen = false;
+  selectedMedida: Medida | null = null;
   errorMessage = '';
   successMessage = '';
 
   constructor(
-    private medidaService: MedidaService,
-    private fb: FormBuilder
-  ) {
-    this.medidaForm = this.fb.group({
-      nombre_medida: ['', [Validators.required, Validators.minLength(2)]],
-      abreviatura: ['', [Validators.maxLength(10)]]
-    });
-  }
+    private medidaService: MedidaService
+  ) { }
 
   ngOnInit(): void {
     this.loadMedidas();
@@ -36,72 +36,39 @@ export class MedidasComponent implements OnInit {
 
   loadMedidas(): void {
     this.isLoading = true;
-    this.medidaService.getAll().subscribe({
-      next: (response) => {
-        this.medidas = response.data;
-        this.isLoading = false;
-      },
-      error: (error) => {
-        this.errorMessage = 'Error al cargar medidas';
-        this.isLoading = false;
-      }
-    });
+    this.medidaService.getAll()
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (response) => {
+          this.medidas = response.data;
+        },
+        error: (error) => {
+          this.errorMessage = 'Error al cargar medidas';
+          console.error('Error loading medidas', error);
+        }
+      });
   }
 
-  openModal(medida?: Medida): void {
-    this.isModalOpen = true;
+  openFormModal(): void {
+    this.selectedMedida = null;
+    this.isFormModalOpen = true;
     this.errorMessage = '';
     this.successMessage = '';
-
-    if (medida) {
-      this.isEditMode = true;
-      this.selectedMedidaId = medida.id;
-      this.medidaForm.patchValue({
-        nombre_medida: medida.nombre_medida,
-        abreviatura: medida.abreviatura
-      });
-    } else {
-      this.isEditMode = false;
-      this.selectedMedidaId = null;
-      this.medidaForm.reset();
-    }
   }
 
-  closeModal(): void {
-    this.isModalOpen = false;
-    this.medidaForm.reset();
-    this.isEditMode = false;
-    this.selectedMedidaId = null;
+  closeFormModal(): void {
+    this.isFormModalOpen = false;
+    this.selectedMedida = null;
   }
 
-  onSubmit(): void {
-    if (this.medidaForm.invalid) {
-      this.medidaForm.markAllAsTouched();
-      return;
-    }
-
-    this.isLoading = true;
-    const medidaData = this.medidaForm.value;
-
-    const request = this.isEditMode && this.selectedMedidaId
-      ? this.medidaService.update(this.selectedMedidaId, medidaData)
-      : this.medidaService.create(medidaData);
-
-    request.subscribe({
-      next: () => {
-        this.successMessage = `Medida ${this.isEditMode ? 'actualizada' : 'creada'} exitosamente`;
-        this.loadMedidas();
-        this.closeModal();
-        setTimeout(() => this.successMessage = '', 3000);
-      },
-      error: (error) => {
-        this.errorMessage = error.error?.message || 'Error al guardar la medida';
-        this.isLoading = false;
-      }
-    });
+  onEdit(medida: Medida): void {
+    this.selectedMedida = medida;
+    this.isFormModalOpen = true;
+    this.errorMessage = '';
+    this.successMessage = '';
   }
 
-  deleteMedida(id: number): void {
+  onDelete(id: number): void {
     if (confirm('¿Estás seguro de eliminar esta medida?')) {
       this.medidaService.delete(id).subscribe({
         next: () => {
@@ -111,8 +78,31 @@ export class MedidasComponent implements OnInit {
         },
         error: (error) => {
           this.errorMessage = error.error?.message || 'Error al eliminar la medida';
+          console.error('Error deleting medida', error);
         }
       });
     }
+  }
+
+  onSave(medidaData: Medida): void {
+    this.isLoading = true;
+    const request = this.selectedMedida && this.selectedMedida.id
+      ? this.medidaService.update(this.selectedMedida.id, medidaData)
+      : this.medidaService.create(medidaData);
+
+    request
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: () => {
+          this.successMessage = `Medida ${this.selectedMedida ? 'actualizada' : 'creada'} exitosamente`;
+          this.loadMedidas();
+          this.closeFormModal();
+          setTimeout(() => this.successMessage = '', 3000);
+        },
+        error: (error) => {
+          this.errorMessage = error.error?.message || 'Error al guardar la medida';
+          console.error('Error saving medida', error);
+        }
+      });
   }
 }

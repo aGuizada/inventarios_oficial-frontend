@@ -1,37 +1,32 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmpresaService } from '../../../services/empresa.service';
 import { Empresa } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
+// Import child components
+import { EmpresasListComponent } from './empresas-list/empresas-list.component';
+import { EmpresaFormComponent } from './empresa-form/empresa-form.component';
+
 @Component({
   selector: 'app-empresas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    EmpresasListComponent,
+    EmpresaFormComponent
+  ],
   templateUrl: './empresas.component.html',
 })
 export class EmpresasComponent implements OnInit {
   empresas: Empresa[] = [];
-  form: FormGroup;
-  isModalOpen = false;
-  isEditing = false;
   isLoading = false;
-  currentId: number | null = null;
+  isFormModalOpen = false;
+  selectedEmpresa: Empresa | null = null;
 
   constructor(
-    private empresaService: EmpresaService,
-    private fb: FormBuilder
-  ) {
-    this.form = this.fb.group({
-      nombre: ['', Validators.required],
-      nit: [''],
-      direccion: [''],
-      telefono: [''],
-      email: ['', [Validators.email]],
-      logo: ['']
-    });
-  }
+    private empresaService: EmpresaService
+  ) { }
 
   ngOnInit(): void {
     this.loadEmpresas();
@@ -49,62 +44,44 @@ export class EmpresasComponent implements OnInit {
       });
   }
 
-  openModal(): void {
-    this.isModalOpen = true;
-    this.isEditing = false;
-    this.currentId = null;
-    this.form.reset();
+  openFormModal(): void {
+    this.selectedEmpresa = null;
+    this.isFormModalOpen = true;
   }
 
-  closeModal(): void {
-    this.isModalOpen = false;
-    this.form.reset();
+  closeFormModal(): void {
+    this.isFormModalOpen = false;
+    this.selectedEmpresa = null;
   }
 
-  edit(empresa: Empresa): void {
-    this.isModalOpen = true;
-    this.isEditing = true;
-    this.currentId = empresa.id;
-    this.form.patchValue({
-      nombre: empresa.nombre,
-      nit: empresa.nit,
-      direccion: empresa.direccion,
-      telefono: empresa.telefono,
-      email: empresa.email,
-      logo: empresa.logo
-    });
+  onEdit(empresa: Empresa): void {
+    this.selectedEmpresa = empresa;
+    this.isFormModalOpen = true;
   }
 
-  save(): void {
-    if (this.form.invalid) return;
-
-    const empresaData = this.form.value;
-
-    if (this.isEditing && this.currentId) {
-      this.empresaService.update(this.currentId, empresaData).subscribe({
-        next: () => {
-          this.loadEmpresas();
-          this.closeModal();
-        },
-        error: (error) => console.error('Error updating empresa', error)
-      });
-    } else {
-      this.empresaService.create(empresaData).subscribe({
-        next: () => {
-          this.loadEmpresas();
-          this.closeModal();
-        },
-        error: (error) => console.error('Error creating empresa', error)
-      });
-    }
-  }
-
-  delete(id: number): void {
+  onDelete(id: number): void {
     if (confirm('¿Está seguro de eliminar esta empresa?')) {
       this.empresaService.delete(id).subscribe({
         next: () => this.loadEmpresas(),
         error: (error) => console.error('Error deleting empresa', error)
       });
     }
+  }
+
+  onSave(empresaData: Empresa): void {
+    this.isLoading = true;
+    const request = this.selectedEmpresa && this.selectedEmpresa.id
+      ? this.empresaService.update(this.selectedEmpresa.id, empresaData)
+      : this.empresaService.create(empresaData);
+
+    request
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: () => {
+          this.loadEmpresas();
+          this.closeFormModal();
+        },
+        error: (error) => console.error('Error saving empresa', error)
+      });
   }
 }

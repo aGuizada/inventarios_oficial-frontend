@@ -1,7 +1,7 @@
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Gestión de Clientes</h1>
-        <button (click)="openModal()"
+        <button (click)="openFormModal()"
             class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd"
@@ -12,142 +12,28 @@
         </button>
     </div>
 
-    <!-- Loading State -->
-    <div *ngIf="isLoading" class="flex justify-center items-center py-8">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-    </div>
-
-    <!-- Table -->
-    <div *ngIf="!isLoading" class="bg-white shadow-md rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documento
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado
-                    </th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                <tr *ngFor="let cliente of clientes" class="hover:bg-gray-50 transition duration-150">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ cliente.nombre }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ cliente.tipo_documento }}: {{ cliente.num_documento }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div>{{ cliente.telefono }}</div>
-                        <div class="text-xs text-gray-400">{{ cliente.email }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span [class]="cliente.estado ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
-                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
-                            {{ cliente.estado ? 'Activo' : 'Inactivo' }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button (click)="edit(cliente)"
-                            class="text-indigo-600 hover:text-indigo-900 mr-4">Editar</button>
-                        <button (click)="delete(cliente.id)" class="text-red-600 hover:text-red-900">Eliminar</button>
-                    </td>
-                </tr>
-                <tr *ngIf="!isLoading && clientes && clientes.length === 0">
-                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No hay clientes registrados.
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <!-- List Component -->
+    <app-clientes-list [clientes]="clientes" [isLoading]="isLoading" (edit)="onEdit($event)"
+        (delete)="onDelete($event)">
+    </app-clientes-list>
 </div>
 
-<!-- Modal -->
-<div *ngIf="isModalOpen" class="fixed inset-0 overflow-y-auto z-50" aria-labelledby="modal-title" role="dialog"
-    aria-modal="true">
+<!-- Form Modal -->
+@if (isFormModalOpen) {
+<div class="fixed inset-0 overflow-y-auto z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <!-- Background overlay -->
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
-            (click)="closeModal()"></div>
+            (click)="closeFormModal()"></div>
 
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
         <div
             class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <form [formGroup]="form" (ngSubmit)="save()">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                {{ isEditing ? 'Editar Cliente' : 'Nuevo Cliente' }}
-                            </h3>
-                            <div class="mt-4 space-y-4">
-                                <div>
-                                    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre
-                                        Completo</label>
-                                    <input type="text" id="nombre" formControlName="nombre"
-                                        class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
-                                </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="tipo_documento" class="block text-sm font-medium text-gray-700">Tipo
-                                            Documento</label>
-                                        <select id="tipo_documento" formControlName="tipo_documento"
-                                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                            <option value="">Seleccione</option>
-                                            <option value="CI">CI</option>
-                                            <option value="NIT">NIT</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label for="num_documento"
-                                            class="block text-sm font-medium text-gray-700">Número Documento</label>
-                                        <input type="text" id="num_documento" formControlName="num_documento"
-                                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="telefono"
-                                            class="block text-sm font-medium text-gray-700">Teléfono</label>
-                                        <input type="text" id="telefono" formControlName="telefono"
-                                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
-                                    </div>
-                                    <div>
-                                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                                        <input type="email" id="email" formControlName="email"
-                                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label for="direccion"
-                                        class="block text-sm font-medium text-gray-700">Dirección</label>
-                                    <input type="text" id="direccion" formControlName="direccion"
-                                        class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
-                                </div>
-                                <div class="flex items-center">
-                                    <input id="estado" type="checkbox" formControlName="estado"
-                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                    <label for="estado" class="ml-2 block text-sm text-gray-900">Activo</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="submit" [disabled]="form.invalid"
-                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
-                        Guardar
-                    </button>
-                    <button type="button" (click)="closeModal()"
-                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Cancelar
-                    </button>
-                </div>
-            </form>
+            <!-- Form Component -->
+            <app-cliente-form [cliente]="selectedCliente" (save)="onSave($event)" (cancel)="closeFormModal()">
+            </app-cliente-form>
         </div>
     </div>
 </div>
+}

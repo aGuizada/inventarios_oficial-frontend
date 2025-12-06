@@ -1,0 +1,42 @@
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+        <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white shadow-lg bg-blue-500">
+            <i class="fas fa-shopping-cart text-xl"></i>
+        </div>
+        <div>
+            <p class="text-sm text-slate-500 font-medium">Ventas del Día</p>
+            <p class="text-xl font-bold text-slate-800">{{ ventasDelDia | currency }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+        <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white shadow-lg bg-orange-500">
+            <i class="fas fa-chart-line text-xl"></i>
+        </div>
+        <div>
+            <p class="text-sm text-slate-500 font-medium">Total Ventas</p>
+            <p class="text-xl font-bold text-slate-800">{{ totalVentas | currency }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+        <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white shadow-lg bg-red-500">
+            <i class="fas fa-exclamation-triangle text-xl"></i>
+        </div>
+        <div>
+            <p class="text-sm text-slate-500 font-medium">Productos Bajos</p>
+            <p class="text-xl font-bold text-slate-800">{{ productosBajos }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+        <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white shadow-lg bg-green-500">
+            <i class="fas fa-users text-xl"></i>
+        </div>
+        <div>
+            <p class="text-sm text-slate-500 font-medium">Clientes Activos</p>
+            <p class="text-xl font-bold text-slate-800">{{ clientesActivos }}</p>
+        </div>
+    </div>
+</div>
+

@@ -1,38 +1,37 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CajaService } from '../../../services/caja.service';
 import { SucursalService } from '../../../services/sucursal.service';
 import { AuthService } from '../../../services/auth.service';
 import { Caja, Sucursal, User } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
+// Import child components
+import { CajasListComponent } from './cajas-list/cajas-list.component';
+import { CajaFormComponent } from './caja-form/caja-form.component';
+
 @Component({
   selector: 'app-cajas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    CajasListComponent,
+    CajaFormComponent
+  ],
   templateUrl: './cajas.component.html',
 })
 export class CajasComponent implements OnInit {
   cajas: Caja[] = [];
   sucursales: Sucursal[] = [];
   currentUser: User | null = null;
-  form: FormGroup;
-  isModalOpen = false;
+  isFormModalOpen = false;
   isLoading = false;
 
   constructor(
     private cajaService: CajaService,
     private sucursalService: SucursalService,
-    private authService: AuthService,
-    private fb: FormBuilder
-  ) {
-    this.form = this.fb.group({
-      sucursal_id: ['', Validators.required],
-      saldo_inicial: [0, [Validators.required, Validators.min(0)]],
-      fecha_apertura: [new Date().toISOString().substring(0, 16), Validators.required] // datetime-local format
-    });
-  }
+    private authService: AuthService
+  ) { }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
@@ -61,65 +60,49 @@ export class CajasComponent implements OnInit {
     });
   }
 
-  openModal(): void {
-    this.isModalOpen = true;
-    this.form.reset({
-      saldo_inicial: 0,
-      fecha_apertura: new Date().toISOString().substring(0, 16)
-    });
+  openFormModal(): void {
+    this.isFormModalOpen = true;
   }
 
-  closeModal(): void {
-    this.isModalOpen = false;
-    this.form.reset();
+  closeFormModal(): void {
+    this.isFormModalOpen = false;
   }
 
-  abrirCaja(): void {
-    if (this.form.invalid || !this.currentUser) return;
+  onSave(cajaData: any): void {
+    if (!this.currentUser) return;
 
-    const cajaData = {
-      ...this.form.value,
+    const data = {
+      ...cajaData,
       user_id: this.currentUser.id,
-      estado: 'abierta', // Assuming 'abierta' is the status string, or boolean true? Model says boolean in validation but string in interface. Let's check model validation.
-      // Model validation says 'estado' => 'boolean'. Interface says 'string'.
-      // Let's try sending boolean true for now, or 1.
-      // Actually, let's look at the interface again.
-      // Interface: estado: string;
-      // Model validation: 'estado' => 'boolean'.
-      // This is a mismatch. I should probably send boolean.
+      estado: 1
     };
 
-    // Adjust for backend expectation
-    cajaData.estado = 1;
-
-    this.cajaService.create(cajaData).subscribe({
-      next: () => {
-        this.loadCajas();
-        this.closeModal();
-      },
-      error: (error) => console.error('Error opening caja', error)
-    });
+    this.isLoading = true;
+    this.cajaService.create(data)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: () => {
+          this.loadCajas();
+          this.closeFormModal();
+        },
+        error: (error) => console.error('Error opening caja', error)
+      });
   }
 
-  isCajaOpen(caja: Caja): boolean {
-    return caja.estado === 'abierta' || caja.estado === '1' || caja.estado === 1 || caja.estado === true;
-  }
-
-  cerrarCaja(caja: Caja): void {
+  onClose(caja: Caja): void {
     if (confirm('¿Está seguro de cerrar esta caja?')) {
-      const cierreData: Partial<Caja> = {
-        fecha_cierre: new Date().toISOString(), // Send as ISO string
-        estado: 'cerrada' // Or 0/false
+      const cierreData: any = {
+        fecha_cierre: new Date().toISOString(),
+        estado: 0
       };
 
-      // Adjust for backend expectation
-      // @ts-ignore
-      cierreData.estado = 0;
-
-      this.cajaService.update(caja.id, cierreData).subscribe({
-        next: () => this.loadCajas(),
-        error: (error) => console.error('Error closing caja', error)
-      });
+      this.isLoading = true;
+      this.cajaService.update(caja.id, cierreData)
+        .pipe(finalize(() => this.isLoading = false))
+        .subscribe({
+          next: () => this.loadCajas(),
+          error: (error) => console.error('Error closing caja', error)
+        });
     }
   }
 }
