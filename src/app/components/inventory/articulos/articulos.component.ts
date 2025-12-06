@@ -34,6 +34,13 @@ export class ArticulosComponent implements OnInit {
   selectedFile: File | null = null;
   imagePreview: string | null = null;
 
+  // Excel Import
+  selectedExcelFile: File | null = null;
+  isImporting = false;
+  importMessage: string | null = null;
+  importErrors: any[] = [];
+  showImportResult = false;
+
   // Pagination
   currentPage = 1;
   perPage = 10;
@@ -243,5 +250,98 @@ export class ArticulosComponent implements OnInit {
         error: (error) => console.error('Error deleting articulo', error)
       });
     }
+  }
+
+  // Excel Import/Export Methods
+  downloadTemplate(): void {
+    this.articuloService.downloadTemplate().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'plantilla_articulos.xlsx';
+        link.click();
+        window.URL.revokeObjectURL(url);
+        alert('Plantilla descargada exitosamente');
+      },
+      error: (error) => {
+        console.error('Error downloading template', error);
+        alert('Error al descargar la plantilla');
+      }
+    });
+  }
+
+  onExcelFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file extension
+      const validExtensions = ['.xlsx', '.xls'];
+      const fileName = file.name.toLowerCase();
+      const isValid = validExtensions.some(ext => fileName.endsWith(ext));
+
+      if (!isValid) {
+        alert('Por favor seleccione un archivo Excel válido (.xlsx o .xls)');
+        event.target.value = '';
+        return;
+      }
+
+      this.selectedExcelFile = file;
+      this.importExcel();
+    }
+  }
+
+  importExcel(): void {
+    if (!this.selectedExcelFile) {
+      alert('Por favor seleccione un archivo Excel');
+      return;
+    }
+
+    this.isImporting = true;
+    this.importMessage = null;
+    this.importErrors = [];
+    this.showImportResult = false;
+
+    this.articuloService.importFromExcel(this.selectedExcelFile)
+      .pipe(finalize(() => this.isImporting = false))
+      .subscribe({
+        next: (response) => {
+          this.showImportResult = true;
+          const data = response.data;
+
+          if (data.filas_con_errores > 0) {
+            this.importMessage = `Importación completada con advertencias: ${data.importadas_exitosamente} artículos importados, ${data.filas_con_errores} filas con errores`;
+            this.importErrors = data.errores || [];
+          } else {
+            this.importMessage = `¡Éxito! ${data.importadas_exitosamente} artículos importados correctamente`;
+            this.importErrors = [];
+          }
+
+          // Reload articles if any were imported
+          if (data.importadas_exitosamente > 0) {
+            this.loadArticulos(this.currentPage);
+          }
+
+          // Reset file input
+          this.selectedExcelFile = null;
+        },
+        error: (error) => {
+          this.showImportResult = true;
+          this.importMessage = 'Error al importar el archivo';
+
+          if (error.error && error.error.errors) {
+            this.importErrors = error.error.errors;
+          } else if (error.error && error.error.message) {
+            this.importMessage = error.error.message;
+          }
+
+          console.error('Error importing Excel', error);
+        }
+      });
+  }
+
+  closeImportResult(): void {
+    this.showImportResult = false;
+    this.importMessage = null;
+    this.importErrors = [];
   }
 }

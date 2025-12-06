@@ -1,15 +1,43 @@
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Gestión de Artículos</h1>
-        <button (click)="openModal()"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd"
-                    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                    clip-rule="evenodd" />
-            </svg>
-            Nuevo Artículo
-        </button>
+        <div class="flex gap-2">
+            <!-- Download Template Button -->
+            <button (click)="downloadTemplate()"
+                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+                Descargar Plantilla
+            </button>
+
+            <!-- Import Excel Button -->
+            <label
+                class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"
+                        clip-rule="evenodd" />
+                </svg>
+                <span *ngIf="!isImporting">Importar Excel</span>
+                <span *ngIf="isImporting">Importando...</span>
+                <input type="file" class="hidden" accept=".xlsx,.xls" (change)="onExcelFileSelected($event)"
+                    [disabled]="isImporting">
+            </label>
+
+            <!-- New Article Button -->
+            <button (click)="openModal()"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                        clip-rule="evenodd" />
+                </svg>
+                Nuevo Artículo
+            </button>
+        </div>
     </div>
 
     <!-- Loading State -->
@@ -210,29 +238,33 @@
                                 <div class="space-y-4">
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label for="stock"
-                                                class="block text-sm font-medium text-gray-700">Stock <span class="text-red-500">*</span></label>
+                                            <label for="stock" class="block text-sm font-medium text-gray-700">Stock
+                                                <span class="text-red-500">*</span></label>
                                             <input type="number" id="stock" formControlName="stock" min="0"
                                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
                                         </div>
                                         <div>
                                             <label for="unidad_envase"
-                                                class="block text-sm font-medium text-gray-700">Unidad Envase <span class="text-red-500">*</span></label>
-                                            <input type="number" id="unidad_envase" formControlName="unidad_envase" min="1"
+                                                class="block text-sm font-medium text-gray-700">Unidad Envase <span
+                                                    class="text-red-500">*</span></label>
+                                            <input type="number" id="unidad_envase" formControlName="unidad_envase"
+                                                min="1"
                                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <label for="precio_costo_unid"
-                                                class="block text-sm font-medium text-gray-700">Costo Unit. <span class="text-red-500">*</span></label>
+                                                class="block text-sm font-medium text-gray-700">Costo Unit. <span
+                                                    class="text-red-500">*</span></label>
                                             <input type="number" id="precio_costo_unid" step="0.01"
                                                 formControlName="precio_costo_unid" min="0"
                                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
                                         </div>
                                         <div>
                                             <label for="precio_costo_paq"
-                                                class="block text-sm font-medium text-gray-700">Costo Paquete <span class="text-red-500">*</span></label>
+                                                class="block text-sm font-medium text-gray-700">Costo Paquete <span
+                                                    class="text-red-500">*</span></label>
                                             <input type="number" id="precio_costo_paq" step="0.01"
                                                 formControlName="precio_costo_paq" min="0"
                                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
@@ -241,42 +273,52 @@
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <label for="precio_venta"
-                                                class="block text-sm font-medium text-gray-700">Precio Venta <span class="text-red-500">*</span></label>
-                                            <input type="number" id="precio_venta" formControlName="precio_venta" step="0.01" min="0"
+                                                class="block text-sm font-medium text-gray-700">Precio Venta <span
+                                                    class="text-red-500">*</span></label>
+                                            <input type="number" id="precio_venta" formControlName="precio_venta"
+                                                step="0.01" min="0"
                                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
                                         </div>
                                         <div>
                                             <label for="costo_compra"
-                                                class="block text-sm font-medium text-gray-700">Costo Compra <span class="text-red-500">*</span></label>
-                                            <input type="number" id="costo_compra" formControlName="costo_compra" step="0.01" min="0"
+                                                class="block text-sm font-medium text-gray-700">Costo Compra <span
+                                                    class="text-red-500">*</span></label>
+                                            <input type="number" id="costo_compra" formControlName="costo_compra"
+                                                step="0.01" min="0"
                                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">Precios Adicionales</label>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Precios
+                                            Adicionales</label>
                                         <div class="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label for="precio_uno"
                                                     class="block text-xs font-medium text-gray-600">Precio Uno</label>
-                                                <input type="number" id="precio_uno" formControlName="precio_uno" step="0.01" min="0"
+                                                <input type="number" id="precio_uno" formControlName="precio_uno"
+                                                    step="0.01" min="0"
                                                     class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
                                             </div>
                                             <div>
                                                 <label for="precio_dos"
                                                     class="block text-xs font-medium text-gray-600">Precio Dos</label>
-                                                <input type="number" id="precio_dos" formControlName="precio_dos" step="0.01" min="0"
+                                                <input type="number" id="precio_dos" formControlName="precio_dos"
+                                                    step="0.01" min="0"
                                                     class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
                                             </div>
                                             <div>
                                                 <label for="precio_tres"
                                                     class="block text-xs font-medium text-gray-600">Precio Tres</label>
-                                                <input type="number" id="precio_tres" formControlName="precio_tres" step="0.01" min="0"
+                                                <input type="number" id="precio_tres" formControlName="precio_tres"
+                                                    step="0.01" min="0"
                                                     class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
                                             </div>
                                             <div>
                                                 <label for="precio_cuatro"
-                                                    class="block text-xs font-medium text-gray-600">Precio Cuatro</label>
-                                                <input type="number" id="precio_cuatro" formControlName="precio_cuatro" step="0.01" min="0"
+                                                    class="block text-xs font-medium text-gray-600">Precio
+                                                    Cuatro</label>
+                                                <input type="number" id="precio_cuatro" formControlName="precio_cuatro"
+                                                    step="0.01" min="0"
                                                     class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
                                             </div>
                                         </div>
@@ -284,16 +326,19 @@
                                     <div>
                                         <label for="descripcion"
                                             class="block text-sm font-medium text-gray-700">Descripción</label>
-                                        <textarea id="descripcion" formControlName="descripcion" rows="3" maxlength="256"
+                                        <textarea id="descripcion" formControlName="descripcion" rows="3"
+                                            maxlength="256"
                                             class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"></textarea>
                                     </div>
                                     <div>
                                         <label for="fotografia"
                                             class="block text-sm font-medium text-gray-700">Fotografía</label>
-                                        <input type="file" id="fotografia" accept="image/*" (change)="onFileSelected($event)"
+                                        <input type="file" id="fotografia" accept="image/*"
+                                            (change)="onFileSelected($event)"
                                             class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
                                         <div *ngIf="imagePreview" class="mt-2">
-                                            <img [src]="imagePreview" alt="Preview" class="h-32 w-32 object-cover rounded-md border border-gray-300">
+                                            <img [src]="imagePreview" alt="Preview"
+                                                class="h-32 w-32 object-cover rounded-md border border-gray-300">
                                         </div>
                                     </div>
                                     <div>
@@ -324,6 +369,79 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div><!-- Import Result Modal -->
+<div *ngIf="showImportResult" class="fixed inset-0 overflow-y-auto z-50" aria-labelledby="import-modal-title"
+    role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
+            (click)="closeImportResult()"></div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div
+            class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="import-modal-title">
+                            Resultado de Importación
+                        </h3>
+
+                        <!-- Success/Error Message -->
+                        <div *ngIf="importMessage"
+                            [class]="importErrors.length > 0 ? 'bg-yellow-50 border-l-4 border-yellow-400 p-4' : 'bg-green-50 border-l-4 border-green-400 p-4'"
+                            class="mb-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg *ngIf="importErrors.length === 0" class="h-5 w-5 text-green-400"
+                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    <svg *ngIf="importErrors.length > 0" class="h-5 w-5 text-yellow-400"
+                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p
+                                        [class]="importErrors.length > 0 ? 'text-sm text-yellow-700' : 'text-sm text-green-700'">
+                                        {{ importMessage }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Error Details -->
+                        <div *ngIf="importErrors.length > 0" class="mt-4">
+                            <h4 class="text-sm font-medium text-gray-900 mb-2">Detalles de Errores:</h4>
+                            <div class="max-h-64 overflow-y-auto bg-gray-50 rounded-md p-3">
+                                <div *ngFor="let error of importErrors"
+                                    class="mb-3 pb-3 border-b border-gray-200 last:border-0">
+                                    <p class="text-sm font-semibold text-red-600">Fila {{ error.fila }}</p>
+                                    <p class="text-sm text-gray-700">Campo: <span class="font-medium">{{ error.atributo
+                                            }}</span></p>
+                                    <ul class="mt-1 list-disc list-inside text-sm text-gray-600">
+                                        <li *ngFor="let err of error.errores">{{ err }}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" (click)="closeImportResult()"
+                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    Cerrar
+                </button>
+            </div>
         </div>
     </div>
 </div>
