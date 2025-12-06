@@ -1,0 +1,72 @@
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Catálogos de Inventario</h1>
+        <p class="text-sm text-gray-600 mt-1">Gestiona categorías, marcas, medidas e industrias</p>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="border-b border-gray-200 mb-6">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+            <button (click)="changeTab('categorias')"
+                [class]="activeTab === 'categorias' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                🏷️ Categorías
+            </button>
+            <button (click)="changeTab('marcas')"
+                [class]="activeTab === 'marcas' ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                🏭 Marcas
+            </button>
+            <button (click)="changeTab('medidas')"
+                [class]="activeTab === 'medidas' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                📏 Medidas
+            </button>
+            <button (click)="changeTab('industrias')"
+                [class]="activeTab === 'industrias' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                🏢 Industrias
+            </button>
+        </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        @if (activeTab === 'categorias') {
+        <app-catalog-table [title]="getTitlePlural()" [items]="getCurrentItems()" [isLoading]="isLoading"
+            [currentPage]="currentPage" [lastPage]="lastPage" [totalItems]="totalItems" (create)="openCreateModal()"
+            (edit)="openEditModal($event)" (delete)="onDelete($event)" (pageChange)="onPageChange($event)">
+        </app-catalog-table>
+        }
+
+        @if (activeTab === 'marcas') {
+        <app-catalog-table [title]="getTitlePlural()" [items]="getCurrentItems()" [isLoading]="isLoading"
+            [currentPage]="currentPage" [lastPage]="lastPage" [totalItems]="totalItems" (create)="openCreateModal()"
+            (edit)="openEditModal($event)" (delete)="onDelete($event)" (pageChange)="onPageChange($event)">
+        </app-catalog-table>
+        }
+
+        @if (activeTab === 'medidas') {
+        <app-catalog-table [title]="getTitlePlural()" [items]="getCurrentItems()" [isLoading]="isLoading"
+            [currentPage]="currentPage" [lastPage]="lastPage" [totalItems]="totalItems" [showNameMedida]="true"
+            (create)="openCreateModal()" (edit)="openEditModal($event)" (delete)="onDelete($event)"
+            (pageChange)="onPageChange($event)">
+        </app-catalog-table>
+        }
+
+        @if (activeTab === 'industrias') {
+        <app-catalog-table [title]="getTitlePlural()" [items]="getCurrentItems()" [isLoading]="isLoading"
+            [currentPage]="currentPage" [lastPage]="lastPage" [totalItems]="totalItems" (create)="openCreateModal()"
+            (edit)="openEditModal($event)" (delete)="onDelete($event)" (pageChange)="onPageChange($event)">
+        </app-catalog-table>
+        }
+    </div>
+</div>
+
+<!-- Form Modal -->
+@if (isFormModalOpen) {
+<app-catalog-form [title]="getTitleSingular()" [item]="selectedItem" [isMedida]="activeTab === 'medidas'"
+    (save)="onSave($event)" (cancel)="closeFormModal()">
+</app-catalog-form>
+}

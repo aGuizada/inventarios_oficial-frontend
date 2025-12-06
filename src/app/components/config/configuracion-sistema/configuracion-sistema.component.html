@@ -1,0 +1,351 @@
+<div class="container mx-auto px-4 py-8 max-w-5xl">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Configuración del Sistema</h1>
+        <p class="text-sm text-gray-600 mt-1">Gestiona las opciones globales de tu sistema</p>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="border-b border-gray-200 mb-6">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+            <button (click)="changeTab('general')"
+                [class]="activeTab === 'general' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                🌐 General
+            </button>
+            <button (click)="changeTab('precios')"
+                [class]="activeTab === 'precios' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                💰 Precios
+            </button>
+            <button (click)="changeTab('impuestos')"
+                [class]="activeTab === 'impuestos' ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                📊 Impuestos
+            </button>
+            <button (click)="changeTab('trabajo')"
+                [class]="activeTab === 'trabajo' ? 'border-gray-500 text-gray-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                ⚙️ Trabajo
+            </button>
+            <button (click)="changeTab('backup')"
+                [class]="activeTab === 'backup' ? 'border-red-500 text-red-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                💾 Backup
+            </button>
+        </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        <!-- TAB: GENERAL -->
+        @if (activeTab === 'general') {
+        <form [formGroup]="generalForm" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Moneda -->
+                <div>
+                    <label for="moneda_id" class="block text-sm font-medium text-gray-700 mb-2">
+                        Moneda Predeterminada <span class="text-red-500">*</span>
+                    </label>
+                    <select id="moneda_id" formControlName="moneda_id"
+                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        @for (moneda of monedas; track moneda.id) {
+                        <option [value]="moneda.id">{{ moneda.simbolo }} - {{ moneda.nombre }} ({{ moneda.codigo }})
+                        </option>
+                        }
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">Moneda que se usará en todo el sistema</p>
+                </div>
+
+                <!-- Nombre Empresa -->
+                <div>
+                    <label for="nombre_empresa" class="block text-sm font-medium text-gray-700 mb-2">
+                        Nombre de la Empresa <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="nombre_empresa" formControlName="nombre_empresa"
+                        class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                    <p class="mt-1 text-xs text-gray-500">Nombre que aparecerá en documentos</p>
+                </div>
+
+                <!-- Email Empresa -->
+                <div>
+                    <label for="email_empresa" class="block text-sm font-medium text-gray-700 mb-2">
+                        Email de Contacto
+                    </label>
+                    <input type="email" id="email_empresa" formControlName="email_empresa"
+                        class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                    <p class="mt-1 text-xs text-gray-500">Email para contacto y envío de documentos</p>
+                </div>
+
+                <!-- Teléfono Empresa -->
+                <div>
+                    <label for="telefono_empresa" class="block text-sm font-medium text-gray-700 mb-2">
+                        Teléfono
+                    </label>
+                    <input type="tel" id="telefono_empresa" formControlName="telefono_empresa"
+                        class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                    <p class="mt-1 text-xs text-gray-500">Teléfono de contacto</p>
+                </div>
+            </div>
+
+            <!-- Dirección Empresa -->
+            <div>
+                <label for="direccion_empresa" class="block text-sm font-medium text-gray-700 mb-2">
+                    Dirección
+                </label>
+                <textarea id="direccion_empresa" formControlName="direccion_empresa" rows="2"
+                    class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"></textarea>
+                <p class="mt-1 text-xs text-gray-500">Dirección completa de la empresa</p>
+            </div>
+
+            <!-- Logo -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Logo de la Empresa
+                </label>
+                <div class="flex items-center space-x-4">
+                    @if (logoPreview) {
+                    <img [src]="logoPreview" alt="Logo preview" class="h-20 w-20 object-contain border rounded">
+                    } @else {
+                    <div
+                        class="h-20 w-20 bg-gray-100 border-2 border-dashed border-gray-300 rounded flex items-center justify-center">
+                        <i class="fas fa-building text-gray-400 text-2xl"></i>
+                    </div>
+                    }
+                    <div>
+                        <input type="file" id="logo" accept="image/*" (change)="onLogoSelected($event)"
+                            class="block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        <p class="mt-1 text-xs text-gray-500">PNG, JPG hasta 2MB</p>
+                    </div>
+                </div>
+            </div>
+        </form>
+        }
+
+        <!-- TAB: PRECIOS -->
+        @if (activeTab === 'precios') {
+        <form [formGroup]="preciosForm" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Margen por Defecto -->
+                <div>
+                    <label for="margen_default" class="block text-sm font-medium text-gray-700 mb-2">
+                        Margen de Ganancia por Defecto <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input type="number" id="margen_default" formControlName="margen_default" min="0" max="100"
+                            step="0.1"
+                            class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border pr-8">
+                        <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Porcentaje que se agregará al costo para calcular precio de
+                        venta</p>
+                </div>
+
+                <!-- Redondeo -->
+                <div>
+                    <label for="redondeo" class="block text-sm font-medium text-gray-700 mb-2">
+                        Redondeo de Precios <span class="text-red-500">*</span>
+                    </label>
+                    <select id="redondeo" formControlName="redondeo"
+                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
+                        <option [value]="0">Sin redondeo</option>
+                        <option [value]="0.5">$0.50</option>
+                        <option [value]="1">$1.00</option>
+                        <option [value]="5">$5.00</option>
+                        <option [value]="10">$10.00</option>
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">Los precios se redondearán al múltiplo más cercano</p>
+                </div>
+
+                <!-- Stock Minimo -->
+                <div>
+                    <label for="stock_minimo_default" class="block text-sm font-medium text-gray-700 mb-2">
+                        Stock Mínimo por Defecto
+                    </label>
+                    <input type="number" id="stock_minimo_default" formControlName="stock_minimo_default" min="0"
+                        class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                    <p class="mt-1 text-xs text-gray-500">Cantidad mínima antes de alertar stock bajo</p>
+                </div>
+            </div>
+
+            <!-- Notificar Stock Bajo -->
+            <div class="flex items-center">
+                <input id="notificar_stock_bajo" type="checkbox" formControlName="notificar_stock_bajo"
+                    class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                <label for="notificar_stock_bajo" class="ml-2 block text-sm text-gray-700">
+                    Notificar cuando el stock esté por debajo del mínimo
+                </label>
+            </div>
+        </form>
+        }
+
+        <!-- TAB: IMPUESTOS -->
+        @if (activeTab === 'impuestos') {
+        <form [formGroup]="impuestosForm" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- IVA -->
+                <div>
+                    <label for="iva" class="block text-sm font-medium text-gray-700 mb-2">
+                        IVA (Impuesto al Valor Agregado) <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input type="number" id="iva" formControlName="iva" min="0" max="100" step="0.01"
+                            class="mt-1 focus:ring-purple-500 focus:border-purple-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border pr-8">
+                        <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Porcentaje de IVA que se aplicará</p>
+                </div>
+
+                <!-- Precio incluye IVA -->
+                <div class="flex items-center h-full">
+                    <div class="flex items-center">
+                        <input id="precio_incluye_iva" type="checkbox" formControlName="precio_incluye_iva"
+                            class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                        <label for="precio_incluye_iva" class="ml-2 block text-sm text-gray-700">
+                            El precio de venta ya incluye IVA
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-blue-700">
+                            Si marcas esta opción, el precio de venta que ingreses será el precio final. De lo
+                            contrario, el IVA se calculará sobre el precio base.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </form>
+        }
+
+        <!-- TAB: TRABAJO -->
+        @if (activeTab === 'trabajo') {
+        <form [formGroup]="trabajoForm" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Días de Gracia -->
+                <div>
+                    <label for="dias_gracia_credito" class="block text-sm font-medium text-gray-700 mb-2">
+                        Días de Gracia para Créditos <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" id="dias_gracia_credito" formControlName="dias_gracia_credito" min="0"
+                        class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                    <p class="mt-1 text-xs text-gray-500">Días de plazo por defecto para pago a crédito</p>
+                </div>
+
+                <!-- Descuento Pronto Pago -->
+                <div>
+                    <label for="descuento_pronto_pago" class="block text-sm font-medium text-gray-700 mb-2">
+                        Descuento por Pronto Pago
+                    </label>
+                    <div class="relative">
+                        <input type="number" id="descuento_pronto_pago" formControlName="descuento_pronto_pago" min="0"
+                            max="100" step="0.1"
+                            class="mt-1 focus:ring-gray-500 focus:border-gray-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border pr-8">
+                        <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Descuento por pagar antes de la fecha de vencimiento</p>
+                </div>
+            </div>
+        </form>
+        }
+
+        <!-- TAB: BACKUP -->
+        @if (activeTab === 'backup') {
+        <form [formGroup]="backupForm" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Frecuencia Backup -->
+                <div>
+                    <label for="frecuencia_backup" class="block text-sm font-medium text-gray-700 mb-2">
+                        Frecuencia de Backup <span class="text-red-500">*</span>
+                    </label>
+                    <select id="frecuencia_backup" formControlName="frecuencia_backup"
+                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm">
+                        <option value="diario">Diario</option>
+                        <option value="semanal">Semanal</option>
+                        <option value="mensual">Mensual</option>
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">Con qué frecuencia se realizarán los backups automáticos</p>
+                </div>
+
+                <!-- Mantener Backups -->
+                <div>
+                    <label for="mantener_backups" class="block text-sm font-medium text-gray-700 mb-2">
+                        Cantidad de Backups a Mantener <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" id="mantener_backups" formControlName="mantener_backups" min="1"
+                        class="mt-1 focus:ring-red-500 focus:border-red-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                    <p class="mt-1 text-xs text-gray-500">Backups más antiguos serán eliminados automáticamente</p>
+                </div>
+            </div>
+
+            <!-- Ruta Backup -->
+            <div>
+                <label for="ruta_backup" class="block text-sm font-medium text-gray-700 mb-2">
+                    Ruta de Almacenamiento <span class="text-red-500">*</span>
+                </label>
+                <input type="text" id="ruta_backup" formControlName="ruta_backup"
+                    class="mt-1 focus:ring-red-500 focus:border-red-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                <p class="mt-1 text-xs text-gray-500">Carpeta donde se guardarán los archivos de backup</p>
+            </div>
+
+            <!-- Backup Automático -->
+            <div class="flex items-center">
+                <input id="backup_automatico" type="checkbox" formControlName="backup_automatico"
+                    class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                <label for="backup_automatico" class="ml-2 block text-sm text-gray-700">
+                    Activar backup automático
+                </label>
+            </div>
+
+            <!-- Info Box -->
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-700">
+                            <strong>Importante:</strong> Asegúrate de que la ruta de backup sea accesible y tenga
+                            suficiente espacio de almacenamiento. Se recomienda realizar backups manuales adicionales
+                            antes de actualizaciones importantes.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </form>
+        }
+    </div>
+
+    <!-- Action Buttons (Fixed at bottom) -->
+    <div class="mt-6 flex justify-between items-center bg-white border-t pt-4">
+        <button (click)="resetToDefaults()" type="button"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            <i class="fas fa-undo mr-2"></i>
+            Restaurar Valores por Defecto
+        </button>
+
+        <button (click)="saveConfig()" [disabled]="isSaving" type="button"
+            class="inline-flex items-center px-6 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
+            @if (isSaving) {
+            <i class="fas fa-spinner fa-spin mr-2"></i>
+            Guardando...
+            } @else {
+            <i class="fas fa-save mr-2"></i>
+            Guardar Configuración
+            }
+        </button>
+    </div>
+</div>

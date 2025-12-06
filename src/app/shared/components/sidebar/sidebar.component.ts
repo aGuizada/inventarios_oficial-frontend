@@ -29,10 +29,7 @@ export class SidebarComponent {
       isOpen: false,
       children: [
         { label: 'Artículos', icon: 'fas fa-box', route: '/inventario/articulos' },
-        { label: 'Categorías', icon: 'fas fa-tags', route: '/inventario/categorias' },
-        { label: 'Marcas', icon: 'fas fa-copyright', route: '/inventario/marcas' },
-        { label: 'Medidas', icon: 'fas fa-ruler', route: '/inventario/medidas' },
-        { label: 'Industrias', icon: 'fas fa-industry', route: '/inventario/industrias' },
+        { label: 'Catálogos', icon: 'fas fa-cog', route: '/inventario/catalogos' },
         { label: 'Stock', icon: 'fas fa-clipboard-list', route: '/inventario/stock' }
       ]
     },

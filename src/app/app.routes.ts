@@ -26,11 +26,16 @@ export const routes: Routes = [
                 path: 'dashboard',
                 loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
             },
+            {
+                path: 'perfil',
+                loadComponent: () => import('./components/user/perfil/perfil.component').then(m => m.PerfilComponent)
+            },
             // Inventory
             {
                 path: 'inventario',
                 children: [
                     { path: 'articulos', loadComponent: () => import('./components/inventory/articulos/articulos.component').then(m => m.ArticulosComponent) },
+                    { path: 'catalogos', loadComponent: () => import('./components/inventory/catalogos/catalogos.component').then(m => m.CatalogosComponent) },
                     { path: 'categorias', loadComponent: () => import('./components/inventory/categorias/categorias.component').then(m => m.CategoriasComponent) },
                     { path: 'marcas', loadComponent: () => import('./components/inventory/marcas/marcas.component').then(m => m.MarcasComponent) },
                     { path: 'medidas', loadComponent: () => import('./components/inventory/medidas/medidas.component').then(m => m.MedidasComponent) },
@@ -79,6 +84,7 @@ export const routes: Routes = [
             {
                 path: 'config',
                 children: [
+                    { path: 'sistema', loadComponent: () => import('./components/config/configuracion-sistema/configuracion-sistema.component').then(m => m.ConfiguracionSistemaComponent) },
                     { path: 'usuarios', loadComponent: () => import('./components/config/usuarios/usuarios.component').then(m => m.UsuariosComponent) },
                     { path: 'roles', loadComponent: () => import('./components/config/roles/roles.component').then(m => m.RolesComponent) },
                     { path: 'sucursales', loadComponent: () => import('./components/config/sucursales/sucursales.component').then(m => m.SucursalesComponent) },

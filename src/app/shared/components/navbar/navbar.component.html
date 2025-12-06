@@ -29,11 +29,13 @@
 
             <!-- Dropdown Menu -->
             <div *ngIf="showProfileMenu"
-                class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-100 py-1 animate-fade-in-down">
-                <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+                class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-100 py-1 animate-fade-in-down z-50">
+                <a [routerLink]="['/perfil']" (click)="showProfileMenu = false"
+                    class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
                     <i class="fas fa-user mr-2"></i> Perfil
                 </a>
-                <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+                <a [routerLink]="['/config/sistema']" (click)="showProfileMenu = false"
+                    class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
                     <i class="fas fa-cog mr-2"></i> Configuración
                 </a>
                 <div class="border-t border-slate-100 my-1"></div>
