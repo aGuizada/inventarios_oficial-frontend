@@ -9,7 +9,6 @@ import { Medida } from '../../../interfaces';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './medidas.component.html',
-  styleUrls: ['./medidas.component.css']
 })
 export class MedidasComponent implements OnInit {
   medidas: Medida[] = [];

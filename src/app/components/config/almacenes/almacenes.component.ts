@@ -11,7 +11,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './almacenes.component.html',
-  styleUrl: './almacenes.component.css'
 })
 export class AlmacenesComponent implements OnInit {
   almacenes: Almacen[] = [];

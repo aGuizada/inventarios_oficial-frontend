@@ -9,7 +9,6 @@ import { Industria } from '../../../interfaces';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './industrias.component.html',
-  styleUrls: ['./industrias.component.css']
 })
 export class IndustriasComponent implements OnInit {
   industrias: Industria[] = [];

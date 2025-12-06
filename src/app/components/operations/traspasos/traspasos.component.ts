@@ -13,7 +13,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './traspasos.component.html',
-  styleUrl: './traspasos.component.css'
 })
 export class TraspasosComponent implements OnInit {
   traspasos: Traspaso[] = [];

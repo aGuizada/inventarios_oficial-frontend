@@ -19,7 +19,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './ventas.component.html',
-  styleUrl: './ventas.component.css'
 })
 export class VentasComponent implements OnInit {
   ventas: Venta[] = [];

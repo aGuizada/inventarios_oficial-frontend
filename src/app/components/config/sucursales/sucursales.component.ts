@@ -11,7 +11,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './sucursales.component.html',
-  styleUrl: './sucursales.component.css'
 })
 export class SucursalesComponent implements OnInit {
   sucursales: Sucursal[] = [];

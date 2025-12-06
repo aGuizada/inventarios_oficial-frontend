@@ -16,7 +16,6 @@ import { environment } from '../../../../environments/environment';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './articulos.component.html',
-  styleUrl: './articulos.component.css'
 })
 export class ArticulosComponent implements OnInit {
   articulos: Articulo[] = [];

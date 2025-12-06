@@ -12,7 +12,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './cajas.component.html',
-  styleUrl: './cajas.component.css'
 })
 export class CajasComponent implements OnInit {
   cajas: Caja[] = [];

@@ -12,7 +12,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './arqueo-caja.component.html',
-  styleUrl: './arqueo-caja.component.css'
 })
 export class ArqueoCajaComponent implements OnInit {
   arqueos: ArqueoCaja[] = [];

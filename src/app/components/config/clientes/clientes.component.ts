@@ -10,7 +10,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './clientes.component.html',
-  styleUrl: './clientes.component.css'
 })
 export class ClientesComponent implements OnInit {
   clientes: Cliente[] = [];

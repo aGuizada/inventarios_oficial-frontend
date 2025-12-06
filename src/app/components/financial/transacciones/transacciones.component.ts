@@ -12,7 +12,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './transacciones.component.html',
-  styleUrl: './transacciones.component.css'
 })
 export class TransaccionesComponent implements OnInit {
   transacciones: TransaccionCaja[] = [];

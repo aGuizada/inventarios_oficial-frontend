@@ -9,7 +9,6 @@ import { Marca } from '../../../interfaces';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './marcas.component.html',
-  styleUrls: ['./marcas.component.css']
 })
 export class MarcasComponent implements OnInit {
   marcas: Marca[] = [];

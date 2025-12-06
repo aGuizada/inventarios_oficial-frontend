@@ -15,7 +15,6 @@ interface MenuItem {
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './sidebar.component.html',
-  styleUrls: ['./sidebar.component.css']
 })
 export class SidebarComponent {
   menuItems: MenuItem[] = [

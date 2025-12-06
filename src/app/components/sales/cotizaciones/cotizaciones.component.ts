@@ -13,7 +13,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './cotizaciones.component.html',
-  styleUrl: './cotizaciones.component.css'
 })
 export class CotizacionesComponent implements OnInit {
   cotizaciones: Cotizacion[] = [];

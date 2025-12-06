@@ -9,6 +9,5 @@ import { NavbarComponent } from '../navbar/navbar.component';
   standalone: true,
   imports: [CommonModule, RouterOutlet, SidebarComponent, NavbarComponent],
   templateUrl: './layout.component.html',
-  styleUrls: ['./layout.component.css']
 })
 export class LayoutComponent { }

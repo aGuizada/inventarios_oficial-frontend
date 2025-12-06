@@ -12,7 +12,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './usuarios.component.html',
-  styleUrl: './usuarios.component.css'
 })
 export class UsuariosComponent implements OnInit {
   usuarios: User[] = [];

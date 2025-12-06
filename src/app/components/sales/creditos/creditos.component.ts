@@ -12,7 +12,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './creditos.component.html',
-  styleUrl: './creditos.component.css'
 })
 export class CreditosComponent implements OnInit {
   creditos: CreditoVenta[] = [];

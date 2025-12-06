@@ -14,7 +14,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './compras.component.html',
-  styleUrl: './compras.component.css'
 })
 export class ComprasComponent implements OnInit {
   compras: Compra[] = [];

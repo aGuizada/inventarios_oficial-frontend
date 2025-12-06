@@ -11,7 +11,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './monedas.component.html',
-  styleUrl: './monedas.component.css'
 })
 export class MonedasComponent implements OnInit {
   monedas: Moneda[] = [];

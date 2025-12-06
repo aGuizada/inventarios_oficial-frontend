@@ -11,7 +11,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './inventario.component.html',
-  styleUrl: './inventario.component.css'
 })
 export class InventarioComponent implements OnInit {
   inventarios: Inventario[] = [];

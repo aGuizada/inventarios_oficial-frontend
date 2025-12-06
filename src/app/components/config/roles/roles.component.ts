@@ -10,7 +10,6 @@ import { finalize } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './roles.component.html',
-  styleUrl: './roles.component.css'
 })
 export class RolesComponent implements OnInit {
   roles: Rol[] = [];
