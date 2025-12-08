@@ -1,5 +1,5 @@
 import { Component, OnInit, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgClass } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { VentaService, ProductoInventario } from '../../../services/venta.service';
@@ -17,7 +17,7 @@ import { finalize } from 'rxjs/operators';
 @Component({
   selector: 'app-ventas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgClass],
   templateUrl: './ventas.component.html',
 })
 export class VentasComponent implements OnInit {

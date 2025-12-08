@@ -1,11 +1,11 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule, DecimalPipe } from '@angular/common';
+import { CommonModule, DecimalPipe, NgClass } from '@angular/common';
 import { Moneda } from '../../../../interfaces';
 
 @Component({
   selector: 'app-monedas-list',
   standalone: true,
-  imports: [CommonModule, DecimalPipe],
+  imports: [CommonModule, DecimalPipe, NgClass],
   templateUrl: './monedas-list.component.html',
 })
 export class MonedasListComponent {

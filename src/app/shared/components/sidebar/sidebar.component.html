@@ -1,8 +1,8 @@
-<div class="h-screen w-64 bg-slate-900 text-white flex flex-col transition-all duration-300 shadow-xl">
+<div class="h-screen w-64 bg-slate-900 dark:bg-slate-800 text-white flex flex-col transition-all duration-300 shadow-xl border-r border-slate-800 dark:border-slate-700">
     <!-- Logo Area -->
-    <div class="p-6 flex items-center justify-center border-b border-slate-800">
+    <div class="p-6 flex items-center justify-center border-b border-slate-800 dark:border-slate-700">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30">
+            <div class="w-10 h-10 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30">
                 <i class="fas fa-cube text-xl"></i>
             </div>
             <span class="text-xl font-bold tracking-wide">Inventario</span>
@@ -15,8 +15,8 @@
             <li *ngFor="let item of menuItems">
                 <!-- Single Item -->
                 <a *ngIf="!item.children" [routerLink]="item.route"
-                    routerLinkActive="bg-blue-600 text-white shadow-lg shadow-blue-500/30"
-                    class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all duration-200 group cursor-pointer">
+                    routerLinkActive="bg-blue-600 dark:bg-blue-500 text-white shadow-lg shadow-blue-500/30"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 dark:text-slate-300 hover:bg-slate-800 dark:hover:bg-slate-700 hover:text-white transition-all duration-200 group cursor-pointer">
                     <i [class]="item.icon + ' w-5 text-center transition-transform group-hover:scale-110'"></i>
                     <span class="font-medium">{{ item.label }}</span>
                 </a>
@@ -24,7 +24,7 @@
                 <!-- Parent Item -->
                 <div *ngIf="item.children">
                     <button (click)="toggleSubmenu(item)" [class.text-white]="item.isOpen"
-                        class="w-full flex items-center justify-between px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all duration-200 group">
+                        class="w-full flex items-center justify-between px-4 py-3 rounded-lg text-slate-400 dark:text-slate-300 hover:bg-slate-800 dark:hover:bg-slate-700 hover:text-white transition-all duration-200 group">
                         <div class="flex items-center gap-3">
                             <i [class]="item.icon + ' w-5 text-center transition-transform group-hover:scale-110'"></i>
                             <span class="font-medium">{{ item.label }}</span>
@@ -36,10 +36,10 @@
                     <!-- Submenu -->
                     <div class="overflow-hidden transition-all duration-300 ease-in-out"
                         [style.max-height]="item.isOpen ? '500px' : '0'" [style.opacity]="item.isOpen ? '1' : '0'">
-                        <ul class="mt-1 ml-4 pl-4 border-l border-slate-700 space-y-1">
+                        <ul class="mt-1 ml-4 pl-4 border-l border-slate-700 dark:border-slate-600 space-y-1">
                             <li *ngFor="let child of item.children">
-                                <a [routerLink]="child.route" routerLinkActive="text-blue-400 font-semibold"
-                                    class="flex items-center gap-2 px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-slate-800/50">
+                                <a [routerLink]="child.route" routerLinkActive="text-blue-400 dark:text-blue-300 font-semibold"
+                                    class="flex items-center gap-2 px-4 py-2 text-sm text-slate-400 dark:text-slate-300 hover:text-white transition-colors rounded-lg hover:bg-slate-800/50 dark:hover:bg-slate-700/50">
                                     <i [class]="child.icon + ' text-xs w-4 text-center opacity-70'"></i>
                                     <span>{{ child.label }}</span>
                                 </a>

@@ -1,11 +1,11 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgClass } from '@angular/common';
 import { Rol } from '../../../../interfaces';
 
 @Component({
   selector: 'app-roles-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NgClass],
   templateUrl: './roles-list.component.html',
 })
 export class RolesListComponent {

@@ -1,11 +1,11 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule, DatePipe, NgClass } from '@angular/common';
 import { Traspaso, Sucursal } from '../../../../interfaces';
 
 @Component({
   selector: 'app-traspasos-list',
   standalone: true,
-  imports: [CommonModule, DatePipe],
+  imports: [CommonModule, DatePipe, NgClass],
   templateUrl: './traspasos-list.component.html',
 })
 export class TraspasosListComponent {
@@ -17,15 +17,15 @@ export class TraspasosListComponent {
   @Output() receive = new EventEmitter<Traspaso>();
   @Output() reject = new EventEmitter<Traspaso>();
 
-  getEstadoColor(estado: string): string {
-    const colores: { [key: string]: string } = {
-      'PENDIENTE': 'bg-yellow-100 text-yellow-800',
-      'APROBADO': 'bg-blue-100 text-blue-800',
-      'EN_TRANSITO': 'bg-purple-100 text-purple-800',
-      'RECIBIDO': 'bg-green-100 text-green-800',
-      'RECHAZADO': 'bg-red-100 text-red-800'
+  getEstadoColor(estado: string): { [key: string]: boolean } {
+    return {
+      'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300': estado === 'PENDIENTE',
+      'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300': estado === 'APROBADO',
+      'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300': estado === 'EN_TRANSITO',
+      'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300': estado === 'RECIBIDO',
+      'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300': estado === 'RECHAZADO',
+      'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300': !['PENDIENTE', 'APROBADO', 'EN_TRANSITO', 'RECIBIDO', 'RECHAZADO'].includes(estado)
     };
-    return colores[estado] || 'bg-gray-100 text-gray-800';
   }
 
   getSucursalNombre(traspaso: Traspaso, tipo: 'origen' | 'destino'): string {

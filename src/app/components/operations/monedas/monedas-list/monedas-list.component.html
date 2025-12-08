@@ -1,49 +1,49 @@
 @if (isLoading) {
 <div class="flex justify-center items-center py-8">
-    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
 </div>
 }
 
 @if (!isLoading) {
-<div class="bg-white shadow-md rounded-lg overflow-hidden">
+<div class="bg-white dark:bg-slate-800 shadow-md rounded-lg overflow-hidden border border-slate-100 dark:border-slate-700 transition-colors duration-200">
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+            <thead class="bg-gray-50 dark:bg-slate-700">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Empresa
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Nombre
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">País</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Símbolo
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">País</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Símbolo
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Tipo de
                         Cambio</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Estado
                     </th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Acciones
                     </th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
                 @for (moneda of monedas; track moneda.id) {
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">#{{ moneda.id }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <tr class="hover:bg-gray-50 dark:hover:bg-slate-700 transition duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-100">#{{ moneda.id }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
                         {{ getEmpresaNombre(moneda) }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ moneda.nombre }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-slate-100">{{ moneda.nombre }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
                         {{ moneda.pais || '-' }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
                         <span class="text-lg font-semibold">{{ moneda.simbolo || '-' }}</span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-100">
                         <div class="flex items-center space-x-2">
                             <span class="font-semibold">{{ moneda.tipo_cambio | number:'1.4-4' }}</span>
-                            <button (click)="onUpdateTipoCambio(moneda)" class="text-blue-600 hover:text-blue-800 text-xs"
+                            <button (click)="onUpdateTipoCambio(moneda)" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-xs"
                                 title="Actualizar tipo de cambio">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20"
                                     fill="currentColor">
@@ -56,16 +56,16 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                            [class.bg-green-100]="moneda.estado !== false"
-                            [class.text-green-800]="moneda.estado !== false"
-                            [class.bg-gray-100]="moneda.estado === false"
-                            [class.text-gray-800]="moneda.estado === false">
+                            [ngClass]="{
+                                'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300': moneda.estado !== false,
+                                'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300': moneda.estado === false
+                            }">
                             {{ moneda.estado !== false ? 'Activo' : 'Inactivo' }}
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <div class="flex justify-center space-x-2">
-                            <button (click)="onEdit(moneda)" class="text-blue-600 hover:text-blue-900 mr-3"
+                            <button (click)="onEdit(moneda)" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-3"
                                 title="Editar moneda">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
                                     fill="currentColor">
@@ -73,7 +73,7 @@
                                         d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                 </svg>
                             </button>
-                            <button (click)="onDelete(moneda)" class="text-red-600 hover:text-red-900"
+                            <button (click)="onDelete(moneda)" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                                 title="Eliminar moneda">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
                                     fill="currentColor">
@@ -87,7 +87,7 @@
                 </tr>
                 } @empty {
                 <tr>
-                    <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
+                    <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-slate-400">
                         No hay monedas registradas. Haga clic en "Nueva Moneda" para agregar una.
                     </td>
                 </tr>

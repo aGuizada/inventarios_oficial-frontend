@@ -1,30 +1,30 @@
 <div class="container mx-auto px-4 py-8">
     <!-- Header -->
     <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Catálogos de Inventario</h1>
-        <p class="text-sm text-gray-600 mt-1">Gestiona categorías, marcas, medidas e industrias</p>
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-slate-100">Catálogos de Inventario</h1>
+        <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">Gestiona categorías, marcas, medidas e industrias</p>
     </div>
 
     <!-- Tabs Navigation -->
-    <div class="border-b border-gray-200 mb-6">
+    <div class="border-b border-gray-200 dark:border-slate-700 mb-6">
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
             <button (click)="changeTab('categorias')"
-                [class]="activeTab === 'categorias' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                [class]="activeTab === 'categorias' ? 'border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600'"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
                 🏷️ Categorías
             </button>
             <button (click)="changeTab('marcas')"
-                [class]="activeTab === 'marcas' ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                [class]="activeTab === 'marcas' ? 'border-purple-500 dark:border-purple-400 text-purple-600 dark:text-purple-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600'"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
                 🏭 Marcas
             </button>
             <button (click)="changeTab('medidas')"
-                [class]="activeTab === 'medidas' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                [class]="activeTab === 'medidas' ? 'border-green-500 dark:border-green-400 text-green-600 dark:text-green-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600'"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
                 📏 Medidas
             </button>
             <button (click)="changeTab('industrias')"
-                [class]="activeTab === 'industrias' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                [class]="activeTab === 'industrias' ? 'border-orange-500 dark:border-orange-400 text-orange-600 dark:text-orange-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600'"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
                 🏢 Industrias
             </button>
@@ -32,7 +32,7 @@
     </div>
 
     <!-- Tab Content -->
-    <div class="bg-white rounded-lg shadow-sm p-6">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 transition-colors duration-200">
         @if (activeTab === 'categorias') {
         <app-catalog-table [title]="getTitlePlural()" [items]="getCurrentItems()" [isLoading]="isLoading"
             [currentPage]="currentPage" [lastPage]="lastPage" [totalItems]="totalItems" (create)="openCreateModal()"

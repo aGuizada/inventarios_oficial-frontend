@@ -1,11 +1,11 @@
 import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgClass } from '@angular/common';
 import { Inventario, Almacen } from '../../../../interfaces';
 
 @Component({
   selector: 'app-inventario-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NgClass],
   templateUrl: './inventario-list.component.html',
 })
 export class InventarioListComponent {

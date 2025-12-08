@@ -1,11 +1,11 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
+import { CommonModule, DatePipe, CurrencyPipe, NgClass } from '@angular/common';
 import { CreditoVenta } from '../../../../interfaces';
 
 @Component({
   selector: 'app-creditos-list',
   standalone: true,
-  imports: [CommonModule, DatePipe, CurrencyPipe],
+  imports: [CommonModule, DatePipe, CurrencyPipe, NgClass],
   templateUrl: './creditos-list.component.html',
 })
 export class CreditosListComponent {

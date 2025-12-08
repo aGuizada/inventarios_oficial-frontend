@@ -1,4 +1,4 @@
-<div class="flex h-screen bg-slate-50 overflow-hidden">
+<div class="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden transition-colors duration-200">
     <!-- Sidebar -->
     <app-sidebar class="flex-shrink-0 z-20"></app-sidebar>
 
@@ -8,7 +8,7 @@
         <app-navbar class="flex-shrink-0"></app-navbar>
 
         <!-- Page Content -->
-        <main class="flex-1 overflow-y-auto p-6 scroll-smooth">
+        <main class="flex-1 overflow-y-auto p-6 scroll-smooth bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
             <div class="max-w-7xl mx-auto">
                 <router-outlet></router-outlet>
             </div>

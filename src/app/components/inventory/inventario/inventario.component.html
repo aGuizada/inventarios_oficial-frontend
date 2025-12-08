@@ -1,7 +1,7 @@
 <div class="container mx-auto px-4 py-6">
     <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Gestión de Inventario</h1>
-        <p class="text-gray-600">Visualiza las cantidades compradas y el stock disponible por almacén</p>
+        <h1 class="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-2">Gestión de Inventario</h1>
+        <p class="text-gray-600 dark:text-slate-400">Visualiza las cantidades compradas y el stock disponible por almacén</p>
     </div>
 
     <!-- Filters Component -->
@@ -12,17 +12,17 @@
 
     <!-- Resumen -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
-            <div class="text-sm font-medium text-blue-600 mb-1">Total de Registros</div>
-            <div class="text-2xl font-bold text-blue-900">{{ inventariosFiltrados.length }}</div>
+        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800 transition-colors duration-200">
+            <div class="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Total de Registros</div>
+            <div class="text-2xl font-bold text-blue-900 dark:text-blue-200">{{ inventariosFiltrados.length }}</div>
         </div>
-        <div class="bg-green-50 rounded-lg p-4 border border-green-200">
-            <div class="text-sm font-medium text-green-600 mb-1">Cantidad Total</div>
-            <div class="text-2xl font-bold text-green-900">{{ getTotalCantidad() | number }}</div>
+        <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800 transition-colors duration-200">
+            <div class="text-sm font-medium text-green-600 dark:text-green-400 mb-1">Cantidad Total</div>
+            <div class="text-2xl font-bold text-green-900 dark:text-green-200">{{ getTotalCantidad() | number }}</div>
         </div>
-        <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
-            <div class="text-sm font-medium text-purple-600 mb-1">Saldo Stock Total</div>
-            <div class="text-2xl font-bold text-purple-900">{{ getTotalSaldoStock() | number }}</div>
+        <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800 transition-colors duration-200">
+            <div class="text-sm font-medium text-purple-600 dark:text-purple-400 mb-1">Saldo Stock Total</div>
+            <div class="text-2xl font-bold text-purple-900 dark:text-purple-200">{{ getTotalSaldoStock() | number }}</div>
         </div>
     </div>
 

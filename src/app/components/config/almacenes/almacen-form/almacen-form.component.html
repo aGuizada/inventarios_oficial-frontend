@@ -1,25 +1,25 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+    <div class="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 transition-colors duration-200">
         <div class="sm:flex sm:items-start">
             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-slate-100 mb-4" id="modal-title">
                     {{ isEditing ? 'Editar Almacén' : 'Nuevo Almacén' }}
                 </h3>
                 <div class="space-y-4">
                     <div>
-                        <label for="nombre_almacen" class="block text-sm font-medium text-gray-700">Nombre</label>
+                        <label for="nombre_almacen" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Nombre</label>
                         <input type="text" id="nombre_almacen" formControlName="nombre_almacen"
-                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md p-2 border transition-colors duration-200">
                     </div>
                     <div>
-                        <label for="ubicacion" class="block text-sm font-medium text-gray-700">Ubicación</label>
+                        <label for="ubicacion" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Ubicación</label>
                         <input type="text" id="ubicacion" formControlName="ubicacion"
-                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md p-2 border transition-colors duration-200">
                     </div>
                     <div>
-                        <label for="sucursal_id" class="block text-sm font-medium text-gray-700">Sucursal</label>
+                        <label for="sucursal_id" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Sucursal</label>
                         <select id="sucursal_id" formControlName="sucursal_id"
-                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors duration-200">
                             <option value="">Seleccione una sucursal</option>
                             @for (sucursal of sucursales; track sucursal.id) {
                             <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
@@ -27,26 +27,26 @@
                         </select>
                     </div>
                     <div>
-                        <label for="telefono" class="block text-sm font-medium text-gray-700">Teléfono</label>
+                        <label for="telefono" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Teléfono</label>
                         <input type="text" id="telefono" formControlName="telefono"
-                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                            class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md p-2 border transition-colors duration-200">
                     </div>
                     <div class="flex items-center">
                         <input id="estado" type="checkbox" formControlName="estado"
-                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                        <label for="estado" class="ml-2 block text-sm text-gray-900">Activo</label>
+                            class="h-4 w-4 text-blue-600 dark:text-blue-400 focus:ring-blue-500 border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700">
+                        <label for="estado" class="ml-2 block text-sm text-gray-900 dark:text-slate-100">Activo</label>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+    <div class="bg-gray-50 dark:bg-slate-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse transition-colors duration-200">
         <button type="submit" [disabled]="form.invalid"
-            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 dark:bg-blue-500 text-base font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 transition-colors duration-200">
             Guardar
         </button>
         <button type="button" (click)="onCancel()"
-            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-800 text-base font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-200">
             Cancelar
         </button>
     </div>

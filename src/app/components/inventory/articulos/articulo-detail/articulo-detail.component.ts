@@ -1,12 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgClass } from '@angular/common';
 import { Articulo } from '../../../../interfaces';
 import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-articulo-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NgClass],
   templateUrl: './articulo-detail.component.html',
 })
 export class ArticuloDetailComponent {

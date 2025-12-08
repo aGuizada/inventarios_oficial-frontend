@@ -1,11 +1,11 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgClass } from '@angular/common';
 import { Sucursal } from '../../../../interfaces';
 
 @Component({
   selector: 'app-sucursales-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NgClass],
   templateUrl: './sucursales-list.component.html',
 })
 export class SucursalesListComponent {

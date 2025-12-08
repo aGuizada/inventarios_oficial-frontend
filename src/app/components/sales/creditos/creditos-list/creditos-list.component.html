@@ -1,88 +1,86 @@
 @if (isLoading) {
 <div class="flex justify-center items-center py-8">
-    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
 </div>
 }
 
 @if (!isLoading) {
-<div class="bg-white shadow-md rounded-lg overflow-hidden">
+<div class="bg-white dark:bg-slate-800 shadow-md rounded-lg overflow-hidden border border-slate-100 dark:border-slate-700 transition-colors duration-200">
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+            <thead class="bg-gray-50 dark:bg-slate-700">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Venta
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">ID Venta
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Cliente
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Total
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">N°
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">N°
                         Cuotas</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cuotas
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Cuotas
                         Pendientes</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Días entre
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Días entre
                         Cuotas</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Próximo
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Próximo
                         Pago</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Estado
                     </th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Acciones
                     </th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
                 @for (credito of creditos; track credito.id) {
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <tr class="hover:bg-gray-50 dark:hover:bg-slate-700 transition duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-100">
                         #{{ credito.venta_id }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-100">
                         {{ credito.venta?.cliente?.nombre || 'N/A' }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-slate-100">
                         {{ credito.total || credito.venta?.total | currency }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
                         {{ credito.numero_cuotas || 'N/A' }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <span class="px-2 py-1 rounded-full text-xs font-semibold"
-                            [class.bg-red-100]="getCuotasPendientes(credito) > 0"
-                            [class.text-red-800]="getCuotasPendientes(credito) > 0"
-                            [class.bg-green-100]="getCuotasPendientes(credito) === 0"
-                            [class.text-green-800]="getCuotasPendientes(credito) === 0">
+                            [ngClass]="{
+                                'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300': getCuotasPendientes(credito) > 0,
+                                'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300': getCuotasPendientes(credito) === 0
+                            }">
                             {{ getCuotasPendientes(credito) }} pendiente{{ getCuotasPendientes(credito) !== 1 ? 's' : ''
                             }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
                         {{ credito.tiempo_dias_cuota || 'N/A' }} días
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
                         {{ credito.proximo_pago ? (credito.proximo_pago | date:'short') : 'N/A' }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                            [class.bg-yellow-100]="credito.estado === 'Pendiente'"
-                            [class.text-yellow-800]="credito.estado === 'Pendiente'"
-                            [class.bg-green-100]="credito.estado === 'Pagado'"
-                            [class.text-green-800]="credito.estado === 'Pagado'"
-                            [class.bg-red-100]="credito.estado === 'Vencido'"
-                            [class.text-red-800]="credito.estado === 'Vencido'"
-                            [class.bg-gray-100]="!credito.estado || (credito.estado !== 'Pendiente' && credito.estado !== 'Pagado' && credito.estado !== 'Vencido')"
-                            [class.text-gray-800]="!credito.estado || (credito.estado !== 'Pendiente' && credito.estado !== 'Pagado' && credito.estado !== 'Vencido')">
+                            [ngClass]="{
+                                'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300': credito.estado === 'Pendiente',
+                                'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300': credito.estado === 'Pagado',
+                                'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300': credito.estado === 'Vencido',
+                                'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300': !credito.estado || (credito.estado !== 'Pendiente' && credito.estado !== 'Pagado' && credito.estado !== 'Vencido')
+                            }">
                             {{ credito.estado || 'Pendiente' }}
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <div class="flex justify-center space-x-2">
                             <button (click)="onViewDetail(credito)"
-                                class="text-blue-600 hover:text-blue-900 px-2 py-1 rounded hover:bg-blue-50">
+                                class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20">
                                 Ver Detalle
                             </button>
                             @if (getCuotasPendientes(credito) > 0) {
                             <button (click)="onPay(credito)"
-                                class="text-green-600 hover:text-green-900 px-2 py-1 rounded hover:bg-green-50 font-semibold">
+                                class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 px-2 py-1 rounded hover:bg-green-50 dark:hover:bg-green-900/20 font-semibold">
                                 Pagar
                             </button>
                             }
@@ -91,7 +89,7 @@
                 </tr>
                 } @empty {
                 <tr>
-                    <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500">
+                    <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-slate-400">
                         No hay ventas a crédito registradas.
                     </td>
                 </tr>
