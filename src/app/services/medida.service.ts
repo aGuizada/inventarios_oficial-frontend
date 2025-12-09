@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Medida, ApiResponse } from '../interfaces';
+import { Medida, ApiResponse, PaginatedResponse, PaginationParams } from '../interfaces';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -14,6 +14,19 @@ export class MedidaService {
 
     getAll(): Observable<ApiResponse<Medida[]>> {
         return this.http.get<ApiResponse<Medida[]>>(this.apiUrl);
+    }
+
+    getPaginated(params?: PaginationParams): Observable<ApiResponse<PaginatedResponse<Medida>>> {
+        let httpParams = new HttpParams();
+        if (params) {
+            Object.keys(params).forEach(key => {
+                const value = (params as any)[key];
+                if (value !== undefined && value !== null) {
+                    httpParams = httpParams.set(key, value.toString());
+                }
+            });
+        }
+        return this.http.get<ApiResponse<PaginatedResponse<Medida>>>(this.apiUrl, { params: httpParams });
     }
 
     create(medida: Partial<Medida>): Observable<ApiResponse<Medida>> {

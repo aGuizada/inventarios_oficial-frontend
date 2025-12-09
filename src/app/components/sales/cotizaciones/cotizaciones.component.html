@@ -12,10 +12,18 @@
         </button>
     </div>
 
+    <div class="flex justify-between items-center mb-4">
+        <app-search-bar (search)="onSearch($event)"></app-search-bar>
+    </div>
+
     <!-- List Component -->
     <app-cotizaciones-list [cotizaciones]="cotizaciones" [isLoading]="isLoading" (edit)="edit($event)"
         (delete)="delete($event)">
     </app-cotizaciones-list>
+
+    <app-pagination [currentPage]="currentPage" [lastPage]="lastPage" [total]="total"
+        (pageChange)="onPageChange($event)">
+    </app-pagination>
 </div>
 
 <!-- Modal -->

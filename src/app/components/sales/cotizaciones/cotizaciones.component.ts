@@ -5,16 +5,18 @@ import { CotizacionService } from '../../../services/cotizacion.service';
 import { ClienteService } from '../../../services/cliente.service';
 import { AlmacenService } from '../../../services/almacen.service';
 import { ArticuloService } from '../../../services/articulo.service';
-import { Cotizacion, DetalleCotizacion, Cliente, Almacen, Articulo } from '../../../interfaces';
+import { Cotizacion, DetalleCotizacion, Cliente, Almacen, Articulo, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 // Import child components
 import { CotizacionesListComponent } from './cotizaciones-list/cotizaciones-list.component';
+import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-cotizaciones',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, CotizacionesListComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, CotizacionesListComponent, SearchBarComponent, PaginationComponent],
   templateUrl: './cotizaciones.component.html',
 })
 export class CotizacionesComponent implements OnInit {
@@ -40,6 +42,13 @@ export class CotizacionesComponent implements OnInit {
   articulosFiltrados: Articulo[] = [];
   articuloSeleccionado: Articulo | null = null;
   mostrarSugerenciasArticulo: boolean = false;
+  
+  // Paginación
+  currentPage: number = 1;
+  lastPage: number = 1;
+  total: number = 0;
+  perPage: number = 15;
+  searchTerm: string = '';
 
   constructor(
     private cotizacionService: CotizacionService,
@@ -82,7 +91,14 @@ export class CotizacionesComponent implements OnInit {
     });
     this.articuloService.getAll(1, 1000).subscribe({
       next: (res) => {
-        this.articulos = res.data || [];
+        const paginated = res?.data as any;
+        if (paginated && Array.isArray(paginated.data)) {
+          this.articulos = paginated.data;
+        } else if (Array.isArray(res?.data)) {
+          this.articulos = res.data;
+        } else {
+          this.articulos = [];
+        }
         this.articulosFiltrados = this.articulos;
       },
       error: (error) => {
@@ -95,17 +111,53 @@ export class CotizacionesComponent implements OnInit {
 
   loadCotizaciones(): void {
     this.isLoading = true;
-    this.cotizacionService.getAll()
+    
+    const params: PaginationParams = {
+      page: this.currentPage,
+      per_page: this.perPage,
+      sort_by: 'id',
+      sort_order: 'desc'
+    };
+    
+    if (this.searchTerm) {
+      params.search = this.searchTerm;
+    }
+    
+    this.cotizacionService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
-        next: (cotizaciones) => {
-          this.cotizaciones = Array.isArray(cotizaciones) ? cotizaciones : [];
+        next: (response) => {
+          if (response.data) {
+            this.cotizaciones = response.data.data || [];
+            this.currentPage = response.data.current_page;
+            this.lastPage = response.data.last_page;
+            this.total = response.data.total;
+            this.perPage = response.data.per_page;
+          }
         },
         error: (error) => {
           console.error('Error loading cotizaciones', error);
-          this.cotizaciones = [];
+          // Fallback a getAll si falla la paginación
+          this.cotizacionService.getAll()
+            .pipe(finalize(() => this.isLoading = false))
+            .subscribe({
+              next: (cotizaciones) => {
+                this.cotizaciones = Array.isArray(cotizaciones) ? cotizaciones : [];
+              }
+            });
         }
       });
+  }
+
+  onSearch(search: string): void {
+    this.searchTerm = search;
+    this.currentPage = 1;
+    this.loadCotizaciones();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadCotizaciones();
   }
 
   openModal(): void {

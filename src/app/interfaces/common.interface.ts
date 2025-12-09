@@ -11,4 +11,14 @@ export interface PaginatedResponse<T> {
     last_page: number;
     per_page: number;
     total: number;
+    from?: number;
+    to?: number;
+}
+
+export interface PaginationParams {
+    page?: number;
+    per_page?: number;
+    search?: string;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
 }

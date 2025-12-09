@@ -5,16 +5,18 @@ import { TraspasoService } from '../../../services/traspaso.service';
 import { VentaService, ProductoInventario } from '../../../services/venta.service';
 import { SucursalService } from '../../../services/sucursal.service';
 import { AlmacenService } from '../../../services/almacen.service';
-import { Traspaso, DetalleTraspaso, Sucursal, Almacen, ApiResponse } from '../../../interfaces';
+import { Traspaso, DetalleTraspaso, Sucursal, Almacen, ApiResponse, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 // Import child components
 import { TraspasosListComponent } from './traspasos-list/traspasos-list.component';
+import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-traspasos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, TraspasosListComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, TraspasosListComponent, SearchBarComponent, PaginationComponent],
   templateUrl: './traspasos.component.html',
 })
 export class TraspasosComponent implements OnInit {
@@ -41,6 +43,13 @@ export class TraspasosComponent implements OnInit {
   
   errorMessage: string = '';
   successMessage: string = '';
+  
+  // Paginación
+  currentPage: number = 1;
+  lastPage: number = 1;
+  total: number = 0;
+  perPage: number = 15;
+  searchTerm: string = '';
 
   constructor(
     private traspasoService: TraspasoService,
@@ -75,25 +84,62 @@ export class TraspasosComponent implements OnInit {
 
   cargarTraspasos(): void {
     this.isLoading = true;
-    this.traspasoService.getAll()
+    
+    const params: PaginationParams = {
+      page: this.currentPage,
+      per_page: this.perPage,
+      sort_by: 'id',
+      sort_order: 'desc'
+    };
+    
+    if (this.searchTerm) {
+      params.search = this.searchTerm;
+    }
+    
+    this.traspasoService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
-        next: (response: ApiResponse<Traspaso[]> | Traspaso[] | any) => {
-          if (Array.isArray(response)) {
-            this.traspasos = response;
-          } else if (response && 'success' in response && response.success) {
-            this.traspasos = response.data || [];
-          } else if (response && response.data) {
-            this.traspasos = response.data || [];
-          } else {
-            this.traspasos = [];
+        next: (response) => {
+          if (response.data) {
+            this.traspasos = response.data.data || [];
+            this.currentPage = response.data.current_page;
+            this.lastPage = response.data.last_page;
+            this.total = response.data.total;
+            this.perPage = response.data.per_page;
           }
         },
         error: (error) => {
           console.error('Error al cargar traspasos:', error);
           this.mostrarError('Error al cargar los traspasos');
+          // Fallback a getAll si falla la paginación
+          this.traspasoService.getAll()
+            .pipe(finalize(() => this.isLoading = false))
+            .subscribe({
+              next: (response: ApiResponse<Traspaso[]> | Traspaso[] | any) => {
+                if (Array.isArray(response)) {
+                  this.traspasos = response;
+                } else if (response && 'success' in response && response.success) {
+                  this.traspasos = response.data || [];
+                } else if (response && response.data) {
+                  this.traspasos = response.data || [];
+                } else {
+                  this.traspasos = [];
+                }
+              }
+            });
         }
       });
+  }
+
+  onSearch(search: string): void {
+    this.searchTerm = search;
+    this.currentPage = 1;
+    this.cargarTraspasos();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.cargarTraspasos();
   }
 
 

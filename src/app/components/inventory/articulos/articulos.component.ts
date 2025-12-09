@@ -45,7 +45,7 @@ export class ArticulosComponent implements OnInit {
   perPage = 10;
   totalItems = 0;
   lastPage = 1;
-
+  
   constructor(
     private articuloService: ArticuloService,
     private categoriaService: CategoriaService,
@@ -53,7 +53,11 @@ export class ArticulosComponent implements OnInit {
     private medidaService: MedidaService,
     private industriaService: IndustriaService,
     private proveedorService: ProveedorService
-  ) { }
+  ) {
+    // Asegurar que articulos siempre sea un array
+    this.articulos = [];
+  }
+
 
   ngOnInit(): void {
     this.loadArticulos();
@@ -70,16 +74,49 @@ export class ArticulosComponent implements OnInit {
 
   loadArticulos(page: number = 1): void {
     this.isLoading = true;
+    // Asegurar que articulos siempre sea un array antes de la llamada
+    this.articulos = [];
+    
     this.articuloService.getAll(page, this.perPage)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response) => {
-          this.articulos = response.data;
-          this.currentPage = response.current_page;
-          this.lastPage = response.last_page;
-          this.totalItems = response.total;
+          console.log('Response recibida:', response);
+
+          // Intentar formato paginado
+          const paginated = response?.data as any;
+          if (paginated && typeof paginated === 'object' && Array.isArray(paginated.data)) {
+            this.articulos = paginated.data;
+            this.currentPage = paginated.current_page || 1;
+            this.lastPage = paginated.last_page || 1;
+            this.totalItems = paginated.total || 0;
+            return;
+          }
+
+          // Formato antiguo (array directo)
+          const asArray = response?.data as any;
+          if (Array.isArray(asArray)) {
+            this.articulos = asArray;
+            this.currentPage = 1;
+            this.lastPage = 1;
+            this.totalItems = asArray.length || 0;
+            return;
+          }
+
+          // Fallback
+          console.warn('Response sin formato esperado:', response);
+          this.articulos = [];
+          this.currentPage = 1;
+          this.lastPage = 1;
+          this.totalItems = 0;
         },
-        error: (error) => console.error('Error loading articulos', error)
+        error: (error) => {
+          console.error('Error loading articulos', error);
+          this.articulos = [];
+          this.currentPage = 1;
+          this.lastPage = 1;
+          this.totalItems = 0;
+        }
       });
   }
 

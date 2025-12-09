@@ -1,12 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ClienteService } from '../../../services/cliente.service';
-import { Cliente } from '../../../interfaces';
+import { Cliente, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 // Import child components
 import { ClientesListComponent } from './clientes-list/clientes-list.component';
 import { ClienteFormComponent } from './cliente-form/cliente-form.component';
+import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-clientes',
@@ -14,7 +16,9 @@ import { ClienteFormComponent } from './cliente-form/cliente-form.component';
   imports: [
     CommonModule,
     ClientesListComponent,
-    ClienteFormComponent
+    ClienteFormComponent,
+    SearchBarComponent,
+    PaginationComponent
   ],
   templateUrl: './clientes.component.html',
 })
@@ -23,6 +27,13 @@ export class ClientesComponent implements OnInit {
   isLoading = false;
   isFormModalOpen = false;
   selectedCliente: Cliente | null = null;
+  
+  // Paginación
+  currentPage: number = 1;
+  lastPage: number = 1;
+  total: number = 0;
+  perPage: number = 15;
+  searchTerm: string = '';
 
   constructor(
     private clienteService: ClienteService
@@ -34,14 +45,53 @@ export class ClientesComponent implements OnInit {
 
   loadClientes(): void {
     this.isLoading = true;
-    this.clienteService.getAll()
+    
+    const params: PaginationParams = {
+      page: this.currentPage,
+      per_page: this.perPage,
+      sort_by: 'id',
+      sort_order: 'desc'
+    };
+    
+    if (this.searchTerm) {
+      params.search = this.searchTerm;
+    }
+    
+    this.clienteService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response) => {
-          this.clientes = response.data;
+          if (response.data) {
+            this.clientes = response.data.data || [];
+            this.currentPage = response.data.current_page;
+            this.lastPage = response.data.last_page;
+            this.total = response.data.total;
+            this.perPage = response.data.per_page;
+          }
         },
-        error: (error) => console.error('Error loading clientes', error)
+        error: (error) => {
+          console.error('Error loading clientes', error);
+          // Fallback a getAll si falla la paginación
+          this.clienteService.getAll()
+            .pipe(finalize(() => this.isLoading = false))
+            .subscribe({
+              next: (response) => {
+                this.clientes = response.data || [];
+              }
+            });
+        }
       });
+  }
+
+  onSearch(search: string): void {
+    this.searchTerm = search;
+    this.currentPage = 1;
+    this.loadClientes();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadClientes();
   }
 
   openFormModal(): void {

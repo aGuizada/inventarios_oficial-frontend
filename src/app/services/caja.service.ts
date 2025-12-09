@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Caja, ApiResponse } from '../interfaces';
+import { Caja, ApiResponse, PaginatedResponse, PaginationParams } from '../interfaces';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -14,6 +14,28 @@ export class CajaService {
 
     getAll(): Observable<ApiResponse<Caja[]>> {
         return this.http.get<ApiResponse<Caja[]>>(this.apiUrl);
+    }
+
+    getPaginated(params?: PaginationParams): Observable<ApiResponse<PaginatedResponse<Caja>>> {
+        let httpParams = new HttpParams();
+        
+        if (params?.page) {
+            httpParams = httpParams.set('page', params.page.toString());
+        }
+        if (params?.per_page) {
+            httpParams = httpParams.set('per_page', params.per_page.toString());
+        }
+        if (params?.search) {
+            httpParams = httpParams.set('search', params.search);
+        }
+        if (params?.sort_by) {
+            httpParams = httpParams.set('sort_by', params.sort_by);
+        }
+        if (params?.sort_order) {
+            httpParams = httpParams.set('sort_order', params.sort_order);
+        }
+        
+        return this.http.get<ApiResponse<PaginatedResponse<Caja>>>(this.apiUrl, { params: httpParams });
     }
 
     getById(id: number): Observable<ApiResponse<Caja>> {

@@ -1,12 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProveedorService } from '../../../services/proveedor.service';
-import { Proveedor } from '../../../interfaces';
+import { Proveedor, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 // Import child components
 import { ProveedoresListComponent } from './proveedores-list/proveedores-list.component';
 import { ProveedorFormComponent } from './proveedor-form/proveedor-form.component';
+import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-proveedores',
@@ -14,7 +16,9 @@ import { ProveedorFormComponent } from './proveedor-form/proveedor-form.componen
   imports: [
     CommonModule,
     ProveedoresListComponent,
-    ProveedorFormComponent
+    ProveedorFormComponent,
+    SearchBarComponent,
+    PaginationComponent
   ],
   templateUrl: './proveedores.component.html',
 })
@@ -23,6 +27,13 @@ export class ProveedoresComponent implements OnInit {
   isLoading = false;
   isFormModalOpen = false;
   selectedProveedor: Proveedor | null = null;
+  
+  // Paginación
+  currentPage: number = 1;
+  lastPage: number = 1;
+  total: number = 0;
+  perPage: number = 15;
+  searchTerm: string = '';
 
   constructor(
     private proveedorService: ProveedorService
@@ -34,14 +45,53 @@ export class ProveedoresComponent implements OnInit {
 
   loadProveedores(): void {
     this.isLoading = true;
-    this.proveedorService.getAll()
+    
+    const params: PaginationParams = {
+      page: this.currentPage,
+      per_page: this.perPage,
+      sort_by: 'id',
+      sort_order: 'desc'
+    };
+    
+    if (this.searchTerm) {
+      params.search = this.searchTerm;
+    }
+    
+    this.proveedorService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response) => {
-          this.proveedores = response.data;
+          if (response.data) {
+            this.proveedores = response.data.data || [];
+            this.currentPage = response.data.current_page;
+            this.lastPage = response.data.last_page;
+            this.total = response.data.total;
+            this.perPage = response.data.per_page;
+          }
         },
-        error: (error) => console.error('Error loading proveedores', error)
+        error: (error) => {
+          console.error('Error loading proveedores', error);
+          // Fallback a getAll si falla la paginación
+          this.proveedorService.getAll()
+            .pipe(finalize(() => this.isLoading = false))
+            .subscribe({
+              next: (response) => {
+                this.proveedores = response.data || [];
+              }
+            });
+        }
       });
+  }
+
+  onSearch(search: string): void {
+    this.searchTerm = search;
+    this.currentPage = 1;
+    this.loadProveedores();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadProveedores();
   }
 
   openFormModal(): void {

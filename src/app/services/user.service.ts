@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { User, ApiResponse } from '../interfaces';
+import { User, ApiResponse, PaginatedResponse, PaginationParams } from '../interfaces';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -14,6 +14,19 @@ export class UserService {
 
     getAll(): Observable<ApiResponse<User[]>> {
         return this.http.get<ApiResponse<User[]>>(this.apiUrl);
+    }
+
+    getPaginated(params?: PaginationParams): Observable<ApiResponse<PaginatedResponse<User>>> {
+        let httpParams = new HttpParams();
+        if (params) {
+            Object.keys(params).forEach(key => {
+                const value = (params as any)[key];
+                if (value !== undefined && value !== null) {
+                    httpParams = httpParams.set(key, value.toString());
+                }
+            });
+        }
+        return this.http.get<ApiResponse<PaginatedResponse<User>>>(this.apiUrl, { params: httpParams });
     }
 
     getById(id: number): Observable<ApiResponse<User>> {

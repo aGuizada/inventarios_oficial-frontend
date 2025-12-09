@@ -1,0 +1,91 @@
+@if (lastPage > 1 || showInfo) {
+<div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
+    @if (showInfo) {
+    <div class="text-sm text-gray-700 dark:text-slate-300">
+        Mostrando <span class="font-medium">{{ from }}</span> a <span class="font-medium">{{ to }}</span> de <span class="font-medium">{{ total }}</span> resultados
+    </div>
+    } @else {
+    <div></div>
+    }
+    
+    @if (lastPage > 1) {
+    <div class="flex items-center gap-1">
+        <!-- Primera página -->
+        <button
+            (click)="goToFirst()"
+            [disabled]="currentPage === 1"
+            [class.opacity-50]="currentPage === 1"
+            [class.cursor-not-allowed]="currentPage === 1"
+            class="px-3 py-2 text-sm font-medium text-gray-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-l-lg hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200 transition-colors duration-150"
+            title="Primera página"
+        >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        
+        <!-- Página anterior -->
+        <button
+            (click)="goToPrevious()"
+            [disabled]="currentPage === 1"
+            [class.opacity-50]="currentPage === 1"
+            [class.cursor-not-allowed]="currentPage === 1"
+            class="px-3 py-2 text-sm font-medium text-gray-500 dark:text-slate-400 bg-white dark:bg-slate-800 border-t border-b border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200 transition-colors duration-150"
+            title="Página anterior"
+        >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        
+        <!-- Páginas -->
+        @for (page of pages; track page) {
+        <button
+            (click)="goToPage(page)"
+            [class.bg-blue-600]="page === currentPage"
+            [class.text-white]="page === currentPage"
+            [class.border-blue-600]="page === currentPage"
+            [class.bg-white]="page !== currentPage"
+            [class.text-gray-500]="page !== currentPage"
+            [class.dark:bg-slate-800]="page !== currentPage"
+            [class.dark:text-slate-400]="page !== currentPage"
+            class="px-4 py-2 text-sm font-medium border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200 transition-colors duration-150"
+        >
+            {{ page }}
+        </button>
+        }
+        
+        <!-- Página siguiente -->
+        <button
+            (click)="goToNext()"
+            [disabled]="currentPage === lastPage"
+            [class.opacity-50]="currentPage === lastPage"
+            [class.cursor-not-allowed]="currentPage === lastPage"
+            class="px-3 py-2 text-sm font-medium text-gray-500 dark:text-slate-400 bg-white dark:bg-slate-800 border-t border-b border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200 transition-colors duration-150"
+            title="Página siguiente"
+        >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        
+        <!-- Última página -->
+        <button
+            (click)="goToLast()"
+            [disabled]="currentPage === lastPage"
+            [class.opacity-50]="currentPage === lastPage"
+            [class.cursor-not-allowed]="currentPage === lastPage"
+            class="px-3 py-2 text-sm font-medium text-gray-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-r-lg hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200 transition-colors duration-150"
+            title="Última página"
+        >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+    </div>
+    } @else {
+    <div></div>
+    }
+</div>
+}
+

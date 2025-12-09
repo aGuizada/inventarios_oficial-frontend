@@ -7,13 +7,15 @@ import { ProveedorService } from '../../../services/proveedor.service';
 import { AlmacenService } from '../../../services/almacen.service';
 import { ArticuloService } from '../../../services/articulo.service';
 import { CajaService } from '../../../services/caja.service';
-import { Compra, DetalleCompra, Proveedor, Almacen, Articulo, Caja } from '../../../interfaces';
+import { Compra, DetalleCompra, Proveedor, Almacen, Articulo, Caja, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
+import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-compras',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgClass],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgClass, SearchBarComponent, PaginationComponent],
   templateUrl: './compras.component.html',
 })
 export class ComprasComponent implements OnInit {
@@ -42,6 +44,13 @@ export class ComprasComponent implements OnInit {
   articulosFiltrados: Articulo[] = [];
   articuloSeleccionado: Articulo | null = null;
   mostrarSugerenciasArticulo: boolean = false;
+  
+  // Paginación
+  currentPage: number = 1;
+  lastPage: number = 1;
+  total: number = 0;
+  perPage: number = 15;
+  searchTerm: string = '';
 
   constructor(
     private compraService: CompraService,
@@ -117,7 +126,14 @@ export class ComprasComponent implements OnInit {
     });
     this.articuloService.getAll(1, 1000).subscribe({
       next: (res) => {
-        this.articulos = res.data || [];
+        const paginated = res?.data as any;
+        if (paginated && Array.isArray(paginated.data)) {
+          this.articulos = paginated.data;
+        } else if (Array.isArray(res?.data)) {
+          this.articulos = res.data;
+        } else {
+          this.articulos = [];
+        }
         this.articulosFiltrados = this.articulos;
       },
       error: (error) => {
@@ -153,17 +169,53 @@ export class ComprasComponent implements OnInit {
 
   loadCompras(): void {
     this.isLoading = true;
-    this.compraService.getAll()
+    
+    const params: PaginationParams = {
+      page: this.currentPage,
+      per_page: this.perPage,
+      sort_by: 'id',
+      sort_order: 'desc'
+    };
+    
+    if (this.searchTerm) {
+      params.search = this.searchTerm;
+    }
+    
+    this.compraService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
-        next: (compras) => {
-          this.compras = Array.isArray(compras) ? compras : [];
+        next: (response) => {
+          if (response.data) {
+            this.compras = response.data.data || [];
+            this.currentPage = response.data.current_page;
+            this.lastPage = response.data.last_page;
+            this.total = response.data.total;
+            this.perPage = response.data.per_page;
+          }
         },
         error: (error) => {
           console.error('Error loading compras', error);
-          this.compras = [];
+          // Fallback a getAll si falla la paginación
+          this.compraService.getAll()
+            .pipe(finalize(() => this.isLoading = false))
+            .subscribe({
+              next: (compras) => {
+                this.compras = Array.isArray(compras) ? compras : [];
+              }
+            });
         }
       });
+  }
+
+  onSearch(search: string): void {
+    this.searchTerm = search;
+    this.currentPage = 1;
+    this.loadCompras();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadCompras();
   }
 
   openModal(): void {

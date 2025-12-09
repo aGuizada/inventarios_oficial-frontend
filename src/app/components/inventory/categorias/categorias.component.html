@@ -31,10 +31,18 @@
     </div>
     }
 
+    <div class="flex justify-between items-center mb-4">
+        <app-search-bar (search)="onSearch($event)"></app-search-bar>
+    </div>
+
     <!-- List Component -->
     <app-categorias-list [categorias]="categorias" [isLoading]="isLoading" (edit)="onEdit($event)"
         (delete)="onDelete($event)">
     </app-categorias-list>
+
+    <app-pagination [currentPage]="currentPage" [lastPage]="lastPage" [total]="total"
+        (pageChange)="onPageChange($event)">
+    </app-pagination>
 </div>
 
 <!-- Form Modal -->

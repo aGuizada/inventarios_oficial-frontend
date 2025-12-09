@@ -44,9 +44,24 @@
 
   <!-- Vista de Historial de Traspasos -->
   <div *ngIf="!isModalOpen" class="mt-6">
+    <div class="mb-4 max-w-md">
+      <app-search-bar 
+        placeholder="Buscar por código, estado, sucursal..."
+        (search)="onSearch($event)">
+      </app-search-bar>
+    </div>
+    
     <app-traspasos-list [traspasos]="traspasos" [isLoading]="isLoading" [sucursales]="sucursales"
         (approve)="aprobarTraspaso($event)" (receive)="recibirTraspaso($event)" (reject)="rechazarTraspaso($event)">
     </app-traspasos-list>
+    
+    <app-pagination 
+        [currentPage]="currentPage"
+        [lastPage]="lastPage"
+        [total]="total"
+        [perPage]="perPage"
+        (pageChange)="onPageChange($event)">
+    </app-pagination>
   </div>
 
   <!-- Modal de Formulario de Traspaso -->

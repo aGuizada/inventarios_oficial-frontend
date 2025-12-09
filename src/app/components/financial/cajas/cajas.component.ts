@@ -4,7 +4,7 @@ import { CajaService } from '../../../services/caja.service';
 import { SucursalService } from '../../../services/sucursal.service';
 import { AuthService } from '../../../services/auth.service';
 import { TransaccionCajaService } from '../../../services/transaccion-caja.service';
-import { Caja, Sucursal, User } from '../../../interfaces';
+import { Caja, Sucursal, User, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 // Import child components
@@ -13,6 +13,8 @@ import { CajaFormComponent } from './caja-form/caja-form.component';
 import { CajaDetailComponent } from './caja-detail/caja-detail.component';
 import { CajaTransaccionComponent } from './caja-transaccion/caja-transaccion.component';
 import { CajaArqueoComponent } from './caja-arqueo/caja-arqueo.component';
+import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-cajas',
@@ -23,7 +25,9 @@ import { CajaArqueoComponent } from './caja-arqueo/caja-arqueo.component';
     CajaFormComponent,
     CajaDetailComponent,
     CajaTransaccionComponent,
-    CajaArqueoComponent
+    CajaArqueoComponent,
+    SearchBarComponent,
+    PaginationComponent
   ],
   templateUrl: './cajas.component.html',
 })
@@ -39,6 +43,13 @@ export class CajasComponent implements OnInit {
   selectedCaja: Caja | null = null;
   transaccionTipo: 'ingreso' | 'egreso' = 'ingreso';
   isLoading = false;
+  
+  // Paginación
+  currentPage: number = 1;
+  lastPage: number = 1;
+  total: number = 0;
+  perPage: number = 15;
+  searchTerm: string = '';
 
   constructor(
     private cajaService: CajaService,
@@ -72,32 +83,86 @@ export class CajasComponent implements OnInit {
 
   loadCajas(): void {
     this.isLoading = true;
-    this.cajaService.getAll()
+    
+    const params: PaginationParams = {
+      page: this.currentPage,
+      per_page: this.perPage,
+      sort_by: 'id',
+      sort_order: 'desc'
+    };
+    
+    if (this.searchTerm) {
+      params.search = this.searchTerm;
+    }
+    
+    this.cajaService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response) => {
-          // Ordenar cajas: más recientes primero (por ID descendente o fecha de apertura descendente)
-          // También asegurar que los valores numéricos se conviertan correctamente
-          this.cajas = (response.data || []).map((caja: any) => ({
-            ...caja,
-            compras_contado: Number(caja.compras_contado) || 0,
-            compras_credito: Number(caja.compras_credito) || 0,
-            ventas_contado: Number(caja.ventas_contado) || 0,
-            ventas_credito: Number(caja.ventas_credito) || 0,
-            pagos_qr: Number(caja.pagos_qr) || 0,
-            ventas: Number(caja.ventas) || 0,
-            saldo_inicial: Number(caja.saldo_inicial) || 0,
-            depositos: Number(caja.depositos) || 0,
-            salidas: Number(caja.salidas) || 0,
-            saldo_caja: caja.saldo_caja ? Number(caja.saldo_caja) : null
-          })).sort((a: any, b: any) => {
-            // Ordenar por ID descendente (más reciente primero)
-            return b.id - a.id;
-          });
+          if (response.data) {
+            this.cajas = (response.data.data || []).map((caja: any) => ({
+              ...caja,
+              compras_contado: Number(caja.compras_contado) || 0,
+              compras_credito: Number(caja.compras_credito) || 0,
+              ventas_contado: Number(caja.ventas_contado) || 0,
+              ventas_credito: Number(caja.ventas_credito) || 0,
+              pagos_qr: Number(caja.pagos_qr) || 0,
+              ventas: Number(caja.ventas) || 0,
+              saldo_inicial: Number(caja.saldo_inicial) || 0,
+              depositos: Number(caja.depositos) || 0,
+              salidas: Number(caja.salidas) || 0,
+              saldo_caja: caja.saldo_caja ? Number(caja.saldo_caja) : null
+            }));
+            
+            this.currentPage = response.data.current_page;
+            this.lastPage = response.data.last_page;
+            this.total = response.data.total;
+            this.perPage = response.data.per_page;
+          }
           this.updateCajasWithTransacciones();
         },
-        error: (error) => console.error('Error loading cajas', error)
+        error: (error) => {
+          console.error('Error loading cajas', error);
+          // Fallback a getAll si falla la paginación
+          this.cajaService.getAll()
+            .pipe(finalize(() => this.isLoading = false))
+            .subscribe({
+              next: (response) => {
+                this.cajas = (response.data || []).map((caja: any) => ({
+                  ...caja,
+                  compras_contado: Number(caja.compras_contado) || 0,
+                  compras_credito: Number(caja.compras_credito) || 0,
+                  ventas_contado: Number(caja.ventas_contado) || 0,
+                  ventas_credito: Number(caja.ventas_credito) || 0,
+                  pagos_qr: Number(caja.pagos_qr) || 0,
+                  ventas: Number(caja.ventas) || 0,
+                  saldo_inicial: Number(caja.saldo_inicial) || 0,
+                  depositos: Number(caja.depositos) || 0,
+                  salidas: Number(caja.salidas) || 0,
+                  saldo_caja: caja.saldo_caja ? Number(caja.saldo_caja) : null
+                }));
+                this.updateCajasWithTransacciones();
+              }
+            });
+        }
       });
+  }
+  
+  onSearch(search: string): void {
+    this.searchTerm = search;
+    this.currentPage = 1;
+    this.loadCajas();
+  }
+  
+  onSearchClear(): void {
+    this.searchTerm = '';
+    this.currentPage = 1;
+    this.loadCajas();
+  }
+  
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadCajas();
   }
 
   updateCajasWithTransacciones(): void {

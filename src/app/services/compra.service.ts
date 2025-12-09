@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Compra, ApiResponse } from '../interfaces';
+import { Compra, ApiResponse, PaginatedResponse, PaginationParams } from '../interfaces';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -14,6 +14,19 @@ export class CompraService {
 
     getAll(): Observable<Compra[]> {
         return this.http.get<Compra[]>(this.apiUrl);
+    }
+
+    getPaginated(params?: PaginationParams): Observable<ApiResponse<PaginatedResponse<Compra>>> {
+        let httpParams = new HttpParams();
+        if (params) {
+            Object.keys(params).forEach(key => {
+                const value = (params as any)[key];
+                if (value !== undefined && value !== null) {
+                    httpParams = httpParams.set(key, value.toString());
+                }
+            });
+        }
+        return this.http.get<ApiResponse<PaginatedResponse<Compra>>>(this.apiUrl, { params: httpParams });
     }
 
     getById(id: number): Observable<Compra> {
