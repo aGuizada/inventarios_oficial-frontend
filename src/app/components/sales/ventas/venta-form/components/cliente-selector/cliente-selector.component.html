@@ -1,0 +1,59 @@
+<div [formGroup]="parentForm" class="relative">
+    <label for="cliente_nombre" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+        Cliente <span class="text-red-500">*</span>
+    </label>
+    <div class="flex gap-2">
+        <div class="relative flex-1">
+            <input type="text" id="cliente_nombre" [(ngModel)]="clienteBusqueda" (input)="buscarCliente($event)"
+                (focus)="onFocusCliente()" (blur)="onBlurCliente()" [ngModelOptions]="{standalone: true}"
+                placeholder="Buscar cliente..."
+                class="block w-full py-2 px-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            <button *ngIf="clienteSeleccionado" type="button" (click)="limpiarCliente()"
+                class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
+        <button type="button" (click)="abrirModalNuevoCliente()"
+            class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors duration-200 flex items-center justify-center"
+            title="Nuevo Cliente">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                    clip-rule="evenodd" />
+            </svg>
+        </button>
+    </div>
+
+    <div *ngIf="mostrarSugerenciasCliente && clientesFiltrados.length > 0"
+        class="absolute z-10 mt-1 w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-md shadow-lg max-h-60 overflow-auto transition-colors duration-200">
+        <ul class="py-1">
+            <li *ngFor="let cliente of clientesFiltrados" (mousedown)="seleccionarCliente(cliente)"
+                class="px-4 py-2 hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer text-sm transition-colors duration-200">
+                <div class="font-medium text-gray-900 dark:text-slate-100">{{ cliente.nombre }}</div>
+                <div *ngIf="cliente.num_documento" class="text-xs text-gray-500 dark:text-slate-400">
+                    {{ cliente.tipo_documento }}: {{ cliente.num_documento }}
+                </div>
+            </li>
+        </ul>
+    </div>
+    <input type="hidden" formControlName="cliente_id">
+
+    <!-- Modal Nuevo Cliente -->
+    <div *ngIf="isModalOpen" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
+        aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
+                (click)="cerrarModalNuevoCliente()"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div
+                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <app-cliente-form (save)="guardarNuevoCliente($event)" (cancel)="cerrarModalNuevoCliente()">
+                </app-cliente-form>
+            </div>
+        </div>
+    </div>
+</div>

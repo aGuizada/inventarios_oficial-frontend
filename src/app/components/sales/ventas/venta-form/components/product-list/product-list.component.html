@@ -1,0 +1,106 @@
+<!-- Filtros de Categorías -->
+<div
+    class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-4 transition-colors duration-200">
+    <div class="flex items-center gap-2 overflow-x-auto">
+        <button type="button" (click)="seleccionarCategoria(null)" [ngClass]="{
+        'bg-blue-600 text-white': categoriaSeleccionada === null,
+        'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300': categoriaSeleccionada !== null
+      }"
+            class="px-4 py-2 rounded-md font-medium text-sm whitespace-nowrap transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30">
+            <i class="fas fa-th mr-2"></i>
+            Todos
+        </button>
+        <button type="button" *ngFor="let categoria of categorias" (click)="seleccionarCategoria(categoria.id)"
+            [ngClass]="{
+        'bg-blue-600 text-white': categoriaSeleccionada === categoria.id,
+        'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300': categoriaSeleccionada !== categoria.id
+      }"
+            class="px-4 py-2 rounded-md font-medium text-sm whitespace-nowrap transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30">
+            {{ categoria.nombre }}
+        </button>
+    </div>
+</div>
+
+<div
+    class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 transition-colors duration-200">
+    <!-- Buscador de productos -->
+    <div class="relative mb-4" *ngIf="almacenId">
+        <input type="text" [(ngModel)]="busquedaProducto" (input)="buscarProducto($event)"
+            (keydown.enter)="agregarRapidoPorCodigo($event)" (focus)="onFocusProducto()" (blur)="onBlurProducto()"
+            [ngModelOptions]="{standalone: true}" placeholder="Buscar productos o ingresar código..."
+            class="block w-full py-2 px-3 pl-9 border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700/50 text-gray-900 dark:text-slate-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 placeholder-gray-400 dark:placeholder-slate-500 shadow-sm hover:bg-white dark:hover:bg-slate-700">
+        <svg xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 pointer-events-none"
+            viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                clip-rule="evenodd" />
+        </svg>
+        <button *ngIf="busquedaProducto" type="button" (click)="limpiarBusquedaProducto()"
+            class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clip-rule="evenodd" />
+            </svg>
+        </button>
+        <!-- Dropdown de sugerencias -->
+        <div *ngIf="mostrarSugerenciasProducto && productosFiltrados.length > 0"
+            class="absolute z-20 mt-1 w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-md shadow-lg max-h-64 overflow-auto transition-colors duration-200">
+            <ul class="py-1">
+                <li *ngFor="let producto of productosFiltrados" (mousedown)="seleccionarProductoCatalogo(producto)"
+                    class="px-4 py-2 hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer transition-colors duration-200">
+                    <div class="font-medium text-gray-900 dark:text-slate-100">{{ producto.articulo?.nombre }}</div>
+                    <div class="text-xs text-gray-500 dark:text-slate-400">
+                        Código: {{ producto.articulo?.codigo }}
+                        <span class="ml-2 font-semibold text-green-600 dark:text-green-400">
+                            | Stock: {{ producto.stock_disponible }}
+                        </span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div *ngIf="!almacenId"
+        class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4 transition-colors duration-200">
+        <p class="text-sm text-yellow-800 dark:text-yellow-300">Por favor seleccione un almacén para ver los productos
+            disponibles.</p>
+    </div>
+
+    <!-- Grid de Productos -->
+    <div *ngIf="almacenId" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div *ngFor="let producto of (productosFiltradosPorCategoria.length > 0 ? productosFiltradosPorCategoria : productosInventario).slice(0, 50)"
+            class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:shadow-md transition-shadow transition-colors duration-200">
+            <div class="mb-2">
+                <h5 class="font-semibold text-gray-900 dark:text-slate-100 text-sm mb-1">{{ producto.articulo?.nombre }}
+                </h5>
+                <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">Código: {{ producto.articulo?.codigo }}</p>
+                <p class="text-lg font-bold text-blue-600 dark:text-blue-400 mb-1">
+                    {{ producto.articulo?.precio_venta || producto.articulo?.precio_uno | currency }}
+                </p>
+                <p class="text-sm text-gray-600 dark:text-slate-400">
+                    Stock: <span [ngClass]="{
+            'text-red-600 dark:text-red-400': producto.stock_disponible < 5,
+            'text-green-600 dark:text-green-400': producto.stock_disponible >= 5
+          }">
+                        {{ producto.stock_disponible }}
+                    </span>
+                </p>
+            </div>
+            <button type="button" (click)="agregarProductoAVenta(producto)" [disabled]="producto.stock_disponible <= 0"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-3 rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                        clip-rule="evenodd" />
+                </svg>
+                Agregar
+            </button>
+        </div>
+        <div *ngIf="productosInventario.length === 0"
+            class="col-span-full text-center text-sm text-gray-500 dark:text-slate-400 py-8">
+            No hay productos disponibles en el inventario de este almacén.
+        </div>
+    </div>
+</div>
