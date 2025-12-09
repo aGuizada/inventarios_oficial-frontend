@@ -60,8 +60,6 @@ export class SidebarComponent {
       isOpen: false,
       children: [
         { label: 'Cajas', icon: 'fas fa-cash-register', route: '/finanzas/cajas' },
-        { label: 'Arqueos', icon: 'fas fa-calculator', route: '/finanzas/arqueos' },
-        { label: 'Transacciones', icon: 'fas fa-exchange-alt', route: '/finanzas/transacciones' }
       ]
     },
     {

@@ -66,9 +66,7 @@ export const routes: Routes = [
             {
                 path: 'finanzas',
                 children: [
-                    { path: 'cajas', loadComponent: () => import('./components/financial/cajas/cajas.component').then(m => m.CajasComponent) },
-                    { path: 'arqueos', loadComponent: () => import('./components/financial/arqueo-caja/arqueo-caja.component').then(m => m.ArqueoCajaComponent) },
-                    { path: 'transacciones', loadComponent: () => import('./components/financial/transacciones/transacciones.component').then(m => m.TransaccionesComponent) }
+                    { path: 'cajas', loadComponent: () => import('./components/financial/cajas/cajas.component').then(m => m.CajasComponent) }
                 ]
             },
             // Operations

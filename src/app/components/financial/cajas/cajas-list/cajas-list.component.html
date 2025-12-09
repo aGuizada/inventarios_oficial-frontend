@@ -6,59 +6,121 @@
 
 @if (!isLoading) {
 <div class="bg-white dark:bg-slate-800 shadow-md rounded-lg overflow-hidden border border-slate-100 dark:border-slate-700 transition-colors duration-200">
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+    <div class="w-full">
+        <table class="w-full divide-y divide-gray-200 dark:divide-slate-700">
             <thead class="bg-gray-50 dark:bg-slate-700">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">ID</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Sucursal
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">ID</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Sucursal</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Apertura</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Cierre</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Saldo Inicial</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">V. Totales</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">V. Contado</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">V. Crédito</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">V. QR</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">C. Contado</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">C. Crédito</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Entradas</span>
+                        </div>
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Usuario
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-rose-600 dark:text-rose-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Salidas</span>
+                        </div>
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Apertura
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Cierre
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Saldo
-                        Inicial</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Estado
-                    </th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Acciones
-                    </th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Saldo Total</th>
+                    <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Estado</th>
+                    <th class="px-2 py-2 text-right text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Acciones</th>
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
                 @for (caja of cajas; track caja.id) {
                 <tr class="hover:bg-gray-50 dark:hover:bg-slate-700 transition duration-150">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">#{{ caja.id }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ caja.sucursal?.nombre || 'N/A' }}
+                    <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-slate-400">#{{ caja.id }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-slate-400">{{ caja.sucursal?.nombre || 'N/A' }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-slate-400">{{ caja.fecha_apertura | date:'short' }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-slate-400">{{ caja.fecha_cierre ? (caja.fecha_cierre | date:'short') : '-' }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-900 dark:text-slate-100">{{ caja.saldo_inicial | currency }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-bold text-indigo-600 dark:text-indigo-400">{{ (caja.ventas || (caja.ventas_contado || 0) + (caja.ventas_credito || 0) + (caja.pagos_qr || 0)) | currency }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-green-600 dark:text-green-400">{{ (caja.ventas_contado || 0) | currency }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-blue-600 dark:text-blue-400">{{ (caja.ventas_credito || 0) | currency }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-purple-600 dark:text-purple-400">{{ (caja.pagos_qr || 0) | currency }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-orange-600 dark:text-orange-400">{{ getComprasContado(caja) | currency }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-red-600 dark:text-red-400">{{ getComprasCredito(caja) | currency }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            <span>{{ getDepositos(caja) | currency }}</span>
+                        </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ caja.user?.name || caja.user_id }}
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-rose-600 dark:text-rose-400">
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd" />
+                            </svg>
+                            <span>{{ getSalidas(caja) | currency }}</span>
+                        </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ caja.fecha_apertura | date:'short'
-                        }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ caja.fecha_cierre ?
-                        (caja.fecha_cierre | date:'short') : '-' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ caja.saldo_inicial | currency }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-bold text-purple-600 dark:text-purple-400">{{ getSaldoTotal(caja) | currency }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap">
                         <span [ngClass]="{
                             'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300': isCajaOpen(caja),
                             'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300': !isCajaOpen(caja)
                         }"
-                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                            class="px-1.5 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full">
                             {{ isCajaOpen(caja) ? 'Abierta' : 'Cerrada' }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        @if (isCajaOpen(caja)) {
-                        <button (click)="onClose(caja)" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">Cerrar Caja</button>
-                        }
+                    <td class="px-2 py-2 whitespace-nowrap text-right text-xs font-medium">
+                        <div class="flex items-center justify-end gap-1">
+                            <button (click)="onView(caja)" 
+                                class="p-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors duration-200"
+                                title="Ver Detalle">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            @if (isCajaOpen(caja)) {
+                            <button (click)="onAddMoney(caja)" 
+                                class="p-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-md transition-colors duration-200"
+                                title="Agregar Dinero (Ingreso)">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <button (click)="onWithdrawMoney(caja)" 
+                                class="p-1.5 text-rose-600 dark:text-rose-400 hover:text-rose-900 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-md transition-colors duration-200"
+                                title="Retirar Dinero (Egreso)">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <button (click)="onClose(caja)" 
+                                class="p-1.5 text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors duration-200"
+                                title="Cerrar Caja">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            }
+                        </div>
                     </td>
                 </tr>
                 } @empty {
                 <tr>
-                    <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-slate-400">No hay cajas registradas.</td>
+                    <td colspan="16" class="px-2 py-4 text-center text-xs text-gray-500 dark:text-slate-400">No hay cajas registradas.</td>
                 </tr>
                 }
             </tbody>
@@ -66,4 +128,3 @@
     </div>
 </div>
 }
-

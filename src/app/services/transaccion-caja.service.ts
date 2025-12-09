@@ -21,6 +21,15 @@ export class TransaccionCajaService {
     }
 
     create(transaccion: Partial<TransaccionCaja>): Observable<ApiResponse<TransaccionCaja>> {
-        return this.http.post<ApiResponse<TransaccionCaja>>(this.apiUrl, transaccion);
+        // Asegurar que los datos estén en el formato correcto
+        const data = {
+            caja_id: transaccion.caja_id,
+            user_id: transaccion.user_id,
+            transaccion: transaccion.transaccion,
+            importe: Number(transaccion.importe),
+            descripcion: transaccion.descripcion || '',
+            ...(transaccion.fecha && { fecha: transaccion.fecha })
+        };
+        return this.http.post<ApiResponse<TransaccionCaja>>(this.apiUrl, data);
     }
 }

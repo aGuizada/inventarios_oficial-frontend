@@ -20,16 +20,15 @@ export class CajaFormComponent implements OnInit {
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
       sucursal_id: ['', Validators.required],
-      saldo_inicial: [0, [Validators.required, Validators.min(0)]],
-      fecha_apertura: [new Date().toISOString().substring(0, 16), Validators.required]
+      saldo_inicial: [0, [Validators.required, Validators.min(0)]]
+      // fecha_apertura se establecerá automáticamente al enviar
     });
   }
 
   ngOnInit(): void {
     // Reset form on init
     this.form.reset({
-      saldo_inicial: 0,
-      fecha_apertura: new Date().toISOString().substring(0, 16)
+      saldo_inicial: 0
     });
   }
 
@@ -39,7 +38,16 @@ export class CajaFormComponent implements OnInit {
       return;
     }
 
-    this.save.emit(this.form.value);
+    // Establecer fecha y hora de apertura automáticamente en formato MySQL/Laravel
+    const now = new Date();
+    const fechaApertura = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+    const formData = {
+      ...this.form.value,
+      fecha_apertura: fechaApertura
+    };
+
+    this.save.emit(formData);
   }
 
   onCancel(): void {

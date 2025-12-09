@@ -6,7 +6,8 @@ import { CompraService } from '../../../services/compra.service';
 import { ProveedorService } from '../../../services/proveedor.service';
 import { AlmacenService } from '../../../services/almacen.service';
 import { ArticuloService } from '../../../services/articulo.service';
-import { Compra, DetalleCompra, Proveedor, Almacen, Articulo } from '../../../interfaces';
+import { CajaService } from '../../../services/caja.service';
+import { Compra, DetalleCompra, Proveedor, Almacen, Articulo, Caja } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 @Component({
@@ -21,6 +22,8 @@ export class ComprasComponent implements OnInit {
   proveedoresFiltrados: Proveedor[] = [];
   almacenes: Almacen[] = [];
   articulos: Articulo[] = [];
+  cajas: Caja[] = [];
+  cajaAbierta: Caja | null = null;
   
   form: FormGroup;
   detallesFormArray: FormArray;
@@ -45,6 +48,7 @@ export class ComprasComponent implements OnInit {
     private proveedorService: ProveedorService,
     private almacenService: AlmacenService,
     private articuloService: ArticuloService,
+    private cajaService: CajaService,
     private router: Router,
     private route: ActivatedRoute,
     private fb: FormBuilder
@@ -120,6 +124,29 @@ export class ComprasComponent implements OnInit {
         console.error('Error loading articulos', error);
         this.articulos = [];
         this.articulosFiltrados = [];
+      }
+    });
+    // Cargar cajas y encontrar la caja abierta
+    this.cajaService.getAll().subscribe({
+      next: (res) => {
+        this.cajas = Array.isArray(res.data) ? res.data : [];
+        // Buscar la caja abierta (estado = 1 o 'abierta')
+        this.cajaAbierta = this.cajas.find(caja => 
+          caja.estado === 1 || 
+          caja.estado === '1' || 
+          caja.estado === true || 
+          caja.estado === 'abierta'
+        ) || null;
+        
+        if (!this.cajaAbierta) {
+          alert('No hay una caja abierta. Por favor, abra una caja antes de realizar compras.');
+        }
+      },
+      error: (error) => {
+        console.error('Error loading cajas', error);
+        this.cajas = [];
+        this.cajaAbierta = null;
+        alert('Error al cargar las cajas. No se puede realizar compras.');
       }
     });
   }
@@ -297,6 +324,35 @@ export class ComprasComponent implements OnInit {
     console.log('Detalles length:', this.detallesFormArray.length);
     console.log('Proveedor búsqueda:', this.proveedorBusqueda);
     
+    // VALIDAR QUE HAYA UNA CAJA ABIERTA
+    if (!this.cajaAbierta) {
+      alert('No hay una caja abierta. Por favor, abra una caja antes de realizar compras.');
+      return;
+    }
+    
+    // Verificar que la caja sigue abierta (recargar si es necesario)
+    const isCajaOpen = this.cajaAbierta.estado === 1 || 
+                       this.cajaAbierta.estado === '1' || 
+                       this.cajaAbierta.estado === true || 
+                       this.cajaAbierta.estado === 'abierta';
+    
+    if (!isCajaOpen) {
+      alert('La caja seleccionada está cerrada. Por favor, abra una caja antes de realizar compras.');
+      // Recargar cajas para encontrar la abierta
+      this.cajaService.getAll().subscribe({
+        next: (res) => {
+          this.cajas = Array.isArray(res.data) ? res.data : [];
+          this.cajaAbierta = this.cajas.find(caja => 
+            caja.estado === 1 || 
+            caja.estado === '1' || 
+            caja.estado === true || 
+            caja.estado === 'abierta'
+          ) || null;
+        }
+      });
+      return;
+    }
+    
     // Validar que el nombre del proveedor esté ingresado
     if (!this.form.get('proveedor_nombre')?.value || this.proveedorBusqueda.trim().length === 0) {
       alert('Por favor ingrese el nombre del proveedor');
@@ -368,6 +424,7 @@ export class ComprasComponent implements OnInit {
       proveedor_nombre: this.proveedorBusqueda.trim(),
       user_id: Number(formValue.user_id),
       almacen_id: Number(formValue.almacen_id),
+      caja_id: this.cajaAbierta.id, // Usar la caja abierta
       fecha_hora: fechaHora,
       total: Number(formValue.total),
       tipo_compra: formValue.tipo_compra || 'contado', // Enviar en minúsculas, el backend lo convertirá a mayúsculas

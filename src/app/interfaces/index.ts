@@ -21,7 +21,6 @@ export * from './credito.interface';
 export * from './compra.interface';
 export * from './proveedor.interface';
 export * from './caja.interface';
-export * from './arqueo-caja.interface';
 export * from './transaccion-caja.interface';
 export * from './moneda.interface';
 export * from './precio.interface';
