@@ -340,11 +340,14 @@ export class VentaFormComponent implements OnInit {
         const precioVenta = producto.articulo?.precio_venta ||
             producto.articulo?.precio_uno || 0;
 
+        const unidadDefecto = producto.articulo?.medida?.nombre_medida || 'Unidad';
+
         const detalle = this.fb.group({
             articulo_id: [producto.articulo_id, Validators.required],
             cantidad: [1, [Validators.required, Validators.min(1), Validators.max(stockDisponible)]],
             precio: [precioVenta, [Validators.required, Validators.min(0)]],
             descuento: [0, [Validators.min(0)]],
+            unidad_medida: [unidadDefecto],
             subtotal: [precioVenta]
         });
 
@@ -470,7 +473,8 @@ export class VentaFormComponent implements OnInit {
                 articulo_id: Number(detalle.articulo_id),
                 cantidad: Number(detalle.cantidad),
                 precio: parseFloat(parseFloat(detalle.precio).toFixed(2)),
-                descuento: parseFloat(parseFloat(detalle.descuento || 0).toFixed(2))
+                descuento: parseFloat(parseFloat(detalle.descuento || 0).toFixed(2)),
+                unidad_medida: detalle.unidad_medida
             }))
         };
 

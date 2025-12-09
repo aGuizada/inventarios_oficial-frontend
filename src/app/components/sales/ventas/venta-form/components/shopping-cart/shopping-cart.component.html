@@ -41,7 +41,15 @@
                     </svg>
                 </button>
             </div>
-            <div class="grid grid-cols-3 gap-2 text-sm">
+            <div class="grid grid-cols-4 gap-2 text-sm">
+                <div>
+                    <label class="text-xs text-gray-600 dark:text-slate-400">Unidad</label>
+                    <select formControlName="unidad_medida"
+                        (change)="cambiarUnidad(i, detalle.get('unidad_medida')?.value)"
+                        class="w-full py-1 px-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 rounded text-sm">
+                        <option *ngFor="let unidad of unidadesMedida" [value]="unidad">{{ unidad }}</option>
+                    </select>
+                </div>
                 <div>
                     <label class="text-xs text-gray-600 dark:text-slate-400">Cant.</label>
                     <input type="number" formControlName="cantidad" min="1"
