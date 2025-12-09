@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 
-type ConfigTab = 'general' | 'precios' | 'impuestos' | 'trabajo' | 'backup';
+type ConfigTab = 'general' | 'precios' | 'impuestos' | 'trabajo' | 'backup' | 'inventario';
 
 interface ConfiguracionTrabajo {
   id?: number;
@@ -29,6 +29,13 @@ interface ConfiguracionTrabajo {
   frecuencia_backup?: string;
   ruta_backup?: string;
   mantener_backups?: number;
+  // Inventario
+  mostrar_costo_unitario?: boolean;
+  mostrar_costo_paquete?: boolean;
+  mostrar_costo_compra?: boolean;
+  mostrar_precios_adicionales?: boolean;
+  mostrar_vencimiento?: boolean;
+  mostrar_stock?: boolean;
 }
 
 @Component({
@@ -46,6 +53,7 @@ export class ConfiguracionSistemaComponent implements OnInit {
   impuestosForm!: FormGroup;
   trabajoForm!: FormGroup;
   backupForm!: FormGroup;
+  inventarioForm!: FormGroup;
 
   // State
   isLoading = false;
@@ -106,6 +114,16 @@ export class ConfiguracionSistemaComponent implements OnInit {
       ruta_backup: ['./backups', [Validators.required]],
       mantener_backups: [7, [Validators.required, Validators.min(1)]]
     });
+
+    // Inventario Form
+    this.inventarioForm = this.fb.group({
+      mostrar_costo_unitario: [true],
+      mostrar_costo_paquete: [true],
+      mostrar_costo_compra: [true],
+      mostrar_precios_adicionales: [true],
+      mostrar_vencimiento: [true],
+      mostrar_stock: [true]
+    });
   }
 
   changeTab(tab: ConfigTab): void {
@@ -139,7 +157,8 @@ export class ConfiguracionSistemaComponent implements OnInit {
   saveConfig(): void {
     // Validar todos los formularios
     if (this.generalForm.invalid || this.preciosForm.invalid ||
-      this.impuestosForm.invalid || this.trabajoForm.invalid || this.backupForm.invalid) {
+      this.impuestosForm.invalid || this.trabajoForm.invalid ||
+      this.backupForm.invalid || this.inventarioForm.invalid) {
       alert('Por favor complete todos los campos requeridos correctamente');
       return;
     }
@@ -152,7 +171,8 @@ export class ConfiguracionSistemaComponent implements OnInit {
       ...this.preciosForm.value,
       ...this.impuestosForm.value,
       ...this.trabajoForm.value,
-      ...this.backupForm.value
+      ...this.backupForm.value,
+      ...this.inventarioForm.value
     };
 
     console.log('Guardando configuración:', config);

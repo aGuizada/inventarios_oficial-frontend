@@ -1,0 +1,121 @@
+<div class="mt-2">
+    <form [formGroup]="form" (ngSubmit)="save()" class="flex flex-col">
+        <!-- Header con campos principales -->
+        <div
+            class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-4 transition-colors duration-200">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-slate-100">Gestión de Ventas</h2>
+                <div class="flex items-center gap-3">
+                    <!-- Botón de Almacenes -->
+                    <div class="relative menu-almacenes">
+                        <button type="button" (click)="toggleMenuAlmacenes()"
+                            class="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-md transition-colors font-medium">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path
+                                    d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                            </svg>
+                            <span>{{ getAlmacenSeleccionadoNombre() || 'Almacén' }}</span>
+                        </button>
+
+                        <!-- Dropdown de Almacenes -->
+                        <div *ngIf="mostrarMenuAlmacenes"
+                            class="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50 transition-colors duration-200">
+                            <div class="p-2">
+                                <h3
+                                    class="px-3 py-2 font-semibold text-gray-800 dark:text-slate-100 border-b border-gray-200 dark:border-slate-700">
+                                    Almacenes</h3>
+                                <div class="max-h-64 overflow-y-auto">
+                                    <button type="button" *ngFor="let almacen of almacenes"
+                                        (click)="cambiarAlmacen(almacen.id)" [ngClass]="{
+                      'bg-blue-50 dark:bg-blue-900/30': form.get('almacen_id')?.value == almacen.id
+                    }" class="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-md transition-colors flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="h-4 w-4 text-gray-500 dark:text-slate-400" viewBox="0 0 20 20"
+                                            fill="currentColor">
+                                            <path
+                                                d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                                        </svg>
+                                        <span class="text-sm text-gray-700 dark:text-slate-300">{{
+                                            almacen.nombre_almacen }}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón Registrar movido al carrito -->
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+                <!-- Cliente Selector movido al carrito -->
+            </div>
+
+            <input type="hidden" formControlName="almacen_id">
+            <input type="hidden" formControlName="tipo_venta_id">
+            <input type="hidden" formControlName="tipo_pago_id">
+
+            <!-- Indicador de Venta a Crédito -->
+            <div *ngIf="esVentaCredito"
+                class="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 transition-colors duration-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+                            <path fill-rule="evenodd"
+                                d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="text-sm font-semibold text-blue-800 dark:text-blue-300">Venta a Crédito</span>
+                    </div>
+                    <button type="button" (click)="abrirModalCredito()"
+                        class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition duration-200">
+                        <span *ngIf="form.get('numero_cuotas')?.value && form.get('tiempo_dias_cuota')?.value">
+                            Editar Datos de Crédito
+                        </span>
+                        <span *ngIf="!form.get('numero_cuotas')?.value || !form.get('tiempo_dias_cuota')?.value">
+                            Configurar Crédito
+                        </span>
+                    </button>
+                </div>
+                <div *ngIf="form.get('numero_cuotas')?.value && form.get('tiempo_dias_cuota')?.value"
+                    class="mt-2 text-xs text-blue-700 dark:text-blue-300">
+                    <p>Cuotas: {{ form.get('numero_cuotas')?.value }} | Días entre cuotas: {{
+                        form.get('tiempo_dias_cuota')?.value }}</p>
+                </div>
+            </div>
+
+            <!-- Campos de Comprobante (Ocultos por defecto) -->
+            <input type="hidden" formControlName="tipo_comprobante">
+            <input type="hidden" formControlName="serie_comprobante">
+            <input type="hidden" formControlName="num_comprobante">
+            <input type="hidden" formControlName="fecha_hora">
+            <input type="hidden" formControlName="caja_id">
+        </div>
+
+        <!-- Contenido principal - Dos columnas -->
+        <div class="flex flex-row gap-4" style="min-height: 65vh;">
+            <!-- Columna Izquierda - Productos -->
+            <div [class]="detalles.length > 0 ? 'w-2/3 overflow-y-auto' : 'w-full overflow-y-auto'">
+                <app-product-list [almacenId]="form.get('almacen_id')?.value"
+                    [productosInventario]="productosInventario" [categorias]="categorias"
+                    (addProduct)="agregarProductoAVenta($event)">
+                </app-product-list>
+            </div>
+
+            <!-- Columna Derecha - Carrito -->
+            <div *ngIf="detalles.length > 0" class="w-1/3 overflow-y-auto">
+                <app-shopping-cart [parentForm]="form" [clientes]="clientes" [isLoading]="isLoading"
+                    [productosInventario]="productosInventario" [tiposVenta]="tiposVenta" [tiposPago]="tiposPago"
+                    (remove)="removeDetalle($event)">
+                </app-shopping-cart>
+            </div>
+        </div>
+    </form>
+
+    <!-- Modal de Configuración de Crédito -->
+    <app-credito-modal [parentForm]="form" [isOpen]="isModalCreditoOpen" (close)="cerrarModalCredito()">
+    </app-credito-modal>
+</div>

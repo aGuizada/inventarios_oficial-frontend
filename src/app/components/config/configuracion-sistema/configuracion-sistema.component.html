@@ -33,6 +33,11 @@
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
                 💾 Backup
             </button>
+            <button (click)="changeTab('inventario')"
+                [class]="activeTab === 'inventario' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                📦 Inventario
+            </button>
         </nav>
     </div>
 
@@ -323,6 +328,71 @@
                             antes de actualizaciones importantes.
                         </p>
                     </div>
+                </div>
+            </div>
+        </form>
+        }
+
+        <!-- TAB: INVENTARIO -->
+        @if (activeTab === 'inventario') {
+        <form [formGroup]="inventarioForm" class="space-y-6">
+            <h3 class="text-lg font-medium text-gray-900">Visibilidad de Campos en Artículos</h3>
+            <p class="text-sm text-gray-500 mb-4">Seleccione qué campos desea mostrar en el formulario de artículos.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Costo Unitario -->
+                <div class="flex items-center">
+                    <input id="mostrar_costo_unitario" type="checkbox" formControlName="mostrar_costo_unitario"
+                        class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
+                    <label for="mostrar_costo_unitario" class="ml-2 block text-sm text-gray-700">
+                        Mostrar Costo Unitario
+                    </label>
+                </div>
+
+                <!-- Costo Paquete -->
+                <div class="flex items-center">
+                    <input id="mostrar_costo_paquete" type="checkbox" formControlName="mostrar_costo_paquete"
+                        class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
+                    <label for="mostrar_costo_paquete" class="ml-2 block text-sm text-gray-700">
+                        Mostrar Costo Paquete
+                    </label>
+                </div>
+
+                <!-- Costo Compra -->
+                <div class="flex items-center">
+                    <input id="mostrar_costo_compra" type="checkbox" formControlName="mostrar_costo_compra"
+                        class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
+                    <label for="mostrar_costo_compra" class="ml-2 block text-sm text-gray-700">
+                        Mostrar Costo Compra
+                    </label>
+                </div>
+
+                <!-- Precios Adicionales -->
+                <div class="flex items-center">
+                    <input id="mostrar_precios_adicionales" type="checkbox"
+                        formControlName="mostrar_precios_adicionales"
+                        class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
+                    <label for="mostrar_precios_adicionales" class="ml-2 block text-sm text-gray-700">
+                        Mostrar Precios Adicionales
+                    </label>
+                </div>
+
+                <!-- Vencimiento -->
+                <div class="flex items-center">
+                    <input id="mostrar_vencimiento" type="checkbox" formControlName="mostrar_vencimiento"
+                        class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
+                    <label for="mostrar_vencimiento" class="ml-2 block text-sm text-gray-700">
+                        Mostrar Vencimiento
+                    </label>
+                </div>
+
+                <!-- Stock -->
+                <div class="flex items-center">
+                    <input id="mostrar_stock" type="checkbox" formControlName="mostrar_stock"
+                        class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
+                    <label for="mostrar_stock" class="ml-2 block text-sm text-gray-700">
+                        Mostrar Stock
+                    </label>
                 </div>
             </div>
         </form>

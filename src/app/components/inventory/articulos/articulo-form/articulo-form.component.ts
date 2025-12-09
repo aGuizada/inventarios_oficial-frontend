@@ -4,6 +4,9 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Articulo, Categoria, Marca, Medida, Industria, Proveedor } from '../../../../interfaces';
 import { environment } from '../../../../../environments/environment';
 
+import { ConfiguracionTrabajoService } from '../../../../services/configuracion-trabajo.service';
+import { ConfiguracionTrabajo } from '../../../../interfaces/configuracion-trabajo.interface';
+
 @Component({
   selector: 'app-articulo-form',
   standalone: true,
@@ -25,8 +28,12 @@ export class ArticuloFormComponent implements OnInit, OnChanges {
   selectedFile: File | null = null;
   imagePreview: string | null = null;
   isEditing: boolean = false;
+  configuracion: ConfiguracionTrabajo | null = null;
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private configService: ConfiguracionTrabajoService
+  ) {
     this.form = this.fb.group({
       codigo: ['', Validators.required],
       nombre: ['', Validators.required],
@@ -53,7 +60,49 @@ export class ArticuloFormComponent implements OnInit, OnChanges {
   }
 
   ngOnInit(): void {
+    this.loadConfiguracion();
     this.loadArticuloData();
+  }
+
+  loadConfiguracion(): void {
+    this.configService.getAll().subscribe({
+      next: (response: any) => {
+        // Assuming the response returns an array and we take the first one or specific logic
+        // Adjust based on actual API response structure for getAll
+        const configs = response.data || response;
+        if (Array.isArray(configs) && configs.length > 0) {
+          this.configuracion = configs[0];
+          this.applyConfigurationVisibility();
+        }
+      },
+      error: (err) => console.error('Error loading configuration', err)
+    });
+  }
+
+  applyConfigurationVisibility(): void {
+    if (!this.configuracion) return;
+
+    // Optional: You can also disable validators if hidden, but *ngIf removes from DOM which is usually enough for display.
+    // However, for Reactive Forms, hidden fields still validate.
+    // If we want to strictly ignore validation for hidden fields, we should disable the controls.
+
+    if (!this.configuracion.mostrar_costo_unitario) {
+      this.form.get('precio_costo_unid')?.clearValidators();
+      this.form.get('precio_costo_unid')?.updateValueAndValidity();
+    }
+    if (!this.configuracion.mostrar_costo_paquete) {
+      this.form.get('precio_costo_paq')?.clearValidators();
+      this.form.get('precio_costo_paq')?.updateValueAndValidity();
+    }
+    if (!this.configuracion.mostrar_costo_compra) {
+      this.form.get('costo_compra')?.clearValidators();
+      this.form.get('costo_compra')?.updateValueAndValidity();
+    }
+    if (!this.configuracion.mostrar_stock) {
+      this.form.get('stock')?.clearValidators();
+      this.form.get('stock')?.updateValueAndValidity();
+    }
+    // ... others are optional by default or handled similarly
   }
 
   ngOnChanges(changes: SimpleChanges): void {

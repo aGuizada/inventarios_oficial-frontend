@@ -1,0 +1,198 @@
+<div [formGroup]="parentForm"
+    class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 transition-colors duration-200">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-gray-800 dark:text-slate-100 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-600 dark:text-blue-400"
+                viewBox="0 0 20 20" fill="currentColor">
+                <path
+                    d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+            </svg>
+            Carrito
+            <span class="ml-2 bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                {{ detalles.length }}
+            </span>
+        </h3>
+    </div>
+
+    <!-- Cliente Selector -->
+    <div class="mb-4">
+        <app-cliente-selector [parentForm]="parentForm" [clientes]="clientes">
+        </app-cliente-selector>
+    </div>
+
+    <!-- Lista de productos en el carrito -->
+    <div formArrayName="detalles" class="space-y-3 max-h-96 overflow-y-auto mb-4">
+        <div *ngFor="let detalle of detalles.controls; let i = index; trackBy: trackByIndex" [formGroupName]="i"
+            class="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 border border-gray-200 dark:border-slate-600 transition-colors duration-200">
+            <div class="flex justify-between items-start mb-2">
+                <div class="flex-1">
+                    <h5 class="font-semibold text-gray-900 dark:text-slate-100 text-sm">
+                        {{ getArticuloNombre(detalle.get('articulo_id')?.value) }}
+                    </h5>
+                    <p class="text-xs text-gray-500 dark:text-slate-400">Stock: {{
+                        getStockDisponible(detalle.get('articulo_id')?.value) }}</p>
+                </div>
+                <button type="button" (click)="removeDetalle(i)"
+                    class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-colors duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-sm">
+                <div>
+                    <label class="text-xs text-gray-600 dark:text-slate-400">Cant.</label>
+                    <input type="number" formControlName="cantidad" min="1"
+                        [max]="getStockDisponible(detalle.get('articulo_id')?.value)"
+                        class="w-full py-1 px-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 rounded text-sm">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-600 dark:text-slate-400">Precio</label>
+                    <input type="number" formControlName="precio" step="0.01" min="0"
+                        class="w-full py-1 px-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 rounded text-sm">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-600 dark:text-slate-400">Desc.</label>
+                    <input type="number" formControlName="descuento" step="0.01" min="0"
+                        class="w-full py-1 px-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 rounded text-sm">
+                </div>
+            </div>
+            <div class="mt-2 text-right">
+                <span class="text-sm font-semibold text-gray-800 dark:text-slate-100">
+                    Subtotal: {{ detalle.get('subtotal')?.value | currency }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de Tipo Venta y Tipo Pago -->
+    <div class="border-t border-gray-200 dark:border-slate-700 pt-4 mt-4 mb-4">
+        <div class="space-y-3">
+            <!-- Tipo Venta -->
+            <div>
+                <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-2">Tipo Venta</label>
+                <div class="flex gap-2">
+                    <button type="button" *ngFor="let tipoVenta of tiposVenta"
+                        (click)="seleccionarTipoVenta(tipoVenta.id)" [ngClass]="{
+              'bg-green-600 text-white': parentForm.get('tipo_venta_id')?.value == tipoVenta.id,
+              'bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-slate-300': parentForm.get('tipo_venta_id')?.value != tipoVenta.id
+            }" class="flex flex-col items-center justify-center p-2.5 rounded-md transition-colors hover:opacity-90 flex-1"
+                        [title]="tipoVenta.nombre_tipo_ventas || tipoVenta.nombre">
+
+                        <!-- Iconos Venta -->
+                        <svg *ngIf="isContado(tipoVenta)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path
+                                d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z"
+                                clip-rule="evenodd" />
+                        </svg>
+
+                        <svg *ngIf="isCredito(tipoVenta)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+                            <path fill-rule="evenodd"
+                                d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
+                                clip-rule="evenodd" />
+                        </svg>
+
+                        <svg *ngIf="isTarjeta(tipoVenta)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+                            <path fill-rule="evenodd"
+                                d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
+                                clip-rule="evenodd" />
+                        </svg>
+
+                        <svg *ngIf="isDefaultVenta(tipoVenta)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+                            <path fill-rule="evenodd"
+                                d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
+                                clip-rule="evenodd" />
+                        </svg>
+
+                        <span class="text-[9px] font-medium leading-tight text-center mt-1">{{
+                            tipoVenta.nombre_tipo_ventas || tipoVenta.nombre }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tipo Pago -->
+            <div>
+                <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-2">Tipo Pago</label>
+                <div class="flex gap-2">
+                    <button type="button" *ngFor="let tipoPago of tiposPago" (click)="seleccionarTipoPago(tipoPago.id)"
+                        [ngClass]="{
+              'bg-green-600 text-white': parentForm.get('tipo_pago_id')?.value == tipoPago.id,
+              'bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-slate-300': parentForm.get('tipo_pago_id')?.value != tipoPago.id
+            }" class="flex flex-col items-center justify-center p-2.5 rounded-md transition-colors hover:opacity-90 flex-1"
+                        [title]="tipoPago.nombre_tipo_pago || tipoPago.nombre">
+
+                        <!-- Iconos Pago -->
+                        <svg *ngIf="isQr(tipoPago)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zM13 3a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1z"
+                                clip-rule="evenodd" />
+                            <path
+                                d="M11 4a1 1 0 10-2 0v1a1 1 0 002 0V4zM10 7a1 1 0 011 1v1h2a1 1 0 110 2h-3a1 1 0 01-1-1V8a1 1 0 011-1zM16 9a1 1 0 100 2 1 1 0 000-2zM9 13a1 1 0 011-1h1a1 1 0 110 2v2a1 1 0 11-2 0v-3zM7 11a1 1 0 100-2H4a1 1 0 100 2h3zM17 13a1 1 0 01-1 1h-2a1 1 0 110-2h2a1 1 0 011 1zM16 17a1 1 0 100-2h-3a1 1 0 100 2h3z" />
+                        </svg>
+
+                        <svg *ngIf="isContado(tipoPago)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path
+                                d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z"
+                                clip-rule="evenodd" />
+                        </svg>
+
+                        <svg *ngIf="isTarjeta(tipoPago)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+                            <path fill-rule="evenodd"
+                                d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
+                                clip-rule="evenodd" />
+                        </svg>
+
+                        <svg *ngIf="isDefaultPago(tipoPago)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path
+                                d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                            <path
+                                d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
+                        </svg>
+
+                        <span class="text-[9px] font-medium leading-tight text-center mt-1">{{
+                            tipoPago.nombre_tipo_pago || tipoPago.nombre }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total -->
+    <div class="border-t border-gray-200 dark:border-slate-700 pt-4">
+        <div class="flex justify-between items-center mb-4">
+            <span class="text-lg font-semibold text-gray-800 dark:text-slate-100">Total:</span>
+            <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {{ parentForm.get('total')?.value | currency }}
+            </span>
+        </div>
+
+        <!-- Botón Registrar -->
+        <button type="submit" [disabled]="detalles.length === 0 || isLoading "
+            class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clip-rule="evenodd" />
+            </svg>
+            {{ isLoading ? 'Registrando...' : 'Registrar Venta' }}
+        </button>
+    </div>
+</div>
