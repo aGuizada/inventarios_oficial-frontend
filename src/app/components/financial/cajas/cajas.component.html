@@ -1,5 +1,5 @@
 <div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 class="text-2xl font-bold text-gray-800 dark:text-slate-100">Gestión de Cajas</h1>
         <button (click)="openFormModal()"
             class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center">
@@ -12,10 +12,28 @@
         </button>
     </div>
 
+    <!-- Search Bar -->
+    <div class="mb-4 max-w-md">
+        <app-search-bar 
+            placeholder="Buscar por ID, sucursal, usuario, fecha..."
+            (search)="onSearch($event)"
+            (clear)="onSearchClear()">
+        </app-search-bar>
+    </div>
+
     <!-- List Component -->
     <app-cajas-list [cajas]="cajas" [isLoading]="isLoading" (close)="onClose($event)" (view)="onView($event)" 
         (addMoney)="onAddMoney($event)" (withdrawMoney)="onWithdrawMoney($event)">
     </app-cajas-list>
+
+    <!-- Pagination -->
+    <app-pagination 
+        [currentPage]="currentPage"
+        [lastPage]="lastPage"
+        [total]="total"
+        [perPage]="perPage"
+        (pageChange)="onPageChange($event)">
+    </app-pagination>
 </div>
 
 <!-- Form Modal -->

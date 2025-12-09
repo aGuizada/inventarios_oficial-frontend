@@ -1,12 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MedidaService } from '../../../services/medida.service';
-import { Medida } from '../../../interfaces';
+import { Medida, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 // Import child components
 import { MedidasListComponent } from './medidas-list/medidas-list.component';
 import { MedidaFormComponent } from './medida-form/medida-form.component';
+import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-medidas',
@@ -14,7 +16,9 @@ import { MedidaFormComponent } from './medida-form/medida-form.component';
   imports: [
     CommonModule,
     MedidasListComponent,
-    MedidaFormComponent
+    MedidaFormComponent,
+    SearchBarComponent,
+    PaginationComponent
   ],
   templateUrl: './medidas.component.html',
 })
@@ -25,6 +29,13 @@ export class MedidasComponent implements OnInit {
   selectedMedida: Medida | null = null;
   errorMessage = '';
   successMessage = '';
+  
+  // Paginación
+  currentPage: number = 1;
+  lastPage: number = 1;
+  total: number = 0;
+  perPage: number = 15;
+  searchTerm: string = '';
 
   constructor(
     private medidaService: MedidaService
@@ -36,17 +47,54 @@ export class MedidasComponent implements OnInit {
 
   loadMedidas(): void {
     this.isLoading = true;
-    this.medidaService.getAll()
+    
+    const params: PaginationParams = {
+      page: this.currentPage,
+      per_page: this.perPage,
+      sort_by: 'id',
+      sort_order: 'desc'
+    };
+    
+    if (this.searchTerm) {
+      params.search = this.searchTerm;
+    }
+    
+    this.medidaService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response) => {
-          this.medidas = response.data;
+          if (response.data) {
+            this.medidas = response.data.data || [];
+            this.currentPage = response.data.current_page;
+            this.lastPage = response.data.last_page;
+            this.total = response.data.total;
+            this.perPage = response.data.per_page;
+          }
         },
         error: (error) => {
           this.errorMessage = 'Error al cargar medidas';
           console.error('Error loading medidas', error);
+          // Fallback a getAll si falla la paginación
+          this.medidaService.getAll()
+            .pipe(finalize(() => this.isLoading = false))
+            .subscribe({
+              next: (response) => {
+                this.medidas = response.data || [];
+              }
+            });
         }
       });
+  }
+
+  onSearch(search: string): void {
+    this.searchTerm = search;
+    this.currentPage = 1;
+    this.loadMedidas();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadMedidas();
   }
 
   openFormModal(): void {

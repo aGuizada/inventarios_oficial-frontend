@@ -10,6 +10,13 @@
         (clearFilters)="onClearFilters()">
     </app-inventario-filters>
 
+    <div class="mb-4 max-w-md">
+        <app-search-bar 
+            placeholder="Buscar por artículo, código, almacén..."
+            (search)="onSearch($event)">
+        </app-search-bar>
+    </div>
+
     <!-- Resumen -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800 transition-colors duration-200">
@@ -29,4 +36,12 @@
     <!-- List Component -->
     <app-inventario-list [inventarios]="inventariosFiltrados" [isLoading]="isLoading" [almacenes]="almacenes">
     </app-inventario-list>
+
+    <app-pagination 
+        [currentPage]="currentPage"
+        [lastPage]="lastPage"
+        [total]="total"
+        [perPage]="perPage"
+        (pageChange)="onPageChange($event)">
+    </app-pagination>
 </div>

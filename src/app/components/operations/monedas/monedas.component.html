@@ -53,10 +53,25 @@
     </div>
     }
 
+    <div class="mb-4 max-w-md">
+        <app-search-bar 
+            placeholder="Buscar por nombre, país, símbolo..."
+            (search)="onSearch($event)">
+        </app-search-bar>
+    </div>
+
     <!-- List Component -->
     <app-monedas-list [monedas]="monedas" [isLoading]="isLoading" [empresas]="empresas"
         (edit)="onEdit($event)" (delete)="onDelete($event)" (updateTipoCambio)="onUpdateTipoCambio($event)">
     </app-monedas-list>
+
+    <app-pagination 
+        [currentPage]="currentPage"
+        [lastPage]="lastPage"
+        [total]="total"
+        [perPage]="perPage"
+        (pageChange)="onPageChange($event)">
+    </app-pagination>
 </div>
 
 <!-- Form Modal -->

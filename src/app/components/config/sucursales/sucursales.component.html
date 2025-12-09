@@ -12,10 +12,18 @@
         </button>
     </div>
 
+    <div class="flex justify-between items-center mb-4">
+        <app-search-bar (search)="onSearch($event)"></app-search-bar>
+    </div>
+
     <!-- List Component -->
     <app-sucursales-list [sucursales]="sucursales" [isLoading]="isLoading" (edit)="onEdit($event)"
         (delete)="onDelete($event)">
     </app-sucursales-list>
+
+    <app-pagination [currentPage]="currentPage" [lastPage]="lastPage" [total]="total"
+        (pageChange)="onPageChange($event)">
+    </app-pagination>
 </div>
 
 <!-- Form Modal -->

@@ -2,12 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { InventarioService } from '../../../services/inventario.service';
 import { AlmacenService } from '../../../services/almacen.service';
-import { Inventario, Almacen, ApiResponse } from '../../../interfaces';
+import { Inventario, Almacen, ApiResponse, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 // Import child components
 import { InventarioListComponent } from './inventario-list/inventario-list.component';
 import { InventarioFiltersComponent } from './inventario-filters/inventario-filters.component';
+import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-inventario',
@@ -15,7 +17,9 @@ import { InventarioFiltersComponent } from './inventario-filters/inventario-filt
   imports: [
     CommonModule,
     InventarioListComponent,
-    InventarioFiltersComponent
+    InventarioFiltersComponent,
+    SearchBarComponent,
+    PaginationComponent
   ],
   templateUrl: './inventario.component.html',
 })
@@ -26,6 +30,13 @@ export class InventarioComponent implements OnInit {
   almacenSeleccionado: number | null = null;
   isLoading = false;
   busqueda: string = '';
+  
+  // Paginación
+  currentPage: number = 1;
+  lastPage: number = 1;
+  total: number = 0;
+  perPage: number = 15;
+  searchTerm: string = '';
 
   constructor(
     private inventarioService: InventarioService,
@@ -58,18 +69,56 @@ export class InventarioComponent implements OnInit {
 
   loadInventarios(): void {
     this.isLoading = true;
-    this.inventarioService.getAll()
+    
+    const params: PaginationParams = {
+      page: this.currentPage,
+      per_page: this.perPage,
+      sort_by: 'id',
+      sort_order: 'desc'
+    };
+    
+    if (this.searchTerm) {
+      params.search = this.searchTerm;
+    }
+    
+    this.inventarioService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
-        next: (inventarios) => {
-          this.inventarios = inventarios;
-          this.aplicarFiltros();
+        next: (response) => {
+          if (response.data) {
+            this.inventarios = response.data.data || [];
+            this.currentPage = response.data.current_page;
+            this.lastPage = response.data.last_page;
+            this.total = response.data.total;
+            this.perPage = response.data.per_page;
+            this.aplicarFiltros();
+          }
         },
         error: (error) => {
           console.error('Error al cargar inventarios:', error);
-          alert('Error al cargar el inventario. Por favor, intente nuevamente.');
+          // Fallback a getAll si falla la paginación
+          this.inventarioService.getAll()
+            .pipe(finalize(() => this.isLoading = false))
+            .subscribe({
+              next: (inventarios) => {
+                this.inventarios = inventarios;
+                this.aplicarFiltros();
+              }
+            });
         }
       });
+  }
+
+  onSearch(search: string): void {
+    this.searchTerm = search;
+    this.busqueda = search;
+    this.currentPage = 1;
+    this.loadInventarios();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadInventarios();
   }
 
   onAlmacenChange(almacenId: number | null): void {

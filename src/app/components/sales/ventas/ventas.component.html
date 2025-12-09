@@ -1,10 +1,29 @@
 <div class="container mx-auto px-4 py-4">
   <!-- Vista de Historial -->
-  <app-ventas-history *ngIf="isHistorialView" [ventas]="ventas" [isLoading]="isLoading"
-    (nuevaVenta)="navegarANuevaVenta()" (verDetalle)="verDetalleVenta($event)">
-  </app-ventas-history>
+  @if (isHistorialView) {
+    <div class="mb-4 max-w-md">
+      <app-search-bar 
+        placeholder="Buscar por ID, cliente, comprobante..."
+        (search)="onSearch($event)">
+      </app-search-bar>
+    </div>
+    
+    <app-ventas-history [ventas]="ventas" [isLoading]="isLoading"
+      (nuevaVenta)="navegarANuevaVenta()" (verDetalle)="verDetalleVenta($event)">
+    </app-ventas-history>
+
+    <app-pagination 
+      [currentPage]="currentPage"
+      [lastPage]="lastPage"
+      [total]="total"
+      [perPage]="perPage"
+      (pageChange)="onPageChange($event)">
+    </app-pagination>
+  }
 
   <!-- Formulario de Nueva Venta -->
-  <app-venta-form *ngIf="!isHistorialView" (saleCompleted)="onSaleCompleted()">
-  </app-venta-form>
+  @if (!isHistorialView) {
+    <app-venta-form (saleCompleted)="onSaleCompleted()">
+    </app-venta-form>
+  }
 </div>

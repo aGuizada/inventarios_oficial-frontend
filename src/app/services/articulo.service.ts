@@ -12,11 +12,34 @@ export class ArticuloService {
 
     constructor(private http: HttpClient) { }
 
-    getAll(page: number = 1, perPage: number = 10): Observable<PaginatedResponse<Articulo>> {
+    // Devuelve paginado cuando se envían page/per_page; el backend mantiene compatibilidad con array sin paginar si no se envían.
+    getAll(page: number = 1, perPage: number = 10): Observable<ApiResponse<PaginatedResponse<Articulo> | Articulo[]>> {
         const params = new HttpParams()
             .set('page', page.toString())
             .set('per_page', perPage.toString());
-        return this.http.get<PaginatedResponse<Articulo>>(this.apiUrl, { params });
+        return this.http.get<ApiResponse<PaginatedResponse<Articulo> | Articulo[]>>(this.apiUrl, { params });
+    }
+    
+    getAllPaginated(params?: { page?: number; per_page?: number; search?: string; sort_by?: string; sort_order?: 'asc' | 'desc' }): Observable<ApiResponse<PaginatedResponse<Articulo>>> {
+        let httpParams = new HttpParams();
+        
+        if (params?.page) {
+            httpParams = httpParams.set('page', params.page.toString());
+        }
+        if (params?.per_page) {
+            httpParams = httpParams.set('per_page', params.per_page.toString());
+        }
+        if (params?.search) {
+            httpParams = httpParams.set('search', params.search);
+        }
+        if (params?.sort_by) {
+            httpParams = httpParams.set('sort_by', params.sort_by);
+        }
+        if (params?.sort_order) {
+            httpParams = httpParams.set('sort_order', params.sort_order);
+        }
+        
+        return this.http.get<ApiResponse<PaginatedResponse<Articulo>>>(this.apiUrl, { params: httpParams });
     }
 
     getById(id: number): Observable<ApiResponse<Articulo>> {

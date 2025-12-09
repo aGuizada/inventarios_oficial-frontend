@@ -3,13 +3,15 @@ import { CommonModule } from '@angular/common';
 import { CreditoVentaService } from '../../../services/credito-venta.service';
 import { CuotaCreditoService } from '../../../services/cuota-credito.service';
 import { VentaService } from '../../../services/venta.service';
-import { CreditoVenta, CuotaCredito } from '../../../interfaces';
+import { CreditoVenta, CuotaCredito, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 // Import child components
 import { CreditosListComponent } from './creditos-list/creditos-list.component';
 import { CreditoDetailComponent } from './credito-detail/credito-detail.component';
 import { CreditoPagoComponent } from './credito-pago/credito-pago.component';
+import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-creditos',
@@ -18,7 +20,9 @@ import { CreditoPagoComponent } from './credito-pago/credito-pago.component';
     CommonModule,
     CreditosListComponent,
     CreditoDetailComponent,
-    CreditoPagoComponent
+    CreditoPagoComponent,
+    SearchBarComponent,
+    PaginationComponent
   ],
   templateUrl: './creditos.component.html',
 })
@@ -31,6 +35,13 @@ export class CreditosComponent implements OnInit {
   isPagoModalOpen = false;
   isPaying = false;
   currentUserId = 1; // TODO: Obtener del servicio de autenticación
+  
+  // Paginación
+  currentPage: number = 1;
+  lastPage: number = 1;
+  total: number = 0;
+  perPage: number = 15;
+  searchTerm: string = '';
 
   constructor(
     private creditoVentaService: CreditoVentaService,
@@ -44,29 +55,61 @@ export class CreditosComponent implements OnInit {
 
   loadCreditos(): void {
     this.isLoading = true;
-    this.creditoVentaService.getAll()
+    
+    const params: PaginationParams = {
+      page: this.currentPage,
+      per_page: this.perPage,
+      sort_by: 'id',
+      sort_order: 'desc'
+    };
+    
+    if (this.searchTerm) {
+      params.search = this.searchTerm;
+    }
+    
+    this.creditoVentaService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
-        next: (response: any) => {
-          console.log('Respuesta de créditos:', response);
-          // La API puede devolver un array directo o envuelto en data
-          let datos: any[] = [];
-          if (Array.isArray(response)) {
-            datos = response;
-          } else if (response && response.data) {
-            datos = Array.isArray(response.data) ? response.data : [];
-          } else if (response && response.success && response.data) {
-            datos = Array.isArray(response.data) ? response.data : [];
+        next: (response) => {
+          if (response.data) {
+            this.creditos = response.data.data || [];
+            this.currentPage = response.data.current_page;
+            this.lastPage = response.data.last_page;
+            this.total = response.data.total;
+            this.perPage = response.data.per_page;
           }
-          this.creditos = datos;
-          console.log('Créditos cargados:', this.creditos);
         },
         error: (error) => {
           console.error('Error al cargar créditos:', error);
-          console.error('Detalles del error:', error.error);
-          this.creditos = [];
+          // Fallback a getAll si falla la paginación
+          this.creditoVentaService.getAll()
+            .pipe(finalize(() => this.isLoading = false))
+            .subscribe({
+              next: (response: any) => {
+                let datos: any[] = [];
+                if (Array.isArray(response)) {
+                  datos = response;
+                } else if (response && response.data) {
+                  datos = Array.isArray(response.data) ? response.data : [];
+                } else if (response && response.success && response.data) {
+                  datos = Array.isArray(response.data) ? response.data : [];
+                }
+                this.creditos = datos;
+              }
+            });
         }
       });
+  }
+
+  onSearch(search: string): void {
+    this.searchTerm = search;
+    this.currentPage = 1;
+    this.loadCreditos();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadCreditos();
   }
 
   onViewDetail(credito: CreditoVenta): void {

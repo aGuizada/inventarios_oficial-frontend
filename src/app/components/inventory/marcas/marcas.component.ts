@@ -1,12 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MarcaService } from '../../../services/marca.service';
-import { Marca } from '../../../interfaces';
+import { Marca, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 // Import child components
 import { MarcasListComponent } from './marcas-list/marcas-list.component';
 import { MarcaFormComponent } from './marca-form/marca-form.component';
+import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-marcas',
@@ -14,7 +16,9 @@ import { MarcaFormComponent } from './marca-form/marca-form.component';
   imports: [
     CommonModule,
     MarcasListComponent,
-    MarcaFormComponent
+    MarcaFormComponent,
+    SearchBarComponent,
+    PaginationComponent
   ],
   templateUrl: './marcas.component.html',
 })
@@ -25,6 +29,13 @@ export class MarcasComponent implements OnInit {
   selectedMarca: Marca | null = null;
   errorMessage = '';
   successMessage = '';
+  
+  // Paginación
+  currentPage: number = 1;
+  lastPage: number = 1;
+  total: number = 0;
+  perPage: number = 15;
+  searchTerm: string = '';
 
   constructor(
     private marcaService: MarcaService
@@ -36,17 +47,54 @@ export class MarcasComponent implements OnInit {
 
   loadMarcas(): void {
     this.isLoading = true;
-    this.marcaService.getAll()
+    
+    const params: PaginationParams = {
+      page: this.currentPage,
+      per_page: this.perPage,
+      sort_by: 'id',
+      sort_order: 'desc'
+    };
+    
+    if (this.searchTerm) {
+      params.search = this.searchTerm;
+    }
+    
+    this.marcaService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response) => {
-          this.marcas = response.data;
+          if (response.data) {
+            this.marcas = response.data.data || [];
+            this.currentPage = response.data.current_page;
+            this.lastPage = response.data.last_page;
+            this.total = response.data.total;
+            this.perPage = response.data.per_page;
+          }
         },
         error: (error) => {
           this.errorMessage = 'Error al cargar marcas';
           console.error('Error loading marcas', error);
+          // Fallback a getAll si falla la paginación
+          this.marcaService.getAll()
+            .pipe(finalize(() => this.isLoading = false))
+            .subscribe({
+              next: (response) => {
+                this.marcas = response.data || [];
+              }
+            });
         }
       });
+  }
+
+  onSearch(search: string): void {
+    this.searchTerm = search;
+    this.currentPage = 1;
+    this.loadMarcas();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadMarcas();
   }
 
   openFormModal(): void {

@@ -15,6 +15,14 @@
 
   <!-- Vista de Historial -->
   <div *ngIf="isHistorialView" class="mt-4">
+    <!-- Search Bar -->
+    <div class="mb-4 max-w-md">
+      <app-search-bar 
+        placeholder="Buscar por ID, proveedor, comprobante..."
+        (search)="onSearch($event)">
+      </app-search-bar>
+    </div>
+    
     <!-- Loading State -->
     <div *ngIf="isLoading && compras.length === 0" class="flex justify-center items-center py-8">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
@@ -87,6 +95,15 @@
                 </table>
             </div>
         </div>
+        
+        <!-- Pagination -->
+        <app-pagination 
+            [currentPage]="currentPage"
+            [lastPage]="lastPage"
+            [total]="total"
+            [perPage]="perPage"
+            (pageChange)="onPageChange($event)">
+        </app-pagination>
     </div>
 
   <!-- Formulario de Nueva Compra -->

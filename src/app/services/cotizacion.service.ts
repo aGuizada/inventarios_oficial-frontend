@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Cotizacion, Venta, ApiResponse, PaginatedResponse } from '../interfaces';
+import { Cotizacion, Venta, ApiResponse, PaginatedResponse, PaginationParams } from '../interfaces';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -14,6 +14,19 @@ export class CotizacionService {
 
     getAll(): Observable<Cotizacion[]> {
         return this.http.get<Cotizacion[]>(this.apiUrl);
+    }
+
+    getPaginated(params?: PaginationParams): Observable<ApiResponse<PaginatedResponse<Cotizacion>>> {
+        let httpParams = new HttpParams();
+        if (params) {
+            Object.keys(params).forEach(key => {
+                const value = (params as any)[key];
+                if (value !== undefined && value !== null) {
+                    httpParams = httpParams.set(key, value.toString());
+                }
+            });
+        }
+        return this.http.get<ApiResponse<PaginatedResponse<Cotizacion>>>(this.apiUrl, { params: httpParams });
     }
 
     getById(id: number): Observable<Cotizacion> {

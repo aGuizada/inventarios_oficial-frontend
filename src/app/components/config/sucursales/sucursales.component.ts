@@ -2,12 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SucursalService } from '../../../services/sucursal.service';
 import { EmpresaService } from '../../../services/empresa.service';
-import { Sucursal, Empresa } from '../../../interfaces';
+import { Sucursal, Empresa, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 // Import child components
 import { SucursalesListComponent } from './sucursales-list/sucursales-list.component';
 import { SucursalFormComponent } from './sucursal-form/sucursal-form.component';
+import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-sucursales',
@@ -15,7 +17,9 @@ import { SucursalFormComponent } from './sucursal-form/sucursal-form.component';
   imports: [
     CommonModule,
     SucursalesListComponent,
-    SucursalFormComponent
+    SucursalFormComponent,
+    SearchBarComponent,
+    PaginationComponent
   ],
   templateUrl: './sucursales.component.html',
 })
@@ -25,6 +29,13 @@ export class SucursalesComponent implements OnInit {
   isLoading = false;
   isFormModalOpen = false;
   selectedSucursal: Sucursal | null = null;
+  
+  // Paginación
+  currentPage: number = 1;
+  lastPage: number = 1;
+  total: number = 0;
+  perPage: number = 15;
+  searchTerm: string = '';
 
   constructor(
     private sucursalService: SucursalService,
@@ -42,14 +53,53 @@ export class SucursalesComponent implements OnInit {
 
   loadSucursales(): void {
     this.isLoading = true;
-    this.sucursalService.getAll()
+    
+    const params: PaginationParams = {
+      page: this.currentPage,
+      per_page: this.perPage,
+      sort_by: 'id',
+      sort_order: 'desc'
+    };
+    
+    if (this.searchTerm) {
+      params.search = this.searchTerm;
+    }
+    
+    this.sucursalService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response) => {
-          this.sucursales = response.data;
+          if (response.data) {
+            this.sucursales = response.data.data || [];
+            this.currentPage = response.data.current_page;
+            this.lastPage = response.data.last_page;
+            this.total = response.data.total;
+            this.perPage = response.data.per_page;
+          }
         },
-        error: (error) => console.error('Error loading sucursales', error)
+        error: (error) => {
+          console.error('Error loading sucursales', error);
+          // Fallback a getAll si falla la paginación
+          this.sucursalService.getAll()
+            .pipe(finalize(() => this.isLoading = false))
+            .subscribe({
+              next: (response) => {
+                this.sucursales = response.data || [];
+              }
+            });
+        }
       });
+  }
+
+  onSearch(search: string): void {
+    this.searchTerm = search;
+    this.currentPage = 1;
+    this.loadSucursales();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadSucursales();
   }
 
   openFormModal(): void {

@@ -9,7 +9,25 @@ import { Articulo } from '../../../../interfaces';
   templateUrl: './articulos-list.component.html',
 })
 export class ArticulosListComponent {
-  @Input() articulos: Articulo[] = [];
+  private _articulos: Articulo[] = [];
+  
+  @Input() 
+  set articulos(value: Articulo[] | null | undefined) {
+    // Asegurar que siempre sea un array válido
+    if (Array.isArray(value)) {
+      this._articulos = value;
+    } else if (value === null || value === undefined) {
+      this._articulos = [];
+    } else {
+      // Si es un objeto, intentar convertirlo a array
+      console.warn('ArticulosListComponent: recibió un valor no-array:', value);
+      this._articulos = [];
+    }
+  }
+  get articulos(): Articulo[] {
+    return this._articulos || [];
+  }
+  
   @Input() isLoading: boolean = false;
   @Input() currentPage: number = 1;
   @Input() lastPage: number = 1;

@@ -2,13 +2,15 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MonedaService } from '../../../services/moneda.service';
 import { EmpresaService } from '../../../services/empresa.service';
-import { Moneda, Empresa, ApiResponse } from '../../../interfaces';
+import { Moneda, Empresa, ApiResponse, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 // Import child components
 import { MonedasListComponent } from './monedas-list/monedas-list.component';
 import { MonedaFormComponent } from './moneda-form/moneda-form.component';
 import { TipoCambioFormComponent } from './tipo-cambio-form/tipo-cambio-form.component';
+import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-monedas',
@@ -17,7 +19,9 @@ import { TipoCambioFormComponent } from './tipo-cambio-form/tipo-cambio-form.com
     CommonModule,
     MonedasListComponent,
     MonedaFormComponent,
-    TipoCambioFormComponent
+    TipoCambioFormComponent,
+    SearchBarComponent,
+    PaginationComponent
   ],
   templateUrl: './monedas.component.html',
 })
@@ -31,6 +35,13 @@ export class MonedasComponent implements OnInit {
   monedaSeleccionada: Moneda | null = null;
   errorMessage: string = '';
   successMessage: string = '';
+  
+  // Paginación
+  currentPage: number = 1;
+  lastPage: number = 1;
+  total: number = 0;
+  perPage: number = 15;
+  searchTerm: string = '';
 
   constructor(
     private monedaService: MonedaService,
@@ -73,39 +84,70 @@ export class MonedasComponent implements OnInit {
 
   cargarMonedas(): void {
     this.isLoading = true;
-    this.monedaService.getAll()
+    
+    const params: PaginationParams = {
+      page: this.currentPage,
+      per_page: this.perPage,
+      sort_by: 'id',
+      sort_order: 'desc'
+    };
+    
+    if (this.searchTerm) {
+      params.search = this.searchTerm;
+    }
+    
+    this.monedaService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
-        next: (response: ApiResponse<Moneda[]> | Moneda[]) => {
-          // El backend puede devolver directamente el array o envuelto en ApiResponse
-          if (Array.isArray(response)) {
-            this.monedas = response;
-            console.log('Monedas cargadas:', this.monedas);
+        next: (response) => {
+          if (response.data) {
+            this.monedas = response.data.data || [];
+            this.currentPage = response.data.current_page;
+            this.lastPage = response.data.last_page;
+            this.total = response.data.total;
+            this.perPage = response.data.per_page;
             // Verificar si las empresas están cargadas
             this.monedas.forEach(moneda => {
               if (!moneda.empresa && moneda.empresa_id) {
-                // Si no tiene empresa cargada pero tiene empresa_id, buscar en el array de empresas
                 const empresa = this.empresas.find(e => e.id === moneda.empresa_id);
                 if (empresa) {
                   moneda.empresa = empresa;
                 }
               }
             });
-          } else if (response && 'success' in response) {
-            if (response.success) {
-              this.monedas = response.data || [];
-            } else {
-              this.mostrarError(response.message || 'Error al cargar las monedas');
-            }
-          } else {
-            this.monedas = [];
           }
         },
         error: (error) => {
           console.error('Error al cargar monedas:', error);
-          this.mostrarError('Error al cargar las monedas. Por favor, intente nuevamente.');
+          // Fallback a getAll si falla la paginación
+          this.monedaService.getAll()
+            .pipe(finalize(() => this.isLoading = false))
+            .subscribe({
+              next: (response: ApiResponse<Moneda[]> | Moneda[]) => {
+                if (Array.isArray(response)) {
+                  this.monedas = response;
+                } else if (response && 'success' in response) {
+                  if (response.success) {
+                    this.monedas = response.data || [];
+                  } else {
+                    this.mostrarError(response.message || 'Error al cargar las monedas');
+                  }
+                }
+              }
+            });
         }
       });
+  }
+
+  onSearch(search: string): void {
+    this.searchTerm = search;
+    this.currentPage = 1;
+    this.cargarMonedas();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.cargarMonedas();
   }
 
   openFormModal(): void {

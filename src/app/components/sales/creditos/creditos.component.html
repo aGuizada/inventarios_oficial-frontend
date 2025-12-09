@@ -4,10 +4,25 @@
         <p class="text-sm text-gray-600 mt-1">Gestión de ventas realizadas a crédito y sus cuotas pendientes</p>
     </div>
 
+    <div class="mb-4 max-w-md">
+        <app-search-bar 
+            placeholder="Buscar por cliente, estado, comprobante..."
+            (search)="onSearch($event)">
+        </app-search-bar>
+    </div>
+
     <!-- List Component -->
     <app-creditos-list [creditos]="creditos" [isLoading]="isLoading" (viewDetail)="onViewDetail($event)"
         (pay)="onPay($event)">
     </app-creditos-list>
+
+    <app-pagination 
+        [currentPage]="currentPage"
+        [lastPage]="lastPage"
+        [total]="total"
+        [perPage]="perPage"
+        (pageChange)="onPageChange($event)">
+    </app-pagination>
 </div>
 
 <!-- Detail Modal -->

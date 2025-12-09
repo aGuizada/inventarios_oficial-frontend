@@ -2,23 +2,32 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { VentaService } from '../../../services/venta.service';
-import { Venta } from '../../../interfaces';
+import { Venta, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 // Import child components
 import { VentasHistoryComponent } from './ventas-history/ventas-history.component';
 import { VentaFormComponent } from './venta-form/venta-form.component';
+import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-ventas',
   standalone: true,
-  imports: [CommonModule, VentasHistoryComponent, VentaFormComponent],
+  imports: [CommonModule, VentasHistoryComponent, VentaFormComponent, SearchBarComponent, PaginationComponent],
   templateUrl: './ventas.component.html',
 })
 export class VentasComponent implements OnInit {
   ventas: Venta[] = [];
   isLoading = false;
   isHistorialView = false;
+  
+  // Paginación
+  currentPage: number = 1;
+  lastPage: number = 1;
+  total: number = 0;
+  perPage: number = 15;
+  searchTerm: string = '';
 
   constructor(
     private ventaService: VentaService,
@@ -39,16 +48,53 @@ export class VentasComponent implements OnInit {
 
   loadVentas(): void {
     this.isLoading = true;
-    this.ventaService.getAll()
+    
+    const params: PaginationParams = {
+      page: this.currentPage,
+      per_page: this.perPage,
+      sort_by: 'id',
+      sort_order: 'desc'
+    };
+    
+    if (this.searchTerm) {
+      params.search = this.searchTerm;
+    }
+    
+    this.ventaService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
-        next: (ventas) => {
-          this.ventas = ventas;
+        next: (response) => {
+          if (response.data) {
+            this.ventas = response.data.data || [];
+            this.currentPage = response.data.current_page;
+            this.lastPage = response.data.last_page;
+            this.total = response.data.total;
+            this.perPage = response.data.per_page;
+          }
         },
         error: (error) => {
           console.error('Error al cargar ventas:', error);
+          // Fallback a getAll si falla la paginación
+          this.ventaService.getAll()
+            .pipe(finalize(() => this.isLoading = false))
+            .subscribe({
+              next: (ventas) => {
+                this.ventas = Array.isArray(ventas) ? ventas : [];
+              }
+            });
         }
       });
+  }
+
+  onSearch(search: string): void {
+    this.searchTerm = search;
+    this.currentPage = 1;
+    this.loadVentas();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadVentas();
   }
 
   navegarANuevaVenta(): void {
