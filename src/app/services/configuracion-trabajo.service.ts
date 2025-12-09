@@ -23,4 +23,8 @@ export class ConfiguracionTrabajoService {
     update(id: number, configuracion: Partial<ConfiguracionTrabajo>): Observable<ApiResponse<ConfiguracionTrabajo>> {
         return this.http.put<ApiResponse<ConfiguracionTrabajo>>(`${this.apiUrl}/${id}`, configuracion);
     }
+
+    create(configuracion: Partial<ConfiguracionTrabajo>): Observable<ApiResponse<ConfiguracionTrabajo>> {
+        return this.http.post<ApiResponse<ConfiguracionTrabajo>>(this.apiUrl, configuracion);
+    }
 }

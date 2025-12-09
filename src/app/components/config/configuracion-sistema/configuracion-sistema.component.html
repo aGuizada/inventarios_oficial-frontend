@@ -13,6 +13,16 @@
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
                 🌐 General
             </button>
+            <button (click)="changeTab('empresa')"
+                [class]="activeTab === 'empresa' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                🏢 Empresa
+            </button>
+            <button (click)="changeTab('moneda')"
+                [class]="activeTab === 'moneda' ? 'border-yellow-500 text-yellow-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                💱 Monedas
+            </button>
             <button (click)="changeTab('precios')"
                 [class]="activeTab === 'precios' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
@@ -55,76 +65,94 @@
                     <select id="moneda_id" formControlName="moneda_id"
                         class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                         @for (moneda of monedas; track moneda.id) {
-                        <option [value]="moneda.id">{{ moneda.simbolo }} - {{ moneda.nombre }} ({{ moneda.codigo }})
+                        <option [value]="moneda.id">{{ moneda.simbolo }} - {{ moneda.nombre }} ({{ moneda.pais || 'N/A'
+                            }})
                         </option>
                         }
                     </select>
                     <p class="mt-1 text-xs text-gray-500">Moneda que se usará en todo el sistema</p>
                 </div>
-
-                <!-- Nombre Empresa -->
-                <div>
-                    <label for="nombre_empresa" class="block text-sm font-medium text-gray-700 mb-2">
-                        Nombre de la Empresa <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" id="nombre_empresa" formControlName="nombre_empresa"
-                        class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
-                    <p class="mt-1 text-xs text-gray-500">Nombre que aparecerá en documentos</p>
-                </div>
-
-                <!-- Email Empresa -->
-                <div>
-                    <label for="email_empresa" class="block text-sm font-medium text-gray-700 mb-2">
-                        Email de Contacto
-                    </label>
-                    <input type="email" id="email_empresa" formControlName="email_empresa"
-                        class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
-                    <p class="mt-1 text-xs text-gray-500">Email para contacto y envío de documentos</p>
-                </div>
-
-                <!-- Teléfono Empresa -->
-                <div>
-                    <label for="telefono_empresa" class="block text-sm font-medium text-gray-700 mb-2">
-                        Teléfono
-                    </label>
-                    <input type="tel" id="telefono_empresa" formControlName="telefono_empresa"
-                        class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
-                    <p class="mt-1 text-xs text-gray-500">Teléfono de contacto</p>
-                </div>
-            </div>
-
-            <!-- Dirección Empresa -->
-            <div>
-                <label for="direccion_empresa" class="block text-sm font-medium text-gray-700 mb-2">
-                    Dirección
-                </label>
-                <textarea id="direccion_empresa" formControlName="direccion_empresa" rows="2"
-                    class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border"></textarea>
-                <p class="mt-1 text-xs text-gray-500">Dirección completa de la empresa</p>
-            </div>
-
-            <!-- Logo -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Logo de la Empresa
-                </label>
-                <div class="flex items-center space-x-4">
-                    @if (logoPreview) {
-                    <img [src]="logoPreview" alt="Logo preview" class="h-20 w-20 object-contain border rounded">
-                    } @else {
-                    <div
-                        class="h-20 w-20 bg-gray-100 border-2 border-dashed border-gray-300 rounded flex items-center justify-center">
-                        <i class="fas fa-building text-gray-400 text-2xl"></i>
-                    </div>
-                    }
-                    <div>
-                        <input type="file" id="logo" accept="image/*" (change)="onLogoSelected($event)"
-                            class="block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                        <p class="mt-1 text-xs text-gray-500">PNG, JPG hasta 2MB</p>
-                    </div>
-                </div>
             </div>
         </form>
+        }
+
+        <!-- TAB: EMPRESA -->
+        @if (activeTab === 'empresa') {
+        <div class="space-y-6">
+            <!-- Empresa Selector -->
+            <form [formGroup]="generalForm">
+                <div>
+                    <label for="empresa_id" class="block text-sm font-medium text-gray-700 mb-2">
+                        Seleccionar Empresa Activa <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex gap-2 max-w-md">
+                        <select id="empresa_id" formControlName="empresa_id"
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option [ngValue]="null">Seleccione una empresa</option>
+                            @for (empresa of empresas; track empresa.id) {
+                            <option [value]="empresa.id">{{ empresa.nombre }}</option>
+                            }
+                        </select>
+                        <button type="button"
+                            (click)="selectedEmpresa = null; generalForm.get('empresa_id')?.setValue(null)"
+                            class="mt-1 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-plus"></i> Nueva
+                        </button>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Seleccione la empresa para ver y editar sus datos</p>
+                </div>
+            </form>
+
+            <hr class="border-gray-200">
+
+            <!-- Embedded Empresa Form -->
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 mb-4">
+                    {{ selectedEmpresa ? 'Editar Datos de la Empresa' : 'Registrar Nueva Empresa' }}
+                </h3>
+                <app-empresa-form [empresa]="selectedEmpresa" (save)="onEmpresaSaved($event)"
+                    (cancel)="selectedEmpresa = null">
+                </app-empresa-form>
+            </div>
+        </div>
+        }
+
+        <!-- TAB: MONEDA -->
+        @if (activeTab === 'moneda') {
+        <div class="space-y-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Gestión de Monedas</h3>
+                <button (click)="openMonedaFormModal()"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition duration-300 flex items-center">
+                    <i class="fas fa-plus mr-2"></i> Nueva Moneda
+                </button>
+            </div>
+
+            <!-- Mensajes -->
+            @if (monedaSuccessMessage) {
+            <div
+                class="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md flex items-center justify-between">
+                <span>{{ monedaSuccessMessage }}</span>
+                <button (click)="limpiarMonedaMensajes()" class="text-green-600 hover:text-green-800">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            }
+            @if (monedaErrorMessage) {
+            <div
+                class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md flex items-center justify-between">
+                <span>{{ monedaErrorMessage }}</span>
+                <button (click)="limpiarMonedaMensajes()" class="text-red-600 hover:text-red-800">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            }
+
+            <app-monedas-list [monedas]="monedas" [isLoading]="isLoading" [empresas]="empresas"
+                (edit)="onEditMoneda($event)" (delete)="onDeleteMoneda($event)"
+                (updateTipoCambio)="onUpdateTipoCambio($event)">
+            </app-monedas-list>
+        </div>
         }
 
         <!-- TAB: PRECIOS -->
@@ -418,4 +446,30 @@
             }
         </button>
     </div>
+
+    <!-- Moneda Form Modal -->
+    @if (isMonedaFormModalOpen) {
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+        (click)="closeMonedaFormModal()">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white"
+            (click)="$event.stopPropagation()">
+            <app-moneda-form [moneda]="selectedMoneda" [empresas]="empresas" (save)="onSaveMoneda($event)"
+                (cancel)="closeMonedaFormModal()">
+            </app-moneda-form>
+        </div>
+    </div>
+    }
+
+    <!-- Tipo Cambio Modal -->
+    @if (isTipoCambioModalOpen) {
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+        (click)="closeTipoCambioModal()">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-sm shadow-lg rounded-md bg-white"
+            (click)="$event.stopPropagation()">
+            <app-tipo-cambio-form [moneda]="monedaSeleccionada" (save)="onSaveTipoCambio($event)"
+                (cancel)="closeTipoCambioModal()">
+            </app-tipo-cambio-form>
+        </div>
+    </div>
+    }
 </div>

@@ -68,9 +68,7 @@ export class SidebarComponent {
       isOpen: false,
       children: [
         { label: 'Traspasos', icon: 'fas fa-dolly', route: '/operaciones/traspasos' },
-        { label: 'Precios', icon: 'fas fa-tags', route: '/operaciones/precios' },
-        { label: 'Monedas', icon: 'fas fa-coins', route: '/operaciones/monedas' }
-      ]
+        { label: 'Precios', icon: 'fas fa-tags', route: '/operaciones/precios' },]
     },
     {
       label: 'Configuración',
@@ -78,10 +76,8 @@ export class SidebarComponent {
       isOpen: false,
       children: [
         { label: 'Usuarios', icon: 'fas fa-users', route: '/config/usuarios' },
-        { label: 'Roles', icon: 'fas fa-user-shield', route: '/config/roles' },
         { label: 'Sucursales', icon: 'fas fa-store', route: '/config/sucursales' },
         { label: 'Almacenes', icon: 'fas fa-warehouse', route: '/config/almacenes' },
-        { label: 'Empresa', icon: 'fas fa-building', route: '/config/empresa' },
         { label: 'Clientes', icon: 'fas fa-user-friends', route: '/config/clientes' }
       ]
     }

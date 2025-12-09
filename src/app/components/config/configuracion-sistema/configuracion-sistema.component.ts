@@ -1,14 +1,24 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { ConfiguracionTrabajoService } from '../../../services/configuracion-trabajo.service';
+import { EmpresaService } from '../../../services/empresa.service';
+import { MonedaService } from '../../../services/moneda.service';
+import { Empresa, Moneda, ApiResponse } from '../../../interfaces';
+import { EmpresaFormComponent } from '../empresas/empresa-form/empresa-form.component';
+import { MonedasListComponent } from '../../operations/monedas/monedas-list/monedas-list.component';
+import { MonedaFormComponent } from '../../operations/monedas/moneda-form/moneda-form.component';
+import { TipoCambioFormComponent } from '../../operations/monedas/tipo-cambio-form/tipo-cambio-form.component';
+import { finalize } from 'rxjs/operators';
 
-type ConfigTab = 'general' | 'precios' | 'impuestos' | 'trabajo' | 'backup' | 'inventario';
+type ConfigTab = 'general' | 'empresa' | 'moneda' | 'precios' | 'impuestos' | 'trabajo' | 'backup' | 'inventario';
 
 interface ConfiguracionTrabajo {
   id?: number;
   // General
   moneda_id?: number;
-  nombre_empresa?: string;
+  empresa_id?: number; // New field
+  nombre_empresa?: string; // Legacy?
   logo?: string;
   email_empresa?: string;
   telefono_empresa?: string;
@@ -41,7 +51,14 @@ interface ConfiguracionTrabajo {
 @Component({
   selector: 'app-configuracion-sistema',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    EmpresaFormComponent,
+    MonedasListComponent,
+    MonedaFormComponent,
+    TipoCambioFormComponent
+  ],
   templateUrl: './configuracion-sistema.component.html'
 })
 export class ConfiguracionSistemaComponent implements OnInit {
@@ -61,18 +78,31 @@ export class ConfiguracionSistemaComponent implements OnInit {
   selectedLogo: File | null = null;
   logoPreview: string | null = null;
 
-  // Monedas disponibles
-  monedas = [
-    { id: 1, codigo: 'USD', nombre: 'Dólar Estadounidense', simbolo: '$' },
-    { id: 2, codigo: 'MXN', nombre: 'Peso Mexicano', simbolo: '$' },
-    { id: 3, codigo: 'EUR', nombre: 'Euro', simbolo: '€' },
-    { id: 4, codigo: 'COP', nombre: 'Peso Colombiano', simbolo: '$' }
-  ];
+  // Empresas
+  empresas: Empresa[] = [];
+  selectedEmpresa: Empresa | null = null;
+  showEmpresaForm = false;
 
-  constructor(private fb: FormBuilder) { }
+  // Monedas
+  monedas: Moneda[] = [];
+  isMonedaFormModalOpen = false;
+  isTipoCambioModalOpen = false;
+  selectedMoneda: Moneda | null = null;
+  monedaSeleccionada: Moneda | null = null; // For Tipo Cambio
+  monedaErrorMessage: string = '';
+  monedaSuccessMessage: string = '';
+
+  constructor(
+    private fb: FormBuilder,
+    private configService: ConfiguracionTrabajoService,
+    private empresaService: EmpresaService,
+    private monedaService: MonedaService
+  ) { }
 
   ngOnInit(): void {
     this.initForms();
+    this.loadEmpresas();
+    this.loadMonedas();
     this.loadConfig();
   }
 
@@ -80,6 +110,8 @@ export class ConfiguracionSistemaComponent implements OnInit {
     // General Form
     this.generalForm = this.fb.group({
       moneda_id: [1, [Validators.required]],
+      empresa_id: [null], // New control
+      // Legacy fields kept for compatibility or fallback
       nombre_empresa: ['Mi Empresa', [Validators.required, Validators.maxLength(100)]],
       email_empresa: ['', [Validators.email, Validators.maxLength(100)]],
       telefono_empresa: ['', [Validators.maxLength(20)]],
@@ -124,6 +156,49 @@ export class ConfiguracionSistemaComponent implements OnInit {
       mostrar_vencimiento: [true],
       mostrar_stock: [true]
     });
+
+    // Watch for empresa_id changes
+    this.generalForm.get('empresa_id')?.valueChanges.subscribe(id => {
+      if (id) {
+        const empresa = this.empresas.find(e => e.id == id);
+        if (empresa) {
+          this.selectedEmpresa = empresa;
+          // Optional: Auto-fill legacy fields if needed
+          this.generalForm.patchValue({
+            nombre_empresa: empresa.nombre,
+            email_empresa: empresa.email,
+            telefono_empresa: empresa.telefono,
+            direccion_empresa: empresa.direccion
+          }, { emitEvent: false });
+        }
+      } else {
+        this.selectedEmpresa = null;
+      }
+    });
+  }
+
+  loadEmpresas(): void {
+    this.empresaService.getAll().subscribe({
+      next: (response: any) => {
+        this.empresas = Array.isArray(response) ? response : (response.data || []);
+      },
+      error: (err) => console.error('Error loading empresas:', err)
+    });
+  }
+
+  loadMonedas(): void {
+    this.monedaService.getAll().subscribe({
+      next: (response: any) => {
+        if (Array.isArray(response)) {
+          this.monedas = response;
+        } else if (response && response.data) {
+          this.monedas = response.data;
+        } else {
+          this.monedas = [];
+        }
+      },
+      error: (err) => console.error('Error loading monedas:', err)
+    });
   }
 
   changeTab(tab: ConfigTab): void {
@@ -133,11 +208,27 @@ export class ConfiguracionSistemaComponent implements OnInit {
   loadConfig(): void {
     this.isLoading = true;
 
-    // TODO: Llamar al servicio para cargar configuración
-    // Por ahora usamos valores por defecto
-    setTimeout(() => {
-      this.isLoading = false;
-    }, 500);
+    this.configService.getAll().subscribe({
+      next: (response: any) => {
+        const configs = Array.isArray(response) ? response : (response.data || []);
+        if (configs.length > 0) {
+          const config = configs[0];
+
+          // Patch forms
+          this.generalForm.patchValue(config);
+          this.preciosForm.patchValue(config);
+          this.impuestosForm.patchValue(config);
+          this.trabajoForm.patchValue(config);
+          this.backupForm.patchValue(config);
+          this.inventarioForm.patchValue(config);
+        }
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading config:', err);
+        this.isLoading = false;
+      }
+    });
   }
 
   onLogoSelected(event: Event): void {
@@ -177,11 +268,52 @@ export class ConfiguracionSistemaComponent implements OnInit {
 
     console.log('Guardando configuración:', config);
 
-    // TODO: Implementar llamada al servicio
-    setTimeout(() => {
-      this.isSaving = false;
-      alert('Configuración guardada exitosamente');
-    }, 1000);
+    // Llamar al servicio para guardar la configuración
+    this.configService.getAll().subscribe({
+      next: (response: any) => {
+        const configs = Array.isArray(response) ? response : (response.data || []);
+        if (configs.length > 0) {
+          const id = configs[0].id;
+          this.configService.update(id, config).subscribe({
+            next: () => {
+              this.isSaving = false;
+              alert('Configuración guardada exitosamente');
+            },
+            error: (err: any) => {
+              this.isSaving = false;
+              console.error('Error al actualizar configuración:', err);
+              alert('Error al guardar la configuración');
+            }
+          });
+        } else {
+          this.configService.create(config).subscribe({
+            next: () => {
+              this.isSaving = false;
+              alert('Configuración creada exitosamente');
+            },
+            error: (err: any) => {
+              this.isSaving = false;
+              console.error('Error al crear configuración:', err);
+              alert('Error al guardar la configuración');
+            }
+          });
+        }
+      },
+      error: (err: any) => {
+        this.isSaving = false;
+        console.error('Error al obtener configuraciones:', err);
+        // Intentar crear si falla la obtención (por ejemplo, si está vacía)
+        this.configService.create(config).subscribe({
+          next: () => {
+            alert('Configuración creada exitosamente');
+          },
+          error: (createErr: any) => {
+            console.error('Error al crear configuración (fallback):', createErr);
+            alert('Error al guardar la configuración');
+          }
+        });
+      }
+    });
   }
 
   resetToDefaults(): void {
@@ -192,5 +324,160 @@ export class ConfiguracionSistemaComponent implements OnInit {
     this.initForms();
     this.selectedLogo = null;
     this.logoPreview = null;
+  }
+
+  // Empresa Form Handling
+  openEmpresaForm(): void {
+    this.showEmpresaForm = true;
+  }
+
+  closeEmpresaForm(): void {
+    this.showEmpresaForm = false;
+  }
+
+  onEmpresaSaved(empresa: Empresa): void {
+    if (this.selectedEmpresa && this.selectedEmpresa.id) {
+      // Update existing
+      this.empresaService.update(this.selectedEmpresa.id, empresa).subscribe({
+        next: (response: any) => {
+          this.loadEmpresas();
+          this.closeEmpresaForm();
+          alert('Empresa actualizada correctamente');
+        },
+        error: (err) => {
+          console.error('Error updating empresa:', err);
+          alert('Error al actualizar empresa');
+        }
+      });
+    } else {
+      // Create new (should not happen if we only edit selected, but for robustness)
+      this.empresaService.create(empresa).subscribe({
+        next: (response: any) => {
+          this.loadEmpresas();
+          this.closeEmpresaForm();
+          alert('Empresa creada correctamente');
+        },
+        error: (err) => {
+          console.error('Error creating empresa:', err);
+          alert('Error al crear empresa');
+        }
+      });
+    }
+  }
+
+  // Moneda Logic
+  openMonedaFormModal(): void {
+    this.selectedMoneda = null;
+    this.isMonedaFormModalOpen = true;
+    this.limpiarMonedaMensajes();
+  }
+
+  closeMonedaFormModal(): void {
+    this.isMonedaFormModalOpen = false;
+    this.selectedMoneda = null;
+    this.limpiarMonedaMensajes();
+  }
+
+  onEditMoneda(moneda: Moneda): void {
+    this.selectedMoneda = moneda;
+    this.isMonedaFormModalOpen = true;
+    this.limpiarMonedaMensajes();
+  }
+
+  onSaveMoneda(monedaData: Moneda): void {
+    this.isLoading = true;
+    const operacion = this.selectedMoneda && this.selectedMoneda.id
+      ? this.monedaService.update(this.selectedMoneda.id, monedaData)
+      : this.monedaService.create(monedaData);
+
+    operacion
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (response: any) => {
+          this.mostrarMonedaExito(
+            this.selectedMoneda
+              ? 'Moneda actualizada exitosamente'
+              : 'Moneda creada exitosamente'
+          );
+          this.loadMonedas();
+          this.closeMonedaFormModal();
+        },
+        error: (error) => {
+          console.error('Error al guardar moneda:', error);
+          this.mostrarMonedaError('Error al guardar la moneda');
+        }
+      });
+  }
+
+  onDeleteMoneda(moneda: Moneda): void {
+    if (!confirm(`¿Está seguro de que desea eliminar la moneda "${moneda.nombre}"?`)) {
+      return;
+    }
+
+    this.isLoading = true;
+    this.monedaService.delete(moneda.id)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: () => {
+          this.mostrarMonedaExito('Moneda eliminada exitosamente');
+          this.loadMonedas();
+        },
+        error: (error) => {
+          console.error('Error al eliminar moneda:', error);
+          this.mostrarMonedaError('Error al eliminar la moneda');
+        }
+      });
+  }
+
+  onUpdateTipoCambio(moneda: Moneda): void {
+    this.monedaSeleccionada = moneda;
+    this.isTipoCambioModalOpen = true;
+    this.limpiarMonedaMensajes();
+  }
+
+  closeTipoCambioModal(): void {
+    this.isTipoCambioModalOpen = false;
+    this.monedaSeleccionada = null;
+  }
+
+  onSaveTipoCambio(nuevoTipoCambio: number): void {
+    if (!this.monedaSeleccionada || !nuevoTipoCambio || nuevoTipoCambio <= 0) {
+      this.mostrarMonedaError('El tipo de cambio debe ser mayor a 0');
+      return;
+    }
+
+    this.actualizarTipoCambio(this.monedaSeleccionada, nuevoTipoCambio);
+    this.closeTipoCambioModal();
+  }
+
+  actualizarTipoCambio(moneda: Moneda, nuevoTipoCambio: number): void {
+    this.isLoading = true;
+    this.monedaService.update(moneda.id, { tipo_cambio: nuevoTipoCambio })
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: () => {
+          this.mostrarMonedaExito('Tipo de cambio actualizado exitosamente');
+          this.loadMonedas();
+        },
+        error: (error) => {
+          console.error('Error al actualizar tipo de cambio:', error);
+          this.mostrarMonedaError('Error al actualizar el tipo de cambio');
+        }
+      });
+  }
+
+  mostrarMonedaError(mensaje: string): void {
+    this.monedaErrorMessage = mensaje;
+    setTimeout(() => this.monedaErrorMessage = '', 5000);
+  }
+
+  mostrarMonedaExito(mensaje: string): void {
+    this.monedaSuccessMessage = mensaje;
+    setTimeout(() => this.monedaSuccessMessage = '', 5000);
+  }
+
+  limpiarMonedaMensajes(): void {
+    this.monedaErrorMessage = '';
+    this.monedaSuccessMessage = '';
   }
 }
