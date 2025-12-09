@@ -10,19 +10,22 @@
                     <!-- Column 1 -->
                     <div class="space-y-4">
                         <div>
-                            <label for="codigo" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Código</label>
+                            <label for="codigo"
+                                class="block text-sm font-medium text-gray-700 dark:text-slate-300">Código</label>
                             <input type="text" id="codigo" formControlName="codigo"
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md p-2 border">
                         </div>
 
                         <div>
-                            <label for="nombre" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Nombre</label>
+                            <label for="nombre"
+                                class="block text-sm font-medium text-gray-700 dark:text-slate-300">Nombre</label>
                             <input type="text" id="nombre" formControlName="nombre"
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md p-2 border">
                         </div>
 
                         <div>
-                            <label for="categoria_id" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Categoría</label>
+                            <label for="categoria_id"
+                                class="block text-sm font-medium text-gray-700 dark:text-slate-300">Categoría</label>
                             <select id="categoria_id" formControlName="categoria_id"
                                 class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                 <option value="">Seleccione</option>
@@ -33,7 +36,8 @@
                         </div>
 
                         <div>
-                            <label for="marca_id" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Marca</label>
+                            <label for="marca_id"
+                                class="block text-sm font-medium text-gray-700 dark:text-slate-300">Marca</label>
                             <select id="marca_id" formControlName="marca_id"
                                 class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                 <option value="">Seleccione</option>
@@ -44,7 +48,8 @@
                         </div>
 
                         <div>
-                            <label for="medida_id" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Medida</label>
+                            <label for="medida_id"
+                                class="block text-sm font-medium text-gray-700 dark:text-slate-300">Medida</label>
                             <select id="medida_id" formControlName="medida_id"
                                 class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                 <option value="">Seleccione</option>
@@ -55,7 +60,8 @@
                         </div>
 
                         <div>
-                            <label for="industria_id" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Industria</label>
+                            <label for="industria_id"
+                                class="block text-sm font-medium text-gray-700 dark:text-slate-300">Industria</label>
                             <select id="industria_id" formControlName="industria_id"
                                 class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                 <option value="">Seleccione</option>
@@ -66,7 +72,8 @@
                         </div>
 
                         <div>
-                            <label for="proveedor_id" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Proveedor</label>
+                            <label for="proveedor_id"
+                                class="block text-sm font-medium text-gray-700 dark:text-slate-300">Proveedor</label>
                             <select id="proveedor_id" formControlName="proveedor_id"
                                 class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                 <option value="">Seleccione</option>
@@ -82,15 +89,17 @@
                     <!-- Column 2 -->
                     <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="stock" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Stock <span
+                            <div *ngIf="configuracion?.mostrar_stock">
+                                <label for="stock"
+                                    class="block text-sm font-medium text-gray-700 dark:text-slate-300">Stock <span
                                         class="text-red-500">*</span></label>
                                 <input type="number" id="stock" formControlName="stock" min="0"
                                     class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md p-2 border">
                             </div>
 
                             <div>
-                                <label for="unidad_envase" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Unidad Envase
+                                <label for="unidad_envase"
+                                    class="block text-sm font-medium text-gray-700 dark:text-slate-300">Unidad Envase
                                     <span class="text-red-500">*</span></label>
                                 <input type="number" id="unidad_envase" formControlName="unidad_envase" min="1"
                                     class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md p-2 border">
@@ -99,16 +108,18 @@
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="precio_costo_unid" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Costo
+                            <div *ngIf="configuracion?.mostrar_costo_unitario">
+                                <label for="precio_costo_unid"
+                                    class="block text-sm font-medium text-gray-700 dark:text-slate-300">Costo
                                     Unit. <span class="text-red-500">*</span></label>
                                 <input type="number" id="precio_costo_unid" step="0.01"
                                     formControlName="precio_costo_unid" min="0"
                                     class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md p-2 border">
                             </div>
 
-                            <div>
-                                <label for="precio_costo_paq" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Costo
+                            <div *ngIf="configuracion?.mostrar_costo_paquete">
+                                <label for="precio_costo_paq"
+                                    class="block text-sm font-medium text-gray-700 dark:text-slate-300">Costo
                                     Paquete <span class="text-red-500">*</span></label>
                                 <input type="number" id="precio_costo_paq" step="0.01"
                                     formControlName="precio_costo_paq" min="0"
@@ -118,26 +129,30 @@
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label for="precio_venta" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Precio Venta
+                                <label for="precio_venta"
+                                    class="block text-sm font-medium text-gray-700 dark:text-slate-300">Precio Venta
                                     <span class="text-red-500">*</span></label>
                                 <input type="number" id="precio_venta" formControlName="precio_venta" step="0.01"
                                     min="0"
                                     class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md p-2 border">
                             </div>
 
-                            <div>
-                                <label for="costo_compra" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Costo Compra
+                            <div *ngIf="configuracion?.mostrar_costo_compra">
+                                <label for="costo_compra"
+                                    class="block text-sm font-medium text-gray-700 dark:text-slate-300">Costo Compra
                                     <span class="text-red-500">*</span></label>
                                 <input type="number" id="costo_compra" formControlName="costo_compra" step="0.01"
                                     min="0"
                                     class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md p-2 border">
                             </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Precios Adicionales</label>
+                        <div *ngIf="configuracion?.mostrar_precios_adicionales">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Precios
+                                Adicionales</label>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label for="precio_uno" class="block text-xs font-medium text-gray-600 dark:text-slate-400">Precio
+                                    <label for="precio_uno"
+                                        class="block text-xs font-medium text-gray-600 dark:text-slate-400">Precio
                                         Uno</label>
                                     <input type="number" id="precio_uno" formControlName="precio_uno" step="0.01"
                                         min="0"
@@ -145,7 +160,8 @@
                                 </div>
 
                                 <div>
-                                    <label for="precio_dos" class="block text-xs font-medium text-gray-600 dark:text-slate-400">Precio
+                                    <label for="precio_dos"
+                                        class="block text-xs font-medium text-gray-600 dark:text-slate-400">Precio
                                         Dos</label>
                                     <input type="number" id="precio_dos" formControlName="precio_dos" step="0.01"
                                         min="0"
@@ -153,7 +169,8 @@
                                 </div>
 
                                 <div>
-                                    <label for="precio_tres" class="block text-xs font-medium text-gray-600 dark:text-slate-400">Precio
+                                    <label for="precio_tres"
+                                        class="block text-xs font-medium text-gray-600 dark:text-slate-400">Precio
                                         Tres</label>
                                     <input type="number" id="precio_tres" formControlName="precio_tres" step="0.01"
                                         min="0"
@@ -161,7 +178,8 @@
                                 </div>
 
                                 <div>
-                                    <label for="precio_cuatro" class="block text-xs font-medium text-gray-600 dark:text-slate-400">Precio
+                                    <label for="precio_cuatro"
+                                        class="block text-xs font-medium text-gray-600 dark:text-slate-400">Precio
                                         Cuatro</label>
                                     <input type="number" id="precio_cuatro" formControlName="precio_cuatro" step="0.01"
                                         min="0"
@@ -170,12 +188,14 @@
                             </div>
                         </div>
                         <div>
-                            <label for="descripcion" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Descripción</label>
+                            <label for="descripcion"
+                                class="block text-sm font-medium text-gray-700 dark:text-slate-300">Descripción</label>
                             <textarea id="descripcion" formControlName="descripcion" rows="3" maxlength="256"
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md p-2 border"></textarea>
                         </div>
                         <div>
-                            <label for="fotografia" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Fotografía</label>
+                            <label for="fotografia"
+                                class="block text-sm font-medium text-gray-700 dark:text-slate-300">Fotografía</label>
                             <input type="file" id="fotografia" accept="image/*" (change)="onFileSelected($event)"
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md p-2 border">
                             @if (imagePreview) {
@@ -185,8 +205,9 @@
                             </div>
                             }
                         </div>
-                        <div>
-                            <label for="vencimiento" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Vencimiento
+                        <div *ngIf="configuracion?.mostrar_vencimiento">
+                            <label for="vencimiento"
+                                class="block text-sm font-medium text-gray-700 dark:text-slate-300">Vencimiento
                                 (días)</label>
                             <input type="number" id="vencimiento" formControlName="vencimiento" min="0"
                                 class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md p-2 border">
@@ -194,7 +215,8 @@
                         <div class="flex items-center mt-6">
                             <input id="estado" type="checkbox" formControlName="estado"
                                 class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-slate-600 rounded">
-                            <label for="estado" class="ml-2 block text-sm text-gray-900 dark:text-slate-100">Activo</label>
+                            <label for="estado"
+                                class="ml-2 block text-sm text-gray-900 dark:text-slate-100">Activo</label>
                         </div>
                     </div>
                 </div>
@@ -202,7 +224,8 @@
         </div>
     </div>
 
-    <div class="bg-gray-50 dark:bg-slate-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse transition-colors duration-200">
+    <div
+        class="bg-gray-50 dark:bg-slate-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse transition-colors duration-200">
         <button type="submit" [disabled]="form.invalid"
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
             Guardar
