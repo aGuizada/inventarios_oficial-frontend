@@ -26,11 +26,13 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 export class InventarioComponent implements OnInit {
   inventarios: Inventario[] = [];
   inventariosFiltrados: Inventario[] = [];
+  inventariosPorItem: any[] = [];
   almacenes: Almacen[] = [];
   almacenSeleccionado: number | null = null;
   isLoading = false;
   busqueda: string = '';
-  
+  vista: 'item' | 'lotes' = 'lotes'; // Vista por defecto
+
   // Paginación
   currentPage: number = 1;
   lastPage: number = 1;
@@ -41,11 +43,12 @@ export class InventarioComponent implements OnInit {
   constructor(
     private inventarioService: InventarioService,
     private almacenService: AlmacenService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadAlmacenes();
     this.loadInventarios();
+    this.loadInventariosPorItem();
   }
 
   loadAlmacenes(): void {
@@ -69,18 +72,18 @@ export class InventarioComponent implements OnInit {
 
   loadInventarios(): void {
     this.isLoading = true;
-    
+
     const params: PaginationParams = {
       page: this.currentPage,
       per_page: this.perPage,
       sort_by: 'id',
       sort_order: 'desc'
     };
-    
+
     if (this.searchTerm) {
       params.search = this.searchTerm;
     }
-    
+
     this.inventarioService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
@@ -179,5 +182,17 @@ export class InventarioComponent implements OnInit {
 
   getTotalSaldoStock(): number {
     return this.inventariosFiltrados.reduce((sum, inv) => sum + inv.saldo_stock, 0);
+  }
+
+  loadInventariosPorItem(): void {
+    this.inventarioService.getPorItem().subscribe({
+      next: (response) => {
+        this.inventariosPorItem = response.data || [];
+      },
+      error: (error) => {
+        console.error('Error al cargar inventarios por ítem:', error);
+        this.inventariosPorItem = [];
+      }
+    });
   }
 }

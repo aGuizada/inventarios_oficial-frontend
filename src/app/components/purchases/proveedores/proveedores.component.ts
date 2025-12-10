@@ -9,6 +9,7 @@ import { ProveedoresListComponent } from './proveedores-list/proveedores-list.co
 import { ProveedorFormComponent } from './proveedor-form/proveedor-form.component';
 import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { ProveedorImportComponent } from './proveedor-import/proveedor-import.component';
 
 @Component({
   selector: 'app-proveedores',
@@ -18,7 +19,8 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
     ProveedoresListComponent,
     ProveedorFormComponent,
     SearchBarComponent,
-    PaginationComponent
+    PaginationComponent,
+    ProveedorImportComponent
   ],
   templateUrl: './proveedores.component.html',
 })
@@ -27,7 +29,7 @@ export class ProveedoresComponent implements OnInit {
   isLoading = false;
   isFormModalOpen = false;
   selectedProveedor: Proveedor | null = null;
-  
+
   // Paginación
   currentPage: number = 1;
   lastPage: number = 1;
@@ -45,18 +47,18 @@ export class ProveedoresComponent implements OnInit {
 
   loadProveedores(): void {
     this.isLoading = true;
-    
+
     const params: PaginationParams = {
       page: this.currentPage,
       per_page: this.perPage,
       sort_by: 'id',
       sort_order: 'desc'
     };
-    
+
     if (this.searchTerm) {
       params.search = this.searchTerm;
     }
-    
+
     this.proveedorService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
@@ -133,5 +135,9 @@ export class ProveedoresComponent implements OnInit {
         },
         error: (error) => console.error('Error saving proveedor', error)
       });
+  }
+
+  onImportSuccess(): void {
+    this.loadProveedores();
   }
 }

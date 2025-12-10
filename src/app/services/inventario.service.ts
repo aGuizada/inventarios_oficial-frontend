@@ -33,6 +33,35 @@ export class InventarioService {
         return this.http.get<Inventario[]>(`${this.apiUrl}?almacen_id=${almacenId}`);
     }
 
+    search(term: string): Observable<ApiResponse<Inventario[]>> {
+        return this.http.get<ApiResponse<Inventario[]>>(`${this.apiUrl}/search`, {
+            params: { q: term }
+        });
+    }
+
+    /**
+     * Obtiene inventario agrupado por ítem (artículo)
+     */
+    getPorItem(): Observable<any> {
+        return this.http.get(`${this.apiUrl}/por-item`);
+    }
+
+    /**
+     * Obtiene inventario detallado por lotes
+     */
+    getPorLotes(params?: any): Observable<any> {
+        let httpParams = new HttpParams();
+        if (params) {
+            Object.keys(params).forEach(key => {
+                const value = (params as any)[key];
+                if (value !== undefined && value !== null) {
+                    httpParams = httpParams.set(key, value.toString());
+                }
+            });
+        }
+        return this.http.get(`${this.apiUrl}/por-lotes`, { params: httpParams });
+    }
+
     getById(id: number): Observable<Inventario> {
         return this.http.get<Inventario>(`${this.apiUrl}/${id}`);
     }

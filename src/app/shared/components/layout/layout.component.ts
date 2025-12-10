@@ -1,9 +1,10 @@
 import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { NavbarComponent } from '../navbar/navbar.component';
 import { inject } from '@angular/core';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-layout',
@@ -13,7 +14,9 @@ import { inject } from '@angular/core';
 })
 export class LayoutComponent implements OnInit, AfterViewInit {
   private document = inject(DOCUMENT);
+  private router = inject(Router);
   isDarkMode = false;
+  isNoPaddingRoute = false;
 
   ngOnInit(): void {
     // Cargar preferencia de modo oscuro desde localStorage
@@ -23,6 +26,30 @@ export class LayoutComponent implements OnInit, AfterViewInit {
     } else {
       this.disableDarkMode();
     }
+
+    // Detectar rutas que no deben tener padding
+    this.checkRoute(this.router.url);
+
+    // Escuchar cambios de ruta
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.checkRoute(event.url);
+    });
+  }
+
+  private checkRoute(url: string): void {
+    // Rutas que no deben tener padding (todas excepto dashboard)
+    const noPaddingRoutes = [
+      '/perfil',
+      '/inventario',
+      '/ventas',
+      '/compras',
+      '/finanzas',
+      '/operaciones',
+      '/config'
+    ];
+    this.isNoPaddingRoute = noPaddingRoutes.some(route => url.includes(route));
   }
 
   ngAfterViewInit(): void {

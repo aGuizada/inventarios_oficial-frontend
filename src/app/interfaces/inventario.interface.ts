@@ -13,3 +13,23 @@ export interface Inventario {
     articulo?: Articulo;
     almacen?: Almacen;
 }
+
+// Vista agregada por ítem
+export interface InventarioPorItem {
+    articulo: Articulo;
+    total_stock: number;
+    total_saldo: number;
+    almacenes: AlmacenStock[];
+}
+
+export interface AlmacenStock {
+    almacen: string;
+    cantidad: number;
+    saldo_stock: number;
+}
+
+// Vista detallada por lotes
+export interface InventarioPorLote extends Inventario {
+    // Hereda todos los campos de Inventario
+    // Representa cada registro como un "lote" individual
+}

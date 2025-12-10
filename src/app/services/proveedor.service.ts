@@ -50,4 +50,22 @@ export class ProveedorService {
             params: { q: term }
         });
     }
+
+    /**
+     * Descarga la plantilla Excel para importar proveedores
+     */
+    downloadTemplate(): Observable<Blob> {
+        return this.http.get(`${this.apiUrl}/template/download`, {
+            responseType: 'blob'
+        });
+    }
+
+    /**
+     * Importa proveedores desde un archivo Excel
+     */
+    importFromExcel(file: File): Observable<any> {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this.http.post(`${this.apiUrl}/import`, formData);
+    }
 }
