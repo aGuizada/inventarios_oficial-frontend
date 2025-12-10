@@ -59,6 +59,7 @@ export const routes: Routes = [
                 children: [
                     { path: 'nueva', loadComponent: () => import('./components/purchases/compras/compras.component').then(m => m.ComprasComponent) },
                     { path: 'historial', loadComponent: () => import('./components/purchases/compras/compras.component').then(m => m.ComprasComponent) }, // Reuse
+                    { path: 'creditos', loadComponent: () => import('./components/purchases/creditos/creditos.component').then(m => m.CreditosComponent) },
                     { path: 'proveedores', loadComponent: () => import('./components/purchases/proveedores/proveedores.component').then(m => m.ProveedoresComponent) }
                 ]
             },

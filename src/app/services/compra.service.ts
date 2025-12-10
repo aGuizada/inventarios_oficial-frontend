@@ -29,8 +29,8 @@ export class CompraService {
         return this.http.get<ApiResponse<PaginatedResponse<Compra>>>(this.apiUrl, { params: httpParams });
     }
 
-    getById(id: number): Observable<Compra> {
-        return this.http.get<Compra>(`${this.apiUrl}/${id}`);
+    getById(id: number): Observable<ApiResponse<Compra>> {
+        return this.http.get<ApiResponse<Compra>>(`${this.apiUrl}/${id}`);
     }
 
     create(compra: Partial<Compra>): Observable<Compra> {

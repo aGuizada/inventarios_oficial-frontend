@@ -51,6 +51,7 @@ export class SidebarComponent {
       children: [
         { label: 'Nueva Compra', icon: 'fas fa-cart-plus', route: '/compras/nueva' },
         { label: 'Historial', icon: 'fas fa-history', route: '/compras/historial' },
+        { label: 'Créditos', icon: 'fas fa-credit-card', route: '/compras/creditos' },
         { label: 'Proveedores', icon: 'fas fa-truck', route: '/compras/proveedores' }
       ]
     },

@@ -19,7 +19,7 @@ export interface Compra {
     proveedor?: Proveedor;
     detalles?: DetalleCompra[];
     compra_contado?: any;
-    compra_credito?: any;
+    compra_credito?: CompraCredito;
 }
 
 export interface DetalleCompra {
@@ -35,14 +35,28 @@ export interface DetalleCompra {
     articulo?: any;
 }
 
+export interface CompraCredito {
+    id: number;
+    num_cuotas: number;
+    frecuencia_dias: number;
+    cuota_inicial: number;
+    tipo_pago_cuota?: string;
+    dias_gracia: number;
+    interes_moratorio: number;
+    estado_credito: string;
+    cuotas?: CompraCuota[];
+}
+
 export interface CompraCuota {
     id: number;
     compra_credito_id: number;
     numero_cuota: number;
-    monto: number;
+    monto_cuota: number;
+    monto_pagado: number;
+    saldo_pendiente: number;
     fecha_vencimiento: string;
-    fecha_pago?: string;
+    fecha_pago?: string | null;
     estado: string;
-    created_at: string;
-    updated_at: string;
+    created_at?: string;
+    updated_at?: string;
 }

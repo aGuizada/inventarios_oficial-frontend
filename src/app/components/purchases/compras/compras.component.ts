@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule, NgClass } from '@angular/common';
+import { CommonModule, NgClass, DatePipe, CurrencyPipe } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CompraService } from '../../../services/compra.service';
@@ -7,15 +7,17 @@ import { ProveedorService } from '../../../services/proveedor.service';
 import { AlmacenService } from '../../../services/almacen.service';
 import { ArticuloService } from '../../../services/articulo.service';
 import { CajaService } from '../../../services/caja.service';
+import { CompraCuotaService } from '../../../services/compra-cuota.service';
 import { Compra, DetalleCompra, Proveedor, Almacen, Articulo, Caja, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import jsPDF from 'jspdf';
 
 @Component({
   selector: 'app-compras',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgClass, SearchBarComponent, PaginationComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgClass, DatePipe, CurrencyPipe, SearchBarComponent, PaginationComponent],
   templateUrl: './compras.component.html',
 })
 export class ComprasComponent implements OnInit {
@@ -35,6 +37,8 @@ export class ComprasComponent implements OnInit {
   isLoading = false;
   currentId: number | null = null;
   currentUserId = 1; // TODO: Obtener del servicio de autenticación
+  isDetailModalOpen = false;
+  compraSeleccionada: Compra | null = null;
   proveedorBusqueda: string = '';
   mostrarSugerenciasProveedor: boolean = false;
   proveedorSeleccionado: Proveedor | null = null;
@@ -52,12 +56,22 @@ export class ComprasComponent implements OnInit {
   perPage: number = 15;
   searchTerm: string = '';
 
+  // Modal de edición de precio/costo
+  isEditPrecioModalOpen = false;
+  articuloEditando: Articulo | null = null;
+  precioEditForm: FormGroup;
+  detalleIndexEditando: number | null = null;
+
+  // Modal de información de crédito
+  isCreditoModalOpen = false;
+
   constructor(
     private compraService: CompraService,
     private proveedorService: ProveedorService,
     private almacenService: AlmacenService,
     private articuloService: ArticuloService,
     private cajaService: CajaService,
+    private compraCuotaService: CompraCuotaService,
     private router: Router,
     private route: ActivatedRoute,
     private fb: FormBuilder
@@ -75,9 +89,148 @@ export class ComprasComponent implements OnInit {
       num_comprobante: [''],
       descuento_global: [0, [Validators.min(0)]],
       tipo_compra: ['contado', Validators.required],
+      numero_cuotas: [1, [Validators.min(1)]],
+      monto_pagado: [0, [Validators.min(0)]],
       estado: [''],
       detalles: this.detallesFormArray
     });
+
+    // Formulario para editar precio/costo
+    this.precioEditForm = this.fb.group({
+      precio_costo_unid: [0, [Validators.required, Validators.min(0)]],
+      precio_costo_paq: [0, [Validators.min(0)]],
+      porcentaje_ganancia: [30, [Validators.min(0), Validators.max(1000)]],
+      precio_venta: [0, [Validators.min(0)]]
+    });
+
+    // Calcular precio de venta cuando cambie el precio costo o el porcentaje
+    this.precioEditForm.get('precio_costo_unid')?.valueChanges.subscribe(() => {
+      this.calculatePrecioVenta();
+    });
+
+    this.precioEditForm.get('porcentaje_ganancia')?.valueChanges.subscribe(() => {
+      this.calculatePrecioVenta();
+    });
+
+    // Listener para recalcular total cuando cambie el descuento global
+    this.form.get('descuento_global')?.valueChanges.subscribe(() => {
+      this.calculateTotal();
+    });
+
+    // Listener para abrir modal de crédito cuando se seleccione crédito
+    this.form.get('tipo_compra')?.valueChanges.subscribe((tipoCompra) => {
+      if (tipoCompra === 'credito' && !this.isEditing) {
+        // Abrir modal automáticamente solo si no hay número de cuotas configurado
+        const numeroCuotas = this.form.get('numero_cuotas')?.value;
+        if (!numeroCuotas || numeroCuotas < 1) {
+          setTimeout(() => {
+            this.openCreditoModal();
+          }, 100);
+        }
+      } else if (tipoCompra === 'contado') {
+        // Cerrar modal si se cambia a contado
+        this.closeCreditoModal();
+      }
+    });
+  }
+
+  openCreditoModal(): void {
+    this.isCreditoModalOpen = true;
+    // Asegurar que los valores iniciales estén configurados
+    const currentNumCuotas = this.form.get('numero_cuotas')?.value;
+    const currentMontoPagado = this.form.get('monto_pagado')?.value;
+    
+    // Solo establecer valores por defecto si no existen
+    if (!currentNumCuotas || currentNumCuotas < 1) {
+      this.form.patchValue({ numero_cuotas: 1 });
+    }
+    if (currentMontoPagado === null || currentMontoPagado === undefined) {
+      this.form.patchValue({ monto_pagado: 0 });
+    }
+  }
+
+  saveCreditoConfig(): void {
+    // Validar y guardar la configuración de crédito
+    const numeroCuotas = this.form.get('numero_cuotas')?.value;
+    const montoPagado = this.form.get('monto_pagado')?.value || 0;
+    
+    // Validar que numero_cuotas sea válido
+    if (!numeroCuotas || numeroCuotas < 1) {
+      alert('Error: El número de cuotas debe ser mayor a 0.');
+      return;
+    }
+    
+    // Los valores ya están en el formulario, solo cerrar el modal
+    this.isCreditoModalOpen = false;
+  }
+
+  closeCreditoModal(): void {
+    this.isCreditoModalOpen = false;
+  }
+
+  // Calcular vista previa de cuotas
+  getCuotasPreview(): Array<{numero: number, fecha: string, monto: number}> {
+    const total = this.form.get('total')?.value || 0;
+    const cuotaInicial = this.form.get('monto_pagado')?.value || 0;
+    const numCuotas = this.form.get('numero_cuotas')?.value || 0;
+    const fechaHora = this.form.get('fecha_hora')?.value;
+
+    if (!numCuotas || numCuotas < 1 || !total || total <= 0) {
+      return [];
+    }
+
+    const saldoPendiente = total - cuotaInicial;
+    if (saldoPendiente <= 0) {
+      return [];
+    }
+
+    const montoPorCuota = saldoPendiente / numCuotas;
+    const frecuenciaDias = 30; // 30 días por defecto
+    const cuotas: Array<{numero: number, fecha: string, monto: number}> = [];
+
+    // Calcular fecha base
+    let fechaBase: Date;
+    if (fechaHora) {
+      fechaBase = new Date(fechaHora);
+    } else {
+      fechaBase = new Date();
+    }
+
+    for (let i = 1; i <= numCuotas; i++) {
+      const fechaVencimiento = new Date(fechaBase);
+      fechaVencimiento.setDate(fechaVencimiento.getDate() + (i * frecuenciaDias));
+
+      // Para la última cuota, ajustar el monto para evitar diferencias por redondeo
+      let montoCuota: number;
+      if (i === numCuotas) {
+        montoCuota = Math.round((saldoPendiente - (montoPorCuota * (numCuotas - 1))) * 100) / 100;
+      } else {
+        montoCuota = Math.round(montoPorCuota * 100) / 100;
+      }
+
+      cuotas.push({
+        numero: i,
+        fecha: fechaVencimiento.toLocaleDateString('es-GT', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit' 
+        }),
+        monto: montoCuota
+      });
+    }
+
+    return cuotas;
+  }
+
+  getTotalCuotas(): number {
+    const cuotas = this.getCuotasPreview();
+    return cuotas.reduce((sum, cuota) => sum + cuota.monto, 0);
+  }
+
+  getSaldoPendiente(): number {
+    const total = this.form.get('total')?.value || 0;
+    const cuotaInicial = this.form.get('monto_pagado')?.value || 0;
+    return Math.max(0, total - cuotaInicial);
   }
 
   ngOnInit(): void {
@@ -220,7 +373,6 @@ export class ComprasComponent implements OnInit {
 
   openModal(): void {
     try {
-      console.log('Abriendo modal...');
       this.isModalOpen = true;
       this.isEditing = false;
       this.currentId = null;
@@ -245,7 +397,6 @@ export class ComprasComponent implements OnInit {
         descuento_global: 0
       });
       this.form.patchValue({ proveedor_nombre: '' });
-      console.log('Modal abierto, isModalOpen:', this.isModalOpen);
     } catch (error) {
       console.error('Error al abrir modal:', error);
       alert('Error al abrir el modal. Por favor revise la consola para más detalles.');
@@ -279,6 +430,51 @@ export class ComprasComponent implements OnInit {
     });
   }
 
+  viewDetail(compra: Compra): void {
+    // Cargar la compra completa con todos sus detalles desde el backend
+    this.compraService.getById(compra.id)
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.compraSeleccionada = response.data;
+          } else if (response.data) {
+            // Si no tiene success pero tiene data (formato directo)
+            this.compraSeleccionada = response.data as Compra;
+          } else {
+            // Fallback: usar la compra que ya tenemos
+            this.compraSeleccionada = compra;
+          }
+          this.isDetailModalOpen = true;
+          
+          // Si es compra a crédito, cargar las cuotas
+          if (this.compraSeleccionada.compra_credito?.id) {
+            this.compraCuotaService.getByCompraCredito(this.compraSeleccionada.compra_credito.id)
+              .subscribe({
+                next: (cuotasResponse) => {
+                  if (cuotasResponse.success && cuotasResponse.data && this.compraSeleccionada?.compra_credito) {
+                    this.compraSeleccionada.compra_credito.cuotas = cuotasResponse.data;
+                  }
+                },
+                error: (error) => {
+                  console.error('Error al cargar cuotas:', error);
+                }
+              });
+          }
+        },
+        error: (error) => {
+          console.error('Error al cargar detalle de compra:', error);
+          // Fallback: usar la compra que ya tenemos
+          this.compraSeleccionada = compra;
+          this.isDetailModalOpen = true;
+        }
+      });
+  }
+
+  closeDetailModal(): void {
+    this.isDetailModalOpen = false;
+    this.compraSeleccionada = null;
+  }
+
   edit(compra: Compra): void {
     // Navegar a nueva compra para editar
     this.router.navigate(['/compras/nueva']).then(() => {
@@ -298,6 +494,10 @@ export class ComprasComponent implements OnInit {
       this.proveedorBusqueda = proveedor ? proveedor.nombre : '';
       this.mostrarSugerenciasProveedor = false;
       
+      // Cargar datos de crédito si existe
+      const numeroCuotas = compra.compra_credito?.num_cuotas || 1;
+      const montoPagado = compra.compra_credito?.cuota_inicial || 0;
+
       this.form.patchValue({
         proveedor_id: compra.proveedor_id || '',
         proveedor_nombre: proveedor ? proveedor.nombre : '',
@@ -309,7 +509,9 @@ export class ComprasComponent implements OnInit {
         serie_comprobante: compra.serie_comprobante || '',
         num_comprobante: compra.num_comprobante || '',
         descuento_global: compra.descuento_global || 0,
-        tipo_compra: compra.tipo_compra || 'contado',
+        tipo_compra: compra.tipo_compra ? compra.tipo_compra.toLowerCase() : 'contado',
+        numero_cuotas: numeroCuotas,
+        monto_pagado: montoPagado,
         estado: compra.estado || ''
       });
 
@@ -363,18 +565,64 @@ export class ComprasComponent implements OnInit {
     const subtotal = this.detallesFormArray.controls.reduce((sum, control) => {
       return sum + (control.get('subtotal')?.value || 0);
     }, 0);
-    const descuentoGlobal = this.form.get('descuento_global')?.value || 0;
+    const descuentoGlobal = parseFloat(this.form.get('descuento_global')?.value) || 0;
     const total = subtotal - descuentoGlobal;
     this.form.patchValue({ total: Math.max(0, total) }, { emitEvent: false });
   }
 
+  get subtotal(): number {
+    return this.detallesFormArray.controls.reduce((sum, control) => {
+      return sum + (control.get('subtotal')?.value || 0);
+    }, 0);
+  }
+
+  get descuentoGlobal(): number {
+    return parseFloat(this.form.get('descuento_global')?.value) || 0;
+  }
+
+  get descuentoIndividual(): number {
+    return this.detallesFormArray.controls.reduce((sum, control) => {
+      return sum + (parseFloat(control.get('descuento')?.value) || 0);
+    }, 0);
+  }
+
+  get totalDescuentos(): number {
+    return this.descuentoIndividual + this.descuentoGlobal;
+  }
+
+  getDescuentoProporcionalPorProducto(index: number): number {
+    if (this.descuentoGlobal <= 0 || this.subtotal <= 0) {
+      return 0;
+    }
+    const detalle = this.detallesFormArray.at(index);
+    if (!detalle) return 0;
+    
+    const subtotalProducto = detalle.get('subtotal')?.value || 0;
+    if (subtotalProducto <= 0) return 0;
+    
+    // Calcular el porcentaje que representa este producto del subtotal
+    const porcentaje = subtotalProducto / this.subtotal;
+    
+    // Aplicar ese porcentaje al descuento global
+    return this.descuentoGlobal * porcentaje;
+  }
+
+  getSubtotalConDescuentoGlobal(index: number): number {
+    const detalle = this.detallesFormArray.at(index);
+    if (!detalle) return 0;
+    
+    const subtotal = detalle.get('subtotal')?.value || 0;
+    const descuentoProporcional = this.getDescuentoProporcionalPorProducto(index);
+    
+    return Math.max(0, subtotal - descuentoProporcional);
+  }
+
+  isContado(tipoCompra: string | undefined | null): boolean {
+    if (!tipoCompra) return false;
+    return tipoCompra.toLowerCase() === 'contado';
+  }
+
   save(): void {
-    console.log('Guardando compra...');
-    console.log('Form valid:', this.form.valid);
-    console.log('Form errors:', this.form.errors);
-    console.log('Form value:', this.form.value);
-    console.log('Detalles length:', this.detallesFormArray.length);
-    console.log('Proveedor búsqueda:', this.proveedorBusqueda);
     
     // VALIDAR QUE HAYA UNA CAJA ABIERTA
     if (!this.cajaAbierta) {
@@ -411,6 +659,20 @@ export class ComprasComponent implements OnInit {
       return;
     }
 
+    // Validar tipo de compra y campos de crédito antes de validar el formulario
+    const tipoCompraValidacion = (this.form.get('tipo_compra')?.value || 'contado').toLowerCase().trim();
+    if (tipoCompraValidacion === 'credito') {
+      const numeroCuotas = this.form.get('numero_cuotas')?.value;
+      const montoPagado = this.form.get('monto_pagado')?.value;
+      
+      
+      if (!numeroCuotas || numeroCuotas < 1) {
+        alert('Error: Debe configurar el número de cuotas para la compra a crédito. Por favor, haga clic en "Configurar Crédito" y establezca el número de cuotas.');
+        this.openCreditoModal();
+        return;
+      }
+    }
+    
     if (this.form.invalid || this.detallesFormArray.length === 0) {
       if (this.detallesFormArray.length === 0) {
         alert('Debe agregar al menos un artículo a la compra');
@@ -423,7 +685,6 @@ export class ComprasComponent implements OnInit {
             invalidFields.push(key);
           }
         });
-        console.log('Campos inválidos:', invalidFields);
         alert(`Por favor complete los campos requeridos: ${invalidFields.join(', ')}`);
       }
       return;
@@ -451,7 +712,6 @@ export class ComprasComponent implements OnInit {
         .filter(id => id)
         .join(', ');
       console.error('Detalles inválidos detectados:', detallesInvalidos);
-      console.log('Artículos disponibles:', this.articulos.map(a => ({ id: a.id, nombre: a.nombre })));
       alert(`ERROR: Los siguientes artículos no están disponibles (IDs: ${articulosInvalidos}).\n\nPor favor, ELIMINE estos detalles de la tabla y seleccione artículos válidos del catálogo de productos (columna derecha).`);
       return;
     }
@@ -472,6 +732,9 @@ export class ComprasComponent implements OnInit {
       }
     }
     
+    // Reutilizar la variable tipoCompraValidacion que ya se declaró arriba
+    // const tipoCompra = (formValue.tipo_compra || 'contado').toLowerCase().trim();
+    
     const compraData: any = {
       proveedor_nombre: this.proveedorBusqueda.trim(),
       user_id: Number(formValue.user_id),
@@ -479,7 +742,7 @@ export class ComprasComponent implements OnInit {
       caja_id: this.cajaAbierta.id, // Usar la caja abierta
       fecha_hora: fechaHora,
       total: Number(formValue.total),
-      tipo_compra: formValue.tipo_compra || 'contado', // Enviar en minúsculas, el backend lo convertirá a mayúsculas
+      tipo_compra: tipoCompraValidacion, // Reutilizar la variable ya validada
       // Siempre enviar campos de comprobante (el backend asignará valores por defecto si están vacíos)
       tipo_comprobante: formValue.tipo_comprobante?.trim() || '',
       serie_comprobante: formValue.serie_comprobante?.trim() || null,
@@ -504,24 +767,29 @@ export class ComprasComponent implements OnInit {
       compraData.proveedor_id = Number(this.form.get('proveedor_id')?.value);
     }
 
-    // Agregar campos opcionales
-    if (formValue.descuento_global && formValue.descuento_global > 0) {
-      compraData.descuento_global = Number(formValue.descuento_global);
+    // Agregar descuento global (siempre enviar, incluso si es 0)
+    compraData.descuento_global = Number(formValue.descuento_global || 0);
+    
+    // Agregar campos de crédito si es compra a crédito
+    if (tipoCompraValidacion === 'credito') {
+      const numeroCuotas = Number(formValue.numero_cuotas || 1);
+      const montoPagado = Number(formValue.monto_pagado || 0);
+      
+      
+      // Validar que numero_cuotas sea válido
+      if (!numeroCuotas || numeroCuotas < 1) {
+        alert('Error: El número de cuotas debe ser mayor a 0. Por favor, configure el crédito correctamente.');
+        return;
+      }
+      
+      compraData.numero_cuotas = numeroCuotas;
+      compraData.monto_pagado = montoPagado;
     }
+    
     if (formValue.estado && formValue.estado.trim() !== '') {
       compraData.estado = formValue.estado.trim();
     }
 
-    console.log('Datos a enviar:', compraData);
-    console.log('Detalles a enviar:', JSON.stringify(compraData.detalles, null, 2));
-    compraData.detalles.forEach((detalle: any, index: number) => {
-      console.log(`Detalle ${index}:`, {
-        articulo_id: detalle.articulo_id,
-        cantidad: detalle.cantidad,
-        precio_unitario: detalle.precio_unitario,
-        descuento: detalle.descuento
-      });
-    });
     
     this.isLoading = true;
     if (this.isEditing && this.currentId) {
@@ -540,7 +808,6 @@ export class ComprasComponent implements OnInit {
           },
           error: (error) => {
             console.error('Error updating compra', error);
-            console.log('Error response:', error?.error);
             
             let errorMessage = 'Error al actualizar la compra';
             
@@ -579,10 +846,6 @@ export class ComprasComponent implements OnInit {
             const errorDetails = errorResponse.file ? `Archivo: ${errorResponse.file}\nLínea: ${errorResponse.line}` : '';
             const fullError = errorResponse.message || error?.message || 'Error desconocido';
             
-            console.log('Datos enviados:', compraData);
-            console.log('Error completo:', error);
-            console.log('Error response:', errorResponse);
-            
             alert(`Error: ${errorMessage}\n\n${errorDetails}\n\nDetalles: ${fullError}`);
           }
         });
@@ -604,6 +867,236 @@ export class ComprasComponent implements OnInit {
           }
         });
     }
+  }
+
+  // Métodos para calcular totales en el modal de detalle
+  getTotalParcial(): number {
+    if (!this.compraSeleccionada?.detalles) return 0;
+    return this.compraSeleccionada.detalles.reduce((sum, d) => {
+      const precioUnitario = parseFloat(String(d.precio_unitario || 0));
+      const cantidad = parseFloat(String(d.cantidad || 0));
+      const descuento = parseFloat(String(d.descuento || 0));
+      return sum + ((precioUnitario * cantidad) - descuento);
+    }, 0);
+  }
+
+  getTotalNetoSinDescuento(): number {
+    if (!this.compraSeleccionada) return 0;
+    const total = parseFloat(String(this.compraSeleccionada.total || 0));
+    const descuentoGlobal = parseFloat(String(this.compraSeleccionada.descuento_global || 0));
+    return total + descuentoGlobal;
+  }
+
+  getPorcentajeDescuento(): number {
+    if (!this.compraSeleccionada?.descuento_global) return 0;
+    const descuentoGlobal = parseFloat(String(this.compraSeleccionada.descuento_global || 0));
+    const totalNeto = this.getTotalNetoSinDescuento();
+    if (totalNeto === 0) return 0;
+    return (descuentoGlobal / totalNeto) * 100;
+  }
+
+  getDescuentoGlobal(): number {
+    if (!this.compraSeleccionada) return 0;
+    return parseFloat(String(this.compraSeleccionada.descuento_global || 0));
+  }
+
+  getTotalCompra(): number {
+    if (!this.compraSeleccionada) return 0;
+    return parseFloat(String(this.compraSeleccionada.total || 0));
+  }
+
+  getDescuentoValue(compra: Compra): number {
+    if (!compra) return 0;
+    const descuento = compra.descuento_global;
+    if (descuento === null || descuento === undefined) return 0;
+    const descuentoNum = typeof descuento === 'string' ? parseFloat(descuento) : descuento;
+    return isNaN(descuentoNum) ? 0 : descuentoNum;
+  }
+
+  downloadReportForCompra(compra: Compra): void {
+    // Cargar la compra completa antes de generar el reporte
+    this.compraService.getById(compra.id)
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.compraSeleccionada = response.data;
+            this.downloadReport();
+          } else if (response.data) {
+            this.compraSeleccionada = response.data as Compra;
+            this.downloadReport();
+          } else {
+            // Fallback: usar la compra que ya tenemos
+            this.compraSeleccionada = compra;
+            this.downloadReport();
+          }
+        },
+        error: (error) => {
+          console.error('Error al cargar compra para reporte:', error);
+          // Fallback: usar la compra que ya tenemos
+          this.compraSeleccionada = compra;
+          this.downloadReport();
+        }
+      });
+  }
+
+  downloadReport(): void {
+    if (!this.compraSeleccionada) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let yPos = 20;
+    const margin = 15;
+    const lineHeight = 7;
+
+    // Título
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('REPORTE DE COMPRA', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 10;
+
+    // Información del proveedor y tipo de comprobante
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Proveedor: ${this.compraSeleccionada.proveedor?.nombre || 'N/A'}`, margin, yPos);
+    doc.text(`Tipo Comprobante: ${this.compraSeleccionada.tipo_comprobante || 'N/A'}`, pageWidth - margin, yPos, { align: 'right' });
+    yPos += lineHeight;
+
+    // N° Factura y NIT
+    doc.text(`N° Factura: ${this.compraSeleccionada.num_comprobante || this.compraSeleccionada.id || 'N/A'}`, margin, yPos);
+    doc.text(`NIT/Comprobante: ${this.compraSeleccionada.proveedor?.num_documento || this.compraSeleccionada.serie_comprobante || 'N/A'}`, pageWidth - margin, yPos, { align: 'right' });
+    yPos += lineHeight;
+
+    // Fecha
+    const fecha = this.compraSeleccionada.fecha_hora ? new Date(this.compraSeleccionada.fecha_hora).toLocaleString('es-ES') : 'N/A';
+    doc.text(`Fecha: ${fecha}`, margin, yPos);
+    yPos += lineHeight * 2;
+
+    // Resumen
+    doc.setFont('helvetica', 'bold');
+    doc.text('RESUMEN', margin, yPos);
+    yPos += lineHeight;
+    doc.setFont('helvetica', 'normal');
+
+    const descuentoGlobal = this.getDescuentoGlobal();
+    const totalNeto = this.getTotalNetoSinDescuento();
+    const porcentajeDescuento = this.getPorcentajeDescuento();
+
+    doc.text(`Descuento Global: ${porcentajeDescuento.toFixed(2)}%`, margin, yPos);
+    doc.text(`Total Original: ${totalNeto.toFixed(2)} BS`, pageWidth / 2, yPos, { align: 'center' });
+    doc.text(`Total Final: ${this.getTotalCompra().toFixed(2)} BS`, pageWidth - margin, yPos, { align: 'right' });
+    yPos += lineHeight * 2;
+
+    // Tabla de artículos
+    if (this.compraSeleccionada.detalles && this.compraSeleccionada.detalles.length > 0) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('DETALLE DE ARTÍCULOS', margin, yPos);
+      yPos += lineHeight;
+
+      // Encabezados de tabla
+      const tableTop = yPos;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Artículo', margin, yPos);
+      doc.text('Precio Unit.', margin + 60, yPos);
+      doc.text('Cant.', margin + 85, yPos);
+      doc.text('Descuento', margin + 100, yPos);
+      doc.text('Subtotal', pageWidth - margin, yPos, { align: 'right' });
+      yPos += lineHeight;
+
+      // Línea separadora
+      doc.setLineWidth(0.5);
+      doc.line(margin, yPos - 2, pageWidth - margin, yPos - 2);
+      yPos += 2;
+
+      // Detalles
+      doc.setFont('helvetica', 'normal');
+      this.compraSeleccionada.detalles.forEach((detalle) => {
+        if (yPos > pageHeight - 30) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        const nombre = detalle.articulo?.nombre || 'N/A';
+        const precioUnit = parseFloat(String(detalle.precio_unitario || 0)).toFixed(2);
+        const cantidad = detalle.cantidad || 0;
+        const descuento = parseFloat(String(detalle.descuento || 0)).toFixed(2);
+        const subtotal = parseFloat(String(detalle.subtotal || 0)).toFixed(2);
+
+        // Truncar nombre si es muy largo
+        const nombreTruncado = doc.splitTextToSize(nombre, 50);
+        doc.text(nombreTruncado, margin, yPos);
+        doc.text(`${precioUnit} BS`, margin + 60, yPos);
+        doc.text(String(cantidad), margin + 85, yPos);
+        doc.text(`${descuento} BS`, margin + 100, yPos);
+        doc.text(`${subtotal} BS`, pageWidth - margin, yPos, { align: 'right' });
+        yPos += lineHeight * nombreTruncado.length;
+      });
+
+      yPos += lineHeight;
+
+      // Totales
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('Total Parcial:', margin + 100, yPos);
+      doc.text(`${this.getTotalParcial().toFixed(2)} BS`, pageWidth - margin, yPos, { align: 'right' });
+      yPos += lineHeight;
+
+      doc.text('Total Neto (Sin Descuento):', margin + 100, yPos);
+      doc.text(`${totalNeto.toFixed(2)} BS`, pageWidth - margin, yPos, { align: 'right' });
+      yPos += lineHeight;
+
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Descuento Global: ${porcentajeDescuento.toFixed(2)}% - ${descuentoGlobal.toFixed(2)} BS`, margin + 100, yPos);
+      yPos += lineHeight;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('Total Final (Con Descuento):', margin + 100, yPos);
+      doc.text(`${this.getTotalCompra().toFixed(2)} BS`, pageWidth - margin, yPos, { align: 'right' });
+      yPos += lineHeight * 2;
+    }
+
+    // Información de crédito si aplica
+    if (!this.isContado(this.compraSeleccionada.tipo_compra) && this.compraSeleccionada.compra_credito) {
+      if (yPos > pageHeight - 50) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('INFORMACIÓN DE CRÉDITO', margin, yPos);
+      yPos += lineHeight;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text(`Número de Cuotas: ${this.compraSeleccionada.compra_credito.num_cuotas}`, margin, yPos);
+      yPos += lineHeight;
+      doc.text(`Cuota Inicial: ${parseFloat(String(this.compraSeleccionada.compra_credito.cuota_inicial || 0)).toFixed(2)} BS`, margin, yPos);
+      yPos += lineHeight;
+      doc.text(`Saldo Pendiente: ${((this.getTotalCompra() - parseFloat(String(this.compraSeleccionada.compra_credito.cuota_inicial || 0)))).toFixed(2)} BS`, margin, yPos);
+      yPos += lineHeight;
+      doc.text(`Estado: ${this.compraSeleccionada.compra_credito.estado_credito || 'Pendiente'}`, margin, yPos);
+    }
+
+    // Pie de página
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      doc.text(
+        `Página ${i} de ${totalPages}`,
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: 'center' }
+      );
+    }
+
+    // Descargar el PDF
+    const fileName = `Compra_${this.compraSeleccionada.id}_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
   }
 
   getArticuloNombre(articuloId: number): string {
@@ -758,5 +1251,138 @@ export class ComprasComponent implements OnInit {
     setTimeout(() => {
       this.mostrarSugerenciasArticulo = false;
     }, 200);
+  }
+
+  openEditPrecioModal(index: number): void {
+    const detalle = this.detallesFormArray.at(index);
+    if (!detalle) return;
+
+    const articuloId = detalle.get('articulo_id')?.value;
+    const articulo = this.articulos.find(a => a.id === articuloId);
+    
+    if (!articulo) {
+      alert('No se encontró el artículo');
+      return;
+    }
+
+    this.articuloEditando = { ...articulo };
+    this.detalleIndexEditando = index;
+    
+    const precioCosto = articulo.precio_costo_unid || 0;
+    const precioVenta = articulo.precio_venta || 0;
+    
+    // Calcular porcentaje de ganancia actual si hay precio de venta
+    let porcentajeGanancia = 30; // Por defecto 30%
+    if (precioCosto > 0 && precioVenta > 0) {
+      porcentajeGanancia = ((precioVenta - precioCosto) / precioCosto) * 100;
+    }
+    
+    this.precioEditForm.patchValue({
+      precio_costo_unid: precioCosto,
+      precio_costo_paq: articulo.precio_costo_paq || 0,
+      porcentaje_ganancia: Math.round(porcentajeGanancia * 100) / 100,
+      precio_venta: precioVenta
+    }, { emitEvent: false });
+
+    // Calcular precio de venta inicial
+    this.calculatePrecioVenta();
+
+    this.isEditPrecioModalOpen = true;
+  }
+
+  calculatePrecioVenta(): void {
+    const precioCosto = parseFloat(this.precioEditForm.get('precio_costo_unid')?.value) || 0;
+    const porcentajeGanancia = parseFloat(this.precioEditForm.get('porcentaje_ganancia')?.value) || 0;
+    
+    if (precioCosto > 0 && porcentajeGanancia >= 0) {
+      const precioVenta = precioCosto * (1 + (porcentajeGanancia / 100));
+      this.precioEditForm.patchValue({
+        precio_venta: Math.round(precioVenta * 100) / 100
+      }, { emitEvent: false });
+    } else {
+      this.precioEditForm.patchValue({
+        precio_venta: 0
+      }, { emitEvent: false });
+    }
+  }
+
+  closeEditPrecioModal(): void {
+    this.isEditPrecioModalOpen = false;
+    this.articuloEditando = null;
+    this.detalleIndexEditando = null;
+    this.precioEditForm.reset();
+  }
+
+  savePrecioEdit(): void {
+    if (!this.articuloEditando || this.detalleIndexEditando === null) return;
+
+    if (this.precioEditForm.invalid) {
+      alert('Por favor complete todos los campos requeridos');
+      return;
+    }
+
+    const formValue = this.precioEditForm.value;
+    
+    // Actualizar el artículo en el catálogo
+    const articuloIndex = this.articulos.findIndex(a => a.id === this.articuloEditando!.id);
+    if (articuloIndex !== -1) {
+      this.articulos[articuloIndex] = {
+        ...this.articulos[articuloIndex],
+        precio_costo_unid: parseFloat(formValue.precio_costo_unid) || 0,
+        precio_costo_paq: parseFloat(formValue.precio_costo_paq) || 0,
+        precio_venta: parseFloat(formValue.precio_venta) || 0
+      };
+    }
+
+    // Actualizar el precio en el detalle de la compra
+    const detalle = this.detallesFormArray.at(this.detalleIndexEditando);
+    if (detalle && detalle instanceof FormGroup) {
+      const nuevoPrecio = parseFloat(formValue.precio_costo_unid) || 0;
+      detalle.patchValue({
+        precio_unitario: nuevoPrecio
+      });
+      this.calculateSubtotal(detalle);
+    }
+
+    // Guardar en el backend - Enviar todos los campos del artículo actualizados
+    this.isLoading = true;
+    
+    // Preparar datos con todos los campos del artículo, actualizando solo los precios
+    const articuloData: any = {
+      categoria_id: this.articuloEditando.categoria_id,
+      proveedor_id: this.articuloEditando.proveedor_id,
+      medida_id: this.articuloEditando.medida_id,
+      marca_id: this.articuloEditando.marca_id,
+      industria_id: this.articuloEditando.industria_id,
+      codigo: this.articuloEditando.codigo,
+      nombre: this.articuloEditando.nombre,
+      unidad_envase: this.articuloEditando.unidad_envase || 1,
+      precio_costo_unid: parseFloat(formValue.precio_costo_unid) || 0,
+      precio_costo_paq: parseFloat(formValue.precio_costo_paq) || 0,
+      precio_venta: parseFloat(formValue.precio_venta) || 0,
+      precio_uno: this.articuloEditando.precio_uno || null,
+      precio_dos: this.articuloEditando.precio_dos || null,
+      precio_tres: this.articuloEditando.precio_tres || null,
+      precio_cuatro: this.articuloEditando.precio_cuatro || null,
+      stock: this.articuloEditando.stock || 0,
+      descripcion: this.articuloEditando.descripcion || null,
+      costo_compra: this.articuloEditando.costo_compra || parseFloat(formValue.precio_costo_unid) || 0,
+      vencimiento: this.articuloEditando.vencimiento || null,
+      estado: this.articuloEditando.estado !== undefined ? this.articuloEditando.estado : true
+    };
+
+    this.articuloService.update(this.articuloEditando.id, articuloData)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: () => {
+          this.closeEditPrecioModal();
+        },
+        error: (error) => {
+          console.error('Error al actualizar precio del artículo', error);
+          console.error('Datos enviados:', articuloData);
+          const errorMessage = error?.error?.message || error?.error?.error || 'Error al actualizar el precio del artículo';
+          alert(errorMessage);
+        }
+      });
   }
 }

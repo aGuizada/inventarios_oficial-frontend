@@ -1,0 +1,152 @@
+@if (compra) {
+<div class="mt-3">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-slate-100">
+            Pagar Cuotas - Compra #{{ compra.id }}
+        </h3>
+        <button type="button" (click)="onClose()" class="text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Información del Crédito -->
+    <div class="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg p-4 mb-4">
+        <div class="grid grid-cols-3 gap-4 text-sm">
+            <div>
+                <span class="font-semibold text-gray-700 dark:text-slate-300">Total:</span>
+                <p class="text-gray-900 dark:text-slate-100">Q{{ compra.total | number:'1.2-2' }}</p>
+            </div>
+            <div>
+                <span class="font-semibold text-gray-700 dark:text-slate-300">Cuotas Pendientes:</span>
+                <p class="text-red-600 dark:text-red-400 font-bold">{{ getCuotasPendientes(compra) }}</p>
+            </div>
+            <div>
+                <span class="font-semibold text-gray-700 dark:text-slate-300">Cuotas Pagadas:</span>
+                <p class="text-green-600 dark:text-green-400 font-bold">{{ getCuotasPagadas(compra) }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Cuotas -->
+    <div class="mb-4">
+        <h4 class="text-lg font-semibold text-gray-800 dark:text-slate-200 mb-2">Cuotas Pendientes</h4>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                <thead class="bg-gray-50 dark:bg-slate-700">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase">N° Cuota</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase">Monto</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase">Fecha Vencimiento</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase">Pagado</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase">Saldo Pendiente</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-slate-300 uppercase">Acción</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                    @if (cuotas.length > 0) {
+                    @for (cuota of cuotas; track cuota.id) {
+                    <tr [ngClass]="{
+                        'bg-yellow-50 dark:bg-yellow-900/20': cuota.estado === 'Pendiente',
+                        'bg-green-50 dark:bg-green-900/20': cuota.estado === 'Pagado'
+                    }" class="hover:bg-gray-50 dark:hover:bg-slate-700">
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-slate-100">
+                            {{ cuota.numero_cuota }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-slate-100">
+                            {{ cuota.monto_cuota | number:'1.2-2' }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
+                            {{ cuota.fecha_vencimiento | date:'short' }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-emerald-600 dark:text-emerald-400">
+                            {{ cuota.monto_pagado | number:'1.2-2' }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-orange-600 dark:text-orange-400">
+                            {{ cuota.saldo_pendiente | number:'1.2-2' }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-center">
+                            @if (cuota.estado !== 'Pagado') {
+                            <button (click)="onOpenPay(cuota)"
+                                class="px-3 py-1 bg-green-600 dark:bg-green-700 text-white text-sm rounded hover:bg-green-700 dark:hover:bg-green-800 transition-colors">
+                                Pagar
+                            </button>
+                            } @else {
+                            <span class="text-xs text-green-600 dark:text-green-400 font-semibold">
+                                ✓ Pagada
+                            </span>
+                            }
+                        </td>
+                    </tr>
+                    }
+                    } @else {
+                    <tr>
+                        <td colspan="6" class="px-4 py-4 text-center text-sm text-gray-500 dark:text-slate-400">
+                            <div class="flex flex-col items-center">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mb-2"></div>
+                                <span>Cargando cuotas...</span>
+                            </div>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+}
+
+<!-- Modal de Pago de Cuota Individual -->
+@if (cuotaAPagar) {
+<div class="fixed inset-0 bg-gray-600 dark:bg-slate-900 bg-opacity-50 dark:bg-opacity-75 overflow-y-auto h-full w-full z-50"
+    style="z-index: 9999;" (click)="onClosePay()">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-slate-800"
+        (click)="$event.stopPropagation()">
+        <div class="mt-3">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Pagar Cuota #{{ cuotaAPagar.numero_cuota }}</h3>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Monto a Pagar</label>
+                    <input type="number" [(ngModel)]="montoPago" min="0.01" step="0.01"
+                        class="block w-full py-2 px-3 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                        Monto de la cuota: {{ cuotaAPagar.monto_cuota | number:'1.2-2' }}
+                    </p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg p-3">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-600 dark:text-slate-400">Saldo Pendiente:</span>
+                        <span class="font-semibold text-gray-900 dark:text-slate-100">{{ cuotaAPagar.saldo_pendiente | number:'1.2-2' }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600 dark:text-slate-400">Después del pago:</span>
+                        <span class="font-semibold text-green-600 dark:text-green-400">
+                            {{ (cuotaAPagar.saldo_pendiente - montoPago) | number:'1.2-2' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end space-x-3">
+                <button type="button" (click)="onClosePay()"
+                    class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600">
+                    Cancelar
+                </button>
+                <button type="button" (click)="onPay()" [disabled]="isPaying || montoPago <= 0"
+                    class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    @if (isPaying) {
+                    <span>Procesando...</span>
+                    } @else {
+                    <span>Pagar</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
