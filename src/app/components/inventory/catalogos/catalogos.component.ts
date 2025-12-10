@@ -163,28 +163,39 @@ export class CatalogosComponent implements OnInit {
   onSave(data: { nombre: string; descripcion: string }): void {
     const service = this.getService();
 
+    // Para medidas, transformar 'nombre' a 'nombre_medida'
+    let requestData: any = { ...data };
+    if (this.activeTab === 'medidas') {
+      requestData = {
+        nombre_medida: data.nombre,
+        descripcion: data.descripcion
+      };
+    }
+
     if (this.selectedItem) {
       // Update
-      service.update(this.selectedItem.id, data).subscribe({
+      service.update(this.selectedItem.id, requestData).subscribe({
         next: () => {
           this.loadData();
           this.closeFormModal();
         },
         error: (error: any) => {
           console.error('Error updating:', error);
-          alert('Error al actualizar el registro');
+          const errorMessage = error?.error?.message || error?.error?.errors || 'Error al actualizar el registro';
+          alert(typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
         }
       });
     } else {
       // Create
-      service.create(data).subscribe({
+      service.create(requestData).subscribe({
         next: () => {
           this.loadData();
           this.closeFormModal();
         },
         error: (error: any) => {
           console.error('Error creating:', error);
-          alert('Error al crear el registro');
+          const errorMessage = error?.error?.message || error?.error?.errors || 'Error al crear el registro';
+          alert(typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
         }
       });
     }

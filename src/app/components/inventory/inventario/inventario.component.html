@@ -17,10 +17,14 @@
         </app-search-bar>
 
         <!-- Toggle Vistas -->
-        <div class="flex gap-2 bg-gray-100 rounded-lg p-1">
-            <button (click)="vista = 'item'" [class]="vista === 'item' ? 'bg-white shadow-sm' : 'bg-transparent'"
+        <div class="flex gap-2 bg-gray-100 dark:bg-slate-700 rounded-lg p-1 transition-colors duration-200">
+            <button (click)="vista = 'item'" 
+                [class]="vista === 'item' ? 'bg-white dark:bg-slate-600 shadow-sm' : 'bg-transparent'"
                 class="px-4 py-2 rounded-md font-medium transition-all duration-200"
-                [class.text-blue-600]="vista === 'item'" [class.text-gray-600]="vista !== 'item'">
+                [class.text-blue-600]="vista === 'item'" 
+                [class.dark:text-blue-400]="vista === 'item'"
+                [class.text-gray-600]="vista !== 'item'"
+                [class.dark:text-slate-300]="vista !== 'item'">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" viewBox="0 0 20 20"
                     fill="currentColor">
                     <path
@@ -28,9 +32,13 @@
                 </svg>
                 Por Ítem
             </button>
-            <button (click)="vista = 'lotes'" [class]="vista === 'lotes' ? 'bg-white shadow-sm' : 'bg-transparent'"
+            <button (click)="vista = 'lotes'" 
+                [class]="vista === 'lotes' ? 'bg-white dark:bg-slate-600 shadow-sm' : 'bg-transparent'"
                 class="px-4 py-2 rounded-md font-medium transition-all duration-200"
-                [class.text-blue-600]="vista === 'lotes'" [class.text-gray-600]="vista !== 'lotes'">
+                [class.text-blue-600]="vista === 'lotes'"
+                [class.dark:text-blue-400]="vista === 'lotes'"
+                [class.text-gray-600]="vista !== 'lotes'"
+                [class.dark:text-slate-300]="vista !== 'lotes'">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" viewBox="0 0 20 20"
                     fill="currentColor">
                     <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
@@ -65,45 +73,47 @@
 
     <!-- Vista Por Ítem -->
     @if (vista === 'item') {
-    <div class="bg-white rounded-lg shadow">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Artículo</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Stock</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Saldo</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Almacenes</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @if (isLoading) {
-                <tr>
-                    <td colspan="5" class="px-6 py-4 text-center">Cargando...</td>
-                </tr>
-                } @else if (inventariosPorItem.length === 0) {
-                <tr>
-                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">No hay datos</td>
-                </tr>
-                } @else {
-                @for (item of inventariosPorItem; track item.articulo.id) {
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ item.articulo.nombre }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-500">{{ item.articulo.codigo }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900 font-semibold">{{ item.total_stock }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ item.total_saldo }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-500">
-                        @for (alm of item.almacenes; track $index) {
-                        <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1">
-                            {{ alm.almacen }}: {{ alm.cantidad }}
-                        </span>
-                        }
-                    </td>
-                </tr>
-                }
-                }
-            </tbody>
-        </table>
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow border border-gray-200 dark:border-slate-700 transition-colors duration-200">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                <thead class="bg-gray-50 dark:bg-slate-700">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Artículo</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Código</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Total Stock</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Total Saldo</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Almacenes</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                    @if (isLoading) {
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">Cargando...</td>
+                    </tr>
+                    } @else if (inventariosPorItem.length === 0) {
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">No hay datos</td>
+                    </tr>
+                    } @else {
+                    @for (item of inventariosPorItem; track item.articulo.id) {
+                    <tr class="hover:bg-gray-50 dark:hover:bg-slate-700 transition duration-150">
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-slate-100">{{ item.articulo.nombre }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">{{ item.articulo.codigo }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900 dark:text-slate-100 font-semibold">{{ item.total_stock }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900 dark:text-slate-100">{{ item.total_saldo }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
+                            @for (alm of item.almacenes; track $index) {
+                            <span class="inline-block bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs px-2 py-1 rounded mr-1 mb-1">
+                                {{ alm.almacen }}: {{ alm.cantidad }}
+                            </span>
+                            }
+                        </td>
+                    </tr>
+                    }
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
     }
 
