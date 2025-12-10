@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { CompraService } from '../../../services/compra.service';
 import { CompraCuotaService } from '../../../services/compra-cuota.service';
 import { Compra, CompraCuota, PaginationParams } from '../../../interfaces';
@@ -15,7 +15,6 @@ import { CompraCreditoPagoComponent } from './compra-credito-pago/compra-credito
   imports: [
     CommonModule,
     DatePipe,
-    CurrencyPipe,
     SearchBarComponent,
     PaginationComponent,
     CreditosListComponent,
