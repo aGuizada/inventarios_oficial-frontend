@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule, NgClass, DatePipe, CurrencyPipe } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -8,6 +8,7 @@ import { AlmacenService } from '../../../services/almacen.service';
 import { ArticuloService } from '../../../services/articulo.service';
 import { CajaService } from '../../../services/caja.service';
 import { CompraCuotaService } from '../../../services/compra-cuota.service';
+import { AuthService } from '../../../services/auth.service';
 import { Compra, DetalleCompra, Proveedor, Almacen, Articulo, Caja, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
@@ -65,6 +66,10 @@ export class ComprasComponent implements OnInit {
   // Modal de información de crédito
   isCreditoModalOpen = false;
 
+  // Para el dropdown de almacenes
+  mostrarMenuAlmacenes = false;
+  currentUserSucursalId: number | null = null;
+
   constructor(
     private compraService: CompraService,
     private proveedorService: ProveedorService,
@@ -72,6 +77,7 @@ export class ComprasComponent implements OnInit {
     private articuloService: ArticuloService,
     private cajaService: CajaService,
     private compraCuotaService: CompraCuotaService,
+    private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
     private fb: FormBuilder
@@ -132,6 +138,23 @@ export class ComprasComponent implements OnInit {
         this.closeCreditoModal();
       }
     });
+  }
+
+  seleccionarTipoCompra(tipo: 'contado' | 'credito'): void {
+    this.form.patchValue({ tipo_compra: tipo });
+    
+    if (tipo === 'credito' && !this.isEditing) {
+      // Abrir modal automáticamente solo si no hay número de cuotas configurado
+      const numeroCuotas = this.form.get('numero_cuotas')?.value;
+      if (!numeroCuotas || numeroCuotas < 1) {
+        setTimeout(() => {
+          this.openCreditoModal();
+        }, 100);
+      }
+    } else if (tipo === 'contado') {
+      // Cerrar modal si se cambia a contado
+      this.closeCreditoModal();
+    }
   }
 
   openCreditoModal(): void {
@@ -234,6 +257,17 @@ export class ComprasComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Obtener información del usuario actual
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser) {
+      this.currentUserId = currentUser.id;
+      this.currentUserSucursalId = currentUser.sucursal_id || null;
+      this.form.patchValue({ user_id: this.currentUserId });
+    }
+
+    // Establecer fecha y hora inicial automáticamente
+    this.actualizarFechaHora();
+
     // Detectar si estamos en la vista de historial o nueva compra
     this.route.url.subscribe(url => {
       const path = url[0]?.path;
@@ -248,6 +282,8 @@ export class ComprasComponent implements OnInit {
         this.isModalOpen = true;
         this.loadDependencies();
         this.loadCompras(); // También cargar compras para referencia
+        // Actualizar fecha y hora cuando se navega a nueva compra
+        this.actualizarFechaHora();
       }
     });
   }
@@ -271,6 +307,7 @@ export class ComprasComponent implements OnInit {
     this.almacenService.getAll().subscribe({
       next: (res) => {
         this.almacenes = Array.isArray(res.data) ? res.data : [];
+        this.seleccionarAlmacenPorDefecto();
       },
       error: (error) => {
         console.error('Error loading almacenes', error);
@@ -386,21 +423,30 @@ export class ComprasComponent implements OnInit {
       this.articulosFiltrados = this.articulos || [];
       this.mostrarSugerenciasArticulo = false;
       this.articuloSeleccionado = null;
+      // Establecer fecha y hora actual automáticamente
+      const fechaHoraActual = new Date().toISOString().slice(0, 16);
       this.form.reset({
         proveedor_id: '',
         proveedor_nombre: '',
         user_id: this.currentUserId,
         almacen_id: '',
-        fecha_hora: new Date().toISOString().slice(0, 16),
+        fecha_hora: fechaHoraActual,
         total: 0,
         tipo_compra: 'contado',
         descuento_global: 0
       });
       this.form.patchValue({ proveedor_nombre: '' });
+      // Asegurar que la fecha y hora se actualice cuando se abra el modal
+      this.actualizarFechaHora();
     } catch (error) {
       console.error('Error al abrir modal:', error);
       alert('Error al abrir el modal. Por favor revise la consola para más detalles.');
     }
+  }
+
+  actualizarFechaHora(): void {
+    const fechaHoraActual = new Date().toISOString().slice(0, 16);
+    this.form.patchValue({ fecha_hora: fechaHoraActual });
   }
 
   closeModal(): void {
@@ -712,7 +758,7 @@ export class ComprasComponent implements OnInit {
         .filter(id => id)
         .join(', ');
       console.error('Detalles inválidos detectados:', detallesInvalidos);
-      alert(`ERROR: Los siguientes artículos no están disponibles (IDs: ${articulosInvalidos}).\n\nPor favor, ELIMINE estos detalles de la tabla y seleccione artículos válidos del catálogo de productos (columna derecha).`);
+      alert(`ERROR: Los siguien  entes artículos no están disponibles (IDs: ${articulosInvalidos}).\n\nPor favor, ELIMINE estos detalles de la tabla y seleccione artículos válidos del catálogo de productos (columna derecha).`);
       return;
     }
     
@@ -721,16 +767,13 @@ export class ComprasComponent implements OnInit {
       return;
     }
     
+    // Establecer fecha y hora actual automáticamente antes de guardar
+    const fechaHoraActual = new Date();
+    const fechaHoraFormateada = fechaHoraActual.toISOString().slice(0, 19).replace('T', ' ');
+    this.form.patchValue({ fecha_hora: fechaHoraActual.toISOString().slice(0, 16) });
+    
     // Formatear fecha_hora correctamente para Laravel (formato Y-m-d H:i:s)
-    let fechaHora = formValue.fecha_hora;
-    if (fechaHora) {
-      if (fechaHora.includes('T')) {
-        fechaHora = fechaHora.replace('T', ' ');
-      }
-      if (fechaHora.split(':').length === 2) {
-        fechaHora = fechaHora + ':00';
-      }
-    }
+    let fechaHora = fechaHoraFormateada;
     
     // Reutilizar la variable tipoCompraValidacion que ya se declaró arriba
     // const tipoCompra = (formValue.tipo_compra || 'contado').toLowerCase().trim();
@@ -1104,6 +1147,25 @@ export class ComprasComponent implements OnInit {
     return articulo ? articulo.nombre : 'N/A';
   }
 
+  getArticuloCompleto(articuloId: number): Articulo | null {
+    return this.articulos.find(a => a.id === articuloId) || null;
+  }
+
+  getCategoriaArticulo(articuloId: number): string {
+    const articulo = this.getArticuloCompleto(articuloId);
+    return articulo?.categoria?.nombre || 'N/A';
+  }
+
+  getMarcaArticulo(articuloId: number): string {
+    const articulo = this.getArticuloCompleto(articuloId);
+    return articulo?.marca?.nombre || 'N/A';
+  }
+
+  getMedidaArticulo(articuloId: number): string {
+    const articulo = this.getArticuloCompleto(articuloId);
+    return articulo?.medida?.nombre_medida || 'N/A';
+  }
+
   buscarProveedor(event: any): void {
     const valor = event.target.value.toLowerCase();
     this.proveedorBusqueda = event.target.value;
@@ -1111,17 +1173,20 @@ export class ComprasComponent implements OnInit {
     this.form.patchValue({ proveedor_nombre: event.target.value });
     
     if (valor.length === 0) {
+      // Si no hay texto, mostrar todos los proveedores
       this.proveedoresFiltrados = this.proveedores;
-      this.mostrarSugerenciasProveedor = false;
+      this.mostrarSugerenciasProveedor = this.proveedores.length > 0;
       this.proveedorSeleccionado = null;
       this.form.patchValue({ proveedor_id: '' });
     } else {
+      // Filtrar proveedores según el texto ingresado
       this.proveedoresFiltrados = this.proveedores.filter(proveedor =>
         proveedor.nombre.toLowerCase().includes(valor) ||
         (proveedor.num_documento && proveedor.num_documento.toLowerCase().includes(valor))
       );
       this.mostrarSugerenciasProveedor = this.proveedoresFiltrados.length > 0;
       
+      // Buscar coincidencia exacta
       const proveedorExacto = this.proveedores.find(p => 
         p.nombre.toLowerCase() === valor || 
         p.nombre.toLowerCase() === event.target.value.toLowerCase()
@@ -1157,9 +1222,11 @@ export class ComprasComponent implements OnInit {
   }
 
   onFocusProveedor(): void {
-    if (this.proveedorBusqueda.length > 0 && this.proveedoresFiltrados.length > 0) {
-      this.mostrarSugerenciasProveedor = true;
+    // Mostrar todos los proveedores cuando se hace focus
+    if (this.proveedorBusqueda.length === 0) {
+      this.proveedoresFiltrados = this.proveedores;
     }
+    this.mostrarSugerenciasProveedor = this.proveedoresFiltrados.length > 0;
   }
 
   onBlurProveedor(): void {
@@ -1251,6 +1318,51 @@ export class ComprasComponent implements OnInit {
     setTimeout(() => {
       this.mostrarSugerenciasArticulo = false;
     }, 200);
+  }
+
+  // Métodos para manejar el dropdown de almacenes
+  seleccionarAlmacenPorDefecto(): void {
+    if (this.form.get('almacen_id')?.value) return;
+
+    if (this.currentUserSucursalId) {
+      const almacenPorDefecto = this.almacenes.find(almacen =>
+        almacen.sucursal_id === this.currentUserSucursalId && almacen.estado !== false
+      );
+
+      if (almacenPorDefecto) {
+        this.form.patchValue({ almacen_id: almacenPorDefecto.id });
+        return;
+      }
+    }
+
+    const primerAlmacen = this.almacenes.find(almacen => almacen.estado !== false);
+    if (primerAlmacen) {
+      this.form.patchValue({ almacen_id: primerAlmacen.id });
+    }
+  }
+
+  toggleMenuAlmacenes(): void {
+    this.mostrarMenuAlmacenes = !this.mostrarMenuAlmacenes;
+  }
+
+  @HostListener('document:click', ['$event'])
+  cerrarMenus(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (this.mostrarMenuAlmacenes && !target.closest('.menu-almacenes')) {
+      this.mostrarMenuAlmacenes = false;
+    }
+  }
+
+  cambiarAlmacen(almacenId: number): void {
+    this.form.patchValue({ almacen_id: almacenId });
+    this.mostrarMenuAlmacenes = false;
+  }
+
+  getAlmacenSeleccionadoNombre(): string {
+    const almacenId = this.form.get('almacen_id')?.value;
+    if (!almacenId) return '';
+    const almacen = this.almacenes.find(a => a.id === almacenId);
+    return almacen?.nombre_almacen || '';
   }
 
   openEditPrecioModal(index: number): void {
