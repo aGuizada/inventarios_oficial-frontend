@@ -1,38 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { VentaService } from '../../services/venta.service';
-import { InventarioService } from '../../services/inventario.service';
-import { CompraService } from '../../services/compra.service';
-import { ClienteService } from '../../services/cliente.service';
-import { Venta, Inventario, Compra, Cliente, Articulo } from '../../interfaces';
+import { DashboardService } from '../../services/dashboard.service';
 import { finalize } from 'rxjs/operators';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
+import { forkJoin } from 'rxjs';
 
 // Import child components
 import { StatsCardsComponent } from './stats-cards/stats-cards.component';
 import { RecentSalesComponent } from './recent-sales/recent-sales.component';
 import { LowStockComponent } from './low-stock/low-stock.component';
-
-interface ProductoVendido {
-  articulo_id: number;
-  articulo?: Articulo;
-  cantidad_vendida: number;
-  total_ventas: number;
-}
-
-interface ProductoComprado {
-  articulo_id: number;
-  articulo?: Articulo;
-  cantidad_comprada: number;
-  total_compras: number;
-}
-
-interface ClienteFrecuente {
-  cliente_id: number;
-  cliente?: Cliente;
-  cantidad_ventas: number;
-  total_gastado: number;
-}
 
 @Component({
   selector: 'app-dashboard',
@@ -41,34 +19,153 @@ interface ClienteFrecuente {
     CommonModule,
     StatsCardsComponent,
     RecentSalesComponent,
-    LowStockComponent
+    LowStockComponent,
+    BaseChartDirective
   ],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit {
-  // Stats
-  ventasDelDia: number = 0;
-  productosBajos: number = 0;
-  nuevosClientes: number = 0;
-  totalVentas: number = 0;
 
   // Datos
-  ventasRecientes: Venta[] = [];
-  productosBajoStock: Inventario[] = [];
-  clientesMasFrecuentes: ClienteFrecuente[] = [];
-  productosMasComprados: ProductoComprado[] = [];
-  productosMasVendidos: ProductoVendido[] = [];
-  productosMenosVendidos: ProductoVendido[] = [];
+  ventasRecientes: any[] = [];
+  productosBajoStock: any[] = [];
+  clientesMasFrecuentes: any[] = [];
+  productosMasComprados: any[] = [];
+  productosMasVendidos: any[] = [];
+  productosMenosVendidos: any[] = [];
+
+  // KPIs Ampliados
+  ventasHoy: number = 0;
+  ventasMes: number = 0;
+  ventasMesAnterior: number = 0;
+  totalVentas: number = 0;
+  crecimientoVentas: number = 0;
+  productosBajoStockCount: number = 0;
+  productosAgotados: number = 0;
+  valorTotalInventario: number = 0;
+  comprasMes: number = 0;
+  creditosPendientes: number = 0;
+  montoCreditosPendientes: number = 0;
+  margenBruto: number = 0;
+
+  // Alertas
+  alertas: any = null;
+
+  // Resumen Cajas
+  resumenCajas: any = null;
+
+  // Rotación Inventario
+  rotacionInventario: any = null;
+
+  // Gráficos
+  public barChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: true },
+      title: { display: true, text: 'Top 5 Productos Más Vendidos' }
+    }
+  };
+  public barChartType: ChartType = 'bar';
+  public barChartData: ChartData<'bar'> = {
+    labels: [],
+    datasets: [
+      { data: [], label: 'Ventas ($)', backgroundColor: '#3b82f6' }
+    ]
+  };
+
+  public pieChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right' },
+      title: { display: true, text: 'Distribución de Stock' }
+    }
+  };
+  public pieChartType: ChartType = 'doughnut';
+  public pieChartData: ChartData<'doughnut'> = {
+    labels: [],
+    datasets: [
+      { data: [], backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'] }
+    ]
+  };
+
+  // Gráfico de Tendencia de Ventas (Línea)
+  public lineChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: true },
+      title: { display: true, text: 'Tendencia de Ventas (Últimos 7 días)' }
+    }
+  };
+  public lineChartType: ChartType = 'line';
+  public lineChartData: ChartData<'line'> = {
+    labels: [],
+    datasets: [
+      { data: [], label: 'Ventas ($)', borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4 }
+    ]
+  };
+
+  // Gráfico de Valor por Categoría
+  public categoryChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right' },
+      title: { display: true, text: 'Valor de Inventario por Categoría' }
+    }
+  };
+  public categoryChartType: ChartType = 'doughnut';
+  public categoryChartData: ChartData<'doughnut'> = {
+    labels: [],
+    datasets: [
+      { data: [], backgroundColor: ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308'] }
+    ]
+  };
+
+  // Comparativa Ventas vs Compras
+  public comparisonChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: true },
+      title: { display: true, text: 'Ventas vs Compras (Últimos 6 Meses)' }
+    }
+  };
+  public comparisonChartType: ChartType = 'bar';
+  public comparisonChartData: ChartData<'bar'> = {
+    labels: [],
+    datasets: [
+      { data: [], label: 'Ventas', backgroundColor: '#10b981' },
+      { data: [], label: 'Compras', backgroundColor: '#ef4444' }
+    ]
+  };
+
+  // Top Proveedores
+  public supplierChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: {
+      legend: { display: false },
+      title: { display: true, text: 'Top 5 Proveedores por Volumen de Compra' }
+    }
+  };
+  public supplierChartType: ChartType = 'bar';
+  public supplierChartData: ChartData<'bar'> = {
+    labels: [],
+    datasets: [
+      { data: [], label: 'Total Comprado ($)', backgroundColor: '#8b5cf6' }
+    ]
+  };
 
   isLoading = false;
 
   constructor(
-    private ventaService: VentaService,
-    private inventarioService: InventarioService,
-    private compraService: CompraService,
-    private clienteService: ClienteService,
+    private dashboardService: DashboardService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.cargarDatos();
@@ -76,173 +173,126 @@ export class DashboardComponent implements OnInit {
 
   cargarDatos(): void {
     this.isLoading = true;
-    this.cargarVentas();
-    this.cargarInventarios();
-    this.cargarCompras();
-  }
 
-  cargarVentas(): void {
-    this.ventaService.getAll().subscribe({
-      next: (ventas: Venta[] | any) => {
-        const ventasArray = Array.isArray(ventas) ? ventas : (ventas?.data || []);
-        
-        // Ventas del día
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        const ventasHoy = ventasArray.filter((v: any) => {
-          const fechaVenta = new Date(v.fecha_hora);
-          fechaVenta.setHours(0, 0, 0, 0);
-          return fechaVenta.getTime() === hoy.getTime();
-        });
-        this.ventasDelDia = ventasHoy.reduce((sum: number, v: any) => sum + Number(v.total || 0), 0);
-        this.totalVentas = ventasArray.reduce((sum: number, v: any) => sum + Number(v.total || 0), 0);
+    // Cargar todos los datos en paralelo usando forkJoin
+    forkJoin({
+      kpis: this.dashboardService.getKpis(),
+      alertas: this.dashboardService.getAlertas(),
+      resumenCajas: this.dashboardService.getResumenCajas(),
+      rotacionInventario: this.dashboardService.getRotacionInventario(),
+      ventasRecientes: this.dashboardService.getVentasRecientes(),
+      productosTop: this.dashboardService.getProductosTop(),
+      ventasChart: this.dashboardService.getVentasChart(),
+      inventarioChart: this.dashboardService.getInventarioChart(),
+      comparativaChart: this.dashboardService.getComparativaChart(),
+      proveedoresTop: this.dashboardService.getProveedoresTop(),
+      clientesFrecuentes: this.dashboardService.getClientesFrecuentes(),
+      productosBajoStock: this.dashboardService.getProductosBajoStock(),
+      productosMasComprados: this.dashboardService.getProductosMasComprados(),
+      topStock: this.dashboardService.getTopStock()
+    }).pipe(
+      finalize(() => this.isLoading = false)
+    ).subscribe({
+      next: (data) => {
+        // KPIs Ampliados
+        this.ventasHoy = data.kpis.ventas_hoy;
+        this.ventasMes = data.kpis.ventas_mes;
+        this.ventasMesAnterior = data.kpis.ventas_mes_anterior;
+        this.totalVentas = data.kpis.total_ventas;
+        this.crecimientoVentas = data.kpis.crecimiento_ventas;
+        this.productosBajoStockCount = data.kpis.productos_bajo_stock;
+        this.productosAgotados = data.kpis.productos_agotados;
+        this.valorTotalInventario = data.kpis.valor_total_inventario;
+        this.comprasMes = data.kpis.compras_mes;
+        this.creditosPendientes = data.kpis.creditos_pendientes;
+        this.montoCreditosPendientes = data.kpis.monto_creditos_pendientes;
+        this.margenBruto = data.kpis.margen_bruto;
 
-        // Ventas recientes (últimas 5)
-        this.ventasRecientes = ventasArray
-          .sort((a: any, b: any) => new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime())
-          .slice(0, 5);
+        // Nuevas métricas
+        this.alertas = data.alertas;
+        this.resumenCajas = data.resumenCajas;
+        this.rotacionInventario = data.rotacionInventario;
 
-        // Clientes más frecuentes
-        this.calcularClientesMasFrecuentes(ventasArray);
+        // Ventas recientes
+        this.ventasRecientes = data.ventasRecientes;
 
-        // Productos más vendidos y menos vendidos
-        this.calcularProductosVendidos(ventasArray);
-      },
-      error: (error) => {
-        console.error('Error al cargar ventas:', error);
-        this.isLoading = false;
-      }
-    });
-  }
+        // Productos
+        this.productosMasVendidos = data.productosTop.mas_vendidos;
+        this.productosMenosVendidos = data.productosTop.menos_vendidos;
+        this.productosMasComprados = data.productosMasComprados;
+        this.productosBajoStock = data.productosBajoStock;
 
-  cargarInventarios(): void {
-    this.inventarioService.getAll().subscribe({
-      next: (inventarios: Inventario[] | any) => {
-        const inventariosArray = Array.isArray(inventarios) ? inventarios : (inventarios?.data || []);
-        
-        // Productos con stock bajo (menor a 10)
-        this.productosBajoStock = inventariosArray
-          .filter((inv: Inventario) => inv.saldo_stock < 10)
-          .sort((a: Inventario, b: Inventario) => a.saldo_stock - b.saldo_stock)
-          .slice(0, 10);
-        
-        this.productosBajos = this.productosBajoStock.length;
-      },
-      error: (error) => {
-        console.error('Error al cargar inventarios:', error);
-      }
-    });
-  }
+        // Clientes
+        this.clientesMasFrecuentes = data.clientesFrecuentes;
 
-  cargarCompras(): void {
-    this.compraService.getAll().subscribe({
-      next: (compras: Compra[] | any) => {
-        const comprasArray = Array.isArray(compras) ? compras : (compras?.data || []);
-        this.calcularProductosMasComprados(comprasArray);
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error al cargar compras:', error);
-        this.isLoading = false;
-      }
-    });
-  }
+        // Gráfico de Tendencia de Ventas
+        this.lineChartData = {
+          labels: data.ventasChart.labels,
+          datasets: [{
+            data: data.ventasChart.data,
+            label: 'Ventas ($)',
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            tension: 0.4
+          }]
+        };
 
-  calcularClientesMasFrecuentes(ventas: any[]): void {
-    const clientesMap = new Map<number, ClienteFrecuente>();
-
-    ventas.forEach((venta: any) => {
-      if (!venta.cliente_id) return;
-      
-      const clienteId = venta.cliente_id;
-      if (!clientesMap.has(clienteId)) {
-        clientesMap.set(clienteId, {
-          cliente_id: clienteId,
-          cliente: venta.cliente,
-          cantidad_ventas: 0,
-          total_gastado: 0
-        });
-      }
-
-      const cliente = clientesMap.get(clienteId)!;
-      cliente.cantidad_ventas++;
-      cliente.total_gastado += Number(venta.total || 0);
-    });
-
-    this.clientesMasFrecuentes = Array.from(clientesMap.values())
-      .sort((a, b) => b.cantidad_ventas - a.cantidad_ventas)
-      .slice(0, 5);
-  }
-
-  calcularProductosVendidos(ventas: any[]): void {
-    const productosMap = new Map<number, ProductoVendido>();
-
-    ventas.forEach((venta: any) => {
-      if (!venta.detalles || !Array.isArray(venta.detalles)) return;
-
-      venta.detalles.forEach((detalle: any) => {
-        const articuloId = detalle.articulo_id;
-        if (!articuloId) return;
-        
-        if (!productosMap.has(articuloId)) {
-          productosMap.set(articuloId, {
-            articulo_id: articuloId,
-            articulo: detalle.articulo,
-            cantidad_vendida: 0,
-            total_ventas: 0
-          });
+        // Gráfico de productos más vendidos
+        if (this.productosMasVendidos.length > 0) {
+          this.barChartData = {
+            labels: this.productosMasVendidos.map(p => p.articulo?.nombre_articulo || `Artículo #${p.articulo_id}`),
+            datasets: [{
+              data: this.productosMasVendidos.map(p => p.total_ventas),
+              label: 'Ventas ($)',
+              backgroundColor: '#3b82f6'
+            }]
+          };
         }
 
-        const producto = productosMap.get(articuloId)!;
-        producto.cantidad_vendida += Number(detalle.cantidad || 0);
-        producto.total_ventas += Number(detalle.precio || 0) * Number(detalle.cantidad || 0);
-      });
+        // Gráfico de inventario por categoría
+        this.categoryChartData = {
+          labels: data.inventarioChart.labels,
+          datasets: [{
+            data: data.inventarioChart.data,
+            backgroundColor: ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308']
+          }]
+        };
+
+        // Gráfico de comparativa ventas vs compras
+        this.comparisonChartData = {
+          labels: data.comparativaChart.labels,
+          datasets: [
+            { data: data.comparativaChart.ventas, label: 'Ventas', backgroundColor: '#10b981' },
+            { data: data.comparativaChart.compras, label: 'Compras', backgroundColor: '#ef4444' }
+          ]
+        };
+
+        // Gráfico de proveedores
+        this.supplierChartData = {
+          labels: data.proveedoresTop.labels,
+          datasets: [{
+            data: data.proveedoresTop.data,
+            label: 'Total Comprado ($)',
+            backgroundColor: '#8b5cf6'
+          }]
+        };
+
+        // Gráfico de stock (pie chart)
+        this.pieChartData = {
+          labels: data.topStock.labels,
+          datasets: [{
+            data: data.topStock.data,
+            backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444']
+          }]
+        };
+      },
+      error: (error) => {
+        console.error('Error al cargar datos del dashboard:', error);
+        this.isLoading = false;
+      }
     });
-
-    const productosArray = Array.from(productosMap.values());
-    
-    // Productos más vendidos
-    this.productosMasVendidos = productosArray
-      .sort((a, b) => b.cantidad_vendida - a.cantidad_vendida)
-      .slice(0, 5);
-
-    // Productos menos vendidos (solo los que tienen al menos 1 venta)
-    this.productosMenosVendidos = productosArray
-      .filter(p => p.cantidad_vendida > 0)
-      .sort((a, b) => a.cantidad_vendida - b.cantidad_vendida)
-      .slice(0, 5);
   }
-
-  calcularProductosMasComprados(compras: any[]): void {
-    const productosMap = new Map<number, ProductoComprado>();
-
-    compras.forEach((compra: any) => {
-      if (!compra.detalles || !Array.isArray(compra.detalles)) return;
-
-      compra.detalles.forEach((detalle: any) => {
-        const articuloId = detalle.articulo_id;
-        if (!articuloId) return;
-        
-        if (!productosMap.has(articuloId)) {
-          productosMap.set(articuloId, {
-            articulo_id: articuloId,
-            articulo: detalle.articulo,
-            cantidad_comprada: 0,
-            total_compras: 0
-          });
-        }
-
-        const producto = productosMap.get(articuloId)!;
-        producto.cantidad_comprada += Number(detalle.cantidad || 0);
-        producto.total_compras += Number(detalle.precio_unitario || 0) * Number(detalle.cantidad || 0);
-      });
-    });
-
-    this.productosMasComprados = Array.from(productosMap.values())
-      .sort((a, b) => b.cantidad_comprada - a.cantidad_comprada)
-      .slice(0, 5);
-  }
-
 
   navegarAVentas(): void {
     this.router.navigate(['/ventas/historial']);
@@ -252,12 +302,14 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/inventario/stock']);
   }
 
-  getNombreArticulo(articuloId: number, articulo?: Articulo): string {
+  getNombreArticulo(articuloId: number, articulo?: any): string {
+    if (articulo?.nombre_articulo) return articulo.nombre_articulo;
     if (articulo?.nombre) return articulo.nombre;
     return `Artículo #${articuloId}`;
   }
 
-  getNombreCliente(clienteId: number, cliente?: Cliente): string {
+  getNombreCliente(clienteId: number, cliente?: any): string {
+    if (cliente?.nombre_cliente) return cliente.nombre_cliente;
     if (cliente?.nombre) return cliente.nombre;
     return `Cliente #${clienteId}`;
   }

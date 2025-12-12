@@ -8,9 +8,14 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
   templateUrl: './stats-cards.component.html',
 })
 export class StatsCardsComponent {
-  @Input() ventasDelDia: number = 0;
+  @Input() ventasHoy: number = 0;
+  @Input() ventasMes: number = 0;
   @Input() totalVentas: number = 0;
-  @Input() productosBajos: number = 0;
-  @Input() clientesActivos: number = 0;
+  @Input() crecimientoVentas: number = 0;
+  @Input() productosBajoStockCount: number = 0;
+  @Input() productosAgotados: number = 0;
+  @Input() valorTotalInventario: number = 0;
+  @Input() margenBruto: number = 0;
+  @Input() creditosPendientes: number = 0;
 }
 

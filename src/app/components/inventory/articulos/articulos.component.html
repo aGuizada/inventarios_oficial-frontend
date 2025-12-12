@@ -5,6 +5,16 @@
             <!-- Import/Export Component -->
             <app-articulo-import (importSuccess)="onImportSuccess()"></app-articulo-import>
 
+            <!-- Export Buttons -->
+            <button (click)="exportExcel()"
+                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex items-center transition duration-300">
+                <i class="fas fa-file-excel mr-2"></i> Excel
+            </button>
+            <button (click)="exportPDF()"
+                class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center transition duration-300">
+                <i class="fas fa-file-pdf mr-2"></i> PDF
+            </button>
+
             <!-- New Article Button -->
             <button (click)="openFormModal()"
                 class="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center">
@@ -30,8 +40,8 @@
 <div class="fixed inset-0 overflow-y-auto z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <!-- Background overlay -->
-        <div class="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-80 transition-opacity" aria-hidden="true"
-            (click)="closeFormModal()"></div>
+        <div class="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-80 transition-opacity"
+            aria-hidden="true" (click)="closeFormModal()"></div>
 
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
@@ -52,8 +62,8 @@
 <div class="fixed inset-0 overflow-y-auto z-50" aria-labelledby="detail-modal-title" role="dialog" aria-modal="true">
     <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <!-- Background overlay -->
-        <div class="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-80 transition-opacity" aria-hidden="true"
-            (click)="closeDetailModal()"></div>
+        <div class="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-80 transition-opacity"
+            aria-hidden="true" (click)="closeDetailModal()"></div>
 
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 

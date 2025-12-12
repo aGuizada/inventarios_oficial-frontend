@@ -1,29 +1,40 @@
 <div class="container mx-auto px-4 py-4">
   <!-- Vista de Historial -->
   @if (isHistorialView) {
-    <div class="mb-4 max-w-md">
-      <app-search-bar 
-        placeholder="Buscar por ID, cliente, comprobante..."
-        (search)="onSearch($event)">
+  <div class="mb-4 flex flex-col md:flex-row gap-4">
+    <div class="flex-1">
+      <app-search-bar placeholder="Buscar por ID, cliente, comprobante..." (search)="onSearch($event)">
       </app-search-bar>
     </div>
-    
-    <app-ventas-history [ventas]="ventas" [isLoading]="isLoading"
-      (nuevaVenta)="navegarANuevaVenta()" (verDetalle)="verDetalleVenta($event)">
-    </app-ventas-history>
+    <div class="flex gap-2">
+      <select [(ngModel)]="filterEstado" (change)="onFilterChange()"
+        class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+        <option value="">Todos los estados</option>
+        <option value="1">Completadas</option>
+        <option value="0">Anuladas</option>
+      </select>
+      <div
+        class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600">
+        <input type="checkbox" id="chkDevoluciones" [(ngModel)]="filterDevoluciones" (change)="onFilterChange()"
+          class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+        <label for="chkDevoluciones" class="text-sm text-gray-700 dark:text-slate-300">Con Devoluciones</label>
+      </div>
+    </div>
+  </div>
 
-    <app-pagination 
-      [currentPage]="currentPage"
-      [lastPage]="lastPage"
-      [total]="total"
-      [perPage]="perPage"
-      (pageChange)="onPageChange($event)">
-    </app-pagination>
+  <app-ventas-history [ventas]="ventas" [isLoading]="isLoading" (nuevaVenta)="navegarANuevaVenta()"
+    (verDetalle)="verDetalleVenta($event)" (devolverVenta)="onDevolverVenta($event)"
+    (anularVenta)="onAnularVenta($event)">
+  </app-ventas-history>
+
+  <app-pagination [currentPage]="currentPage" [lastPage]="lastPage" [total]="total" [perPage]="perPage"
+    (pageChange)="onPageChange($event)">
+  </app-pagination>
   }
 
   <!-- Formulario de Nueva Venta -->
   @if (!isHistorialView) {
-    <app-venta-form (saleCompleted)="onSaleCompleted()">
-    </app-venta-form>
+  <app-venta-form (saleCompleted)="onSaleCompleted()">
+  </app-venta-form>
   }
 </div>

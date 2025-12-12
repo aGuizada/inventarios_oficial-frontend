@@ -140,4 +140,12 @@ export class ProveedoresComponent implements OnInit {
   onImportSuccess(): void {
     this.loadProveedores();
   }
+
+  exportExcel(): void {
+    this.proveedorService.exportExcel();
+  }
+
+  exportPDF(): void {
+    this.proveedorService.exportPDF();
+  }
 }

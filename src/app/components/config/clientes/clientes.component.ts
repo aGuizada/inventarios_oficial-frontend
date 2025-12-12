@@ -27,7 +27,7 @@ export class ClientesComponent implements OnInit {
   isLoading = false;
   isFormModalOpen = false;
   selectedCliente: Cliente | null = null;
-  
+
   // Paginación
   currentPage: number = 1;
   lastPage: number = 1;
@@ -45,18 +45,18 @@ export class ClientesComponent implements OnInit {
 
   loadClientes(): void {
     this.isLoading = true;
-    
+
     const params: PaginationParams = {
       page: this.currentPage,
       per_page: this.perPage,
       sort_by: 'id',
       sort_order: 'desc'
     };
-    
+
     if (this.searchTerm) {
       params.search = this.searchTerm;
     }
-    
+
     this.clienteService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
@@ -133,5 +133,12 @@ export class ClientesComponent implements OnInit {
         },
         error: (error) => console.error('Error saving cliente', error)
       });
+  }
+  exportExcel(): void {
+    this.clienteService.exportExcel();
+  }
+
+  exportPDF(): void {
+    this.clienteService.exportPDF();
   }
 }

@@ -19,10 +19,10 @@ export class ArticuloService {
             .set('per_page', perPage.toString());
         return this.http.get<ApiResponse<PaginatedResponse<Articulo> | Articulo[]>>(this.apiUrl, { params });
     }
-    
+
     getAllPaginated(params?: { page?: number; per_page?: number; search?: string; sort_by?: string; sort_order?: 'asc' | 'desc' }): Observable<ApiResponse<PaginatedResponse<Articulo>>> {
         let httpParams = new HttpParams();
-        
+
         if (params?.page) {
             httpParams = httpParams.set('page', params.page.toString());
         }
@@ -38,7 +38,7 @@ export class ArticuloService {
         if (params?.sort_order) {
             httpParams = httpParams.set('sort_order', params.sort_order);
         }
-        
+
         return this.http.get<ApiResponse<PaginatedResponse<Articulo>>>(this.apiUrl, { params: httpParams });
     }
 
@@ -78,5 +78,12 @@ export class ArticuloService {
         const formData = new FormData();
         formData.append('file', file);
         return this.http.post<any>(`${this.apiUrl}/import`, formData);
+    }
+    exportExcel(): void {
+        window.open(`${this.apiUrl}/export-excel`, '_blank');
+    }
+
+    exportPDF(): void {
+        window.open(`${this.apiUrl}/export-pdf`, '_blank');
     }
 }

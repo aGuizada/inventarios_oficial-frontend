@@ -1,0 +1,222 @@
+<div class="container mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-2">Ajustes de Inventario</h1>
+            <p class="text-gray-600 dark:text-slate-400">Correcciones manuales de stock</p>
+        </div>
+        <button (click)="openModal()"
+            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2">
+            <i class="fas fa-plus"></i>
+            Nuevo Ajuste
+        </button>
+    </div>
+
+    <!-- Tabla de Ajustes -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Fecha</th>
+                        <th
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Artículo</th>
+                        <th
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Almacén</th>
+                        <th
+                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Entrada</th>
+                        <th
+                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Salida</th>
+                        <th
+                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Saldo</th>
+                        <th
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    @if (isLoading) {
+                    <tr>
+                        <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>Cargando...
+                        </td>
+                    </tr>
+                    } @else if (ajustes.length === 0) {
+                    <tr>
+                        <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            No hay ajustes registrados
+                        </td>
+                    </tr>
+                    } @else {
+                    @for (ajuste of ajustes; track ajuste.id) {
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                            {{ ajuste.fecha | date:'dd/MM/yyyy' }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                            {{ ajuste.articulo?.nombre || 'N/A' }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            {{ ajuste.almacen?.nombre_almacen || 'N/A' }}
+                        </td>
+                        <td
+                            class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-green-600 dark:text-green-400">
+                            {{ ajuste.cantidad_entrada | number:'1.2-2' }}
+                        </td>
+                        <td
+                            class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-red-600 dark:text-red-400">
+                            {{ ajuste.cantidad_salida | number:'1.2-2' }}
+                        </td>
+                        <td
+                            class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600 dark:text-blue-400">
+                            {{ ajuste.cantidad_saldo | number:'1.2-2' }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            {{ ajuste.observaciones }}
+                        </td>
+                    </tr>
+                    }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal de Nuevo Ajuste -->
+    @if (showModal) {
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <!-- Header Modal -->
+            <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-slate-100">Nuevo Ajuste de Inventario</h2>
+                <button (click)="closeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Body Modal -->
+            <div class="p-6">
+                <form>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Fecha -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Fecha <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" [(ngModel)]="ajuste.fecha" name="fecha"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+
+                        <!-- Tipo de Ajuste -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Tipo <span class="text-red-500">*</span>
+                            </label>
+                            <select [(ngModel)]="ajuste.tipo_ajuste" name="tipo_ajuste"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option value="entrada">Entrada (Agregar stock)</option>
+                                <option value="salida">Salida (Reducir stock)</option>
+                            </select>
+                        </div>
+
+                        <!-- Artículo -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Artículo <span class="text-red-500">*</span>
+                            </label>
+                            <select [(ngModel)]="ajuste.articulo_id" (change)="onArticuloChange()" name="articulo_id"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option [value]="null">Seleccione un artículo</option>
+                                @for (art of articulos; track art.id) {
+                                <option [value]="art.id">{{ art.nombre }} ({{ art.codigo }})</option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Almacén -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Almacén <span class="text-red-500">*</span>
+                            </label>
+                            <select [(ngModel)]="ajuste.almacen_id" name="almacen_id"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option [value]="null">Seleccione un almacén</option>
+                                @for (alm of almacenes; track alm.id) {
+                                <option [value]="alm.id">{{ alm.nombre_almacen }}</option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Cantidad -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Cantidad <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" [(ngModel)]="ajuste.cantidad" name="cantidad" min="0" step="0.01"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+
+                        <!-- Costo Unitario -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Costo Unitario <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" [(ngModel)]="ajuste.costo_unitario" name="costo_unitario" min="0"
+                                step="0.01"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+
+                        <!-- Motivo -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Motivo <span class="text-red-500">*</span>
+                            </label>
+                            <select [(ngModel)]="ajuste.motivo" name="motivo"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option value="">Seleccione un motivo</option>
+                                <option value="merma">Merma</option>
+                                <option value="robo">Robo o pérdida</option>
+                                <option value="error_conteo">Error de conteo</option>
+                                <option value="vencimiento">Producto vencido</option>
+                                <option value="inventario_fisico">Ajuste por inventario físico</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+
+                        <!-- Observaciones -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Observaciones
+                            </label>
+                            <textarea [(ngModel)]="ajuste.observaciones" name="observaciones" rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+                <button (click)="closeModal()" [disabled]="isSaving"
+                    class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50">
+                    Cancelar
+                </button>
+                <button (click)="guardarAjuste()" [disabled]="isSaving"
+                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 flex items-center gap-2">
+                    @if (isSaving) {
+                    <i class="fas fa-spinner fa-spin"></i>
+                    }
+                    Guardar Ajuste
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+</div>

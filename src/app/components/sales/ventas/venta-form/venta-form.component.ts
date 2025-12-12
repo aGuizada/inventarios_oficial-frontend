@@ -81,6 +81,7 @@ export class VentaFormComponent implements OnInit {
             total: [0, [Validators.required, Validators.min(0)]],
             estado: ['Activo'],
             detalles: this.detallesFormArray,
+            pagos: this.fb.array([]),
             numero_cuotas: [0, [Validators.min(1)]],
             tiempo_dias_cuota: [30, [Validators.min(1)]]
         });
@@ -103,6 +104,10 @@ export class VentaFormComponent implements OnInit {
 
     get detalles() {
         return this.form.get('detalles') as FormArray;
+    }
+
+    get pagos() {
+        return this.form.get('pagos') as FormArray;
     }
 
     actualizarFechaHora(): void {
@@ -475,7 +480,12 @@ export class VentaFormComponent implements OnInit {
                 precio: parseFloat(parseFloat(detalle.precio).toFixed(2)),
                 descuento: parseFloat(parseFloat(detalle.descuento || 0).toFixed(2)),
                 unidad_medida: detalle.unidad_medida
-            }))
+            })),
+            pagos: formValue.pagos ? formValue.pagos.map((pago: any) => ({
+                tipo_pago_id: Number(pago.tipo_pago_id),
+                monto: parseFloat(parseFloat(pago.monto).toFixed(2)),
+                referencia: pago.referencia
+            })) : []
         };
 
         if (this.esVentaCredito) {

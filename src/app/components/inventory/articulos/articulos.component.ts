@@ -45,7 +45,7 @@ export class ArticulosComponent implements OnInit {
   perPage = 10;
   totalItems = 0;
   lastPage = 1;
-  
+
   constructor(
     private articuloService: ArticuloService,
     private categoriaService: CategoriaService,
@@ -76,7 +76,7 @@ export class ArticulosComponent implements OnInit {
     this.isLoading = true;
     // Asegurar que articulos siempre sea un array antes de la llamada
     this.articulos = [];
-    
+
     this.articuloService.getAll(page, this.perPage)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
@@ -189,5 +189,13 @@ export class ArticulosComponent implements OnInit {
 
   onImportSuccess(): void {
     this.loadArticulos(this.currentPage);
+  }
+
+  exportExcel(): void {
+    this.articuloService.exportExcel();
+  }
+
+  exportPDF(): void {
+    this.articuloService.exportPDF();
   }
 }

@@ -31,7 +31,7 @@ export class UsuariosComponent implements OnInit {
   isLoading = false;
   isFormModalOpen = false;
   selectedUser: User | null = null;
-  
+
   // Paginación
   currentPage: number = 1;
   lastPage: number = 1;
@@ -57,18 +57,18 @@ export class UsuariosComponent implements OnInit {
 
   loadUsuarios(): void {
     this.isLoading = true;
-    
+
     const params: PaginationParams = {
       page: this.currentPage,
       per_page: this.perPage,
       sort_by: 'id',
       sort_order: 'desc'
     };
-    
+
     if (this.searchTerm) {
       params.search = this.searchTerm;
     }
-    
+
     this.userService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
@@ -145,5 +145,12 @@ export class UsuariosComponent implements OnInit {
         },
         error: (error) => console.error('Error saving user', error)
       });
+  }
+  exportExcel(): void {
+    this.userService.exportExcel();
+  }
+
+  exportPDF(): void {
+    this.userService.exportPDF();
   }
 }

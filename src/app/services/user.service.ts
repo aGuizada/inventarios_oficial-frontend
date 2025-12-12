@@ -44,4 +44,11 @@ export class UserService {
     delete(id: number): Observable<ApiResponse<any>> {
         return this.http.delete<ApiResponse<any>>(`${this.apiUrl}/${id}`);
     }
+    exportExcel(): void {
+        window.open(`${this.apiUrl}/export-excel`, '_blank');
+    }
+
+    exportPDF(): void {
+        window.open(`${this.apiUrl}/export-pdf`, '_blank');
+    }
 }

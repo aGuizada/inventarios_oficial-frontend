@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { InventarioService } from '../../../services/inventario.service';
 import { AlmacenService } from '../../../services/almacen.service';
 import { Inventario, Almacen, ApiResponse, PaginationParams } from '../../../interfaces';
@@ -42,7 +43,8 @@ export class InventarioComponent implements OnInit {
 
   constructor(
     private inventarioService: InventarioService,
-    private almacenService: AlmacenService
+    private almacenService: AlmacenService,
+    private router: Router
   ) { }
 
   ngOnInit(): void {
@@ -194,5 +196,17 @@ export class InventarioComponent implements OnInit {
         this.inventariosPorItem = [];
       }
     });
+  }
+
+  navegarAAjustes(): void {
+    this.router.navigate(['/operaciones/ajustes']);
+  }
+
+  exportExcel(): void {
+    this.inventarioService.exportExcel();
+  }
+
+  exportPDF(): void {
+    this.inventarioService.exportPDF();
   }
 }

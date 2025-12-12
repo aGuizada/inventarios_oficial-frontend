@@ -74,10 +74,19 @@ export const routes: Routes = [
             {
                 path: 'operaciones',
                 children: [
+                    { path: 'ajustes', loadComponent: () => import('./components/operations/ajustes-inventario/ajustes-inventario.component').then(m => m.AjustesInventarioComponent) },
+                    { path: 'devoluciones', loadComponent: () => import('./components/operations/devoluciones/devoluciones.component').then(m => m.DevolucionesComponent) },
+                    { path: 'devoluciones/nuevo', loadComponent: () => import('./components/operations/devoluciones/devolucion-form/devolucion-form.component').then(m => m.DevolucionFormComponent) },
+                    { path: 'kardex', loadComponent: () => import('./components/operations/kardex/kardex.component').then(m => m.KardexComponent) },
                     { path: 'traspasos', loadComponent: () => import('./components/operations/traspasos/traspasos.component').then(m => m.TraspasosComponent) },
                     { path: 'precios', loadComponent: () => import('./components/operations/precios/precios.component').then(m => m.PreciosComponent) },
                     { path: 'monedas', loadComponent: () => import('./components/operations/monedas/monedas.component').then(m => m.MonedasComponent) }
                 ]
+            },
+            // Reports
+            {
+                path: 'reportes',
+                loadComponent: () => import('./components/reports/reportes/reportes.component').then(m => m.ReportesComponent)
             },
             // Config
             {

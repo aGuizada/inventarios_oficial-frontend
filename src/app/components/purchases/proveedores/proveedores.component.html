@@ -5,6 +5,16 @@
             <!-- Import Component -->
             <app-proveedor-import (importSuccess)="onImportSuccess()"></app-proveedor-import>
 
+            <!-- Export Buttons -->
+            <button (click)="exportExcel()"
+                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex items-center transition duration-300">
+                <i class="fas fa-file-excel mr-2"></i> Excel
+            </button>
+            <button (click)="exportPDF()"
+                class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center transition duration-300">
+                <i class="fas fa-file-pdf mr-2"></i> PDF
+            </button>
+
             <!-- New Provider Button -->
             <button (click)="openFormModal()"
                 class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center">

@@ -1,0 +1,292 @@
+<div class="container mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-2">Reportes</h1>
+        <p class="text-gray-600 dark:text-slate-400">Análisis y estadísticas del negocio</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="mb-6 flex flex-wrap gap-2">
+        <button (click)="cambiarVista('ventas')" [class.bg-blue-600]="vistaActual === 'ventas'"
+            [class.text-white]="vistaActual === 'ventas'" [class.bg-gray-200]="vistaActual !== 'ventas'"
+            class="px-4 py-2 rounded-lg transition-colors">
+            <i class="fas fa-shopping-cart mr-2"></i>Ventas
+        </button>
+        <button (click)="cambiarVista('compras')" [class.bg-blue-600]="vistaActual === 'compras'"
+            [class.text-white]="vistaActual === 'compras'" [class.bg-gray-200]="vistaActual !== 'compras'"
+            class="px-4 py-2 rounded-lg transition-colors">
+            <i class="fas fa-shopping-bag mr-2"></i>Compras
+        </button>
+        <button (click)="cambiarVista('productos')" [class.bg-blue-600]="vistaActual === 'productos'"
+            [class.text-white]="vistaActual === 'productos'" [class.bg-gray-200]="vistaActual !== 'productos'"
+            class="px-4 py-2 rounded-lg transition-colors">
+            <i class="fas fa-trophy mr-2"></i>Top Productos
+        </button>
+        <button (click)="cambiarVista('stock')" [class.bg-blue-600]="vistaActual === 'stock'"
+            [class.text-white]="vistaActual === 'stock'" [class.bg-gray-200]="vistaActual !== 'stock'"
+            class="px-4 py-2 rounded-lg transition-colors">
+            <i class="fas fa-exclamation-triangle mr-2"></i>Stock Bajo
+        </button>
+        <button (click)="cambiarVista('utilidad')" [class.bg-blue-600]="vistaActual === 'utilidad'"
+            [class.text-white]="vistaActual === 'utilidad'" [class.bg-gray-200]="vistaActual !== 'utilidad'"
+            class="px-4 py-2 rounded-lg transition-colors">
+            <i class="fas fa-chart-line mr-2"></i>Utilidad
+        </button>
+    </div>
+
+    <!-- Filtros (para ventas, compras, productos, utilidad) -->
+    @if (vistaActual !== 'stock') {
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div>
+                <label class="block text-sm font-medium mb-2">Desde</label>
+                <input type="date" [(ngModel)]="fechaDesde" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2">Hasta</label>
+                <input type="date" [(ngModel)]="fechaHasta" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700">
+            </div>
+            <button (click)="cargarReporte()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <i class="fas fa-search mr-2"></i>Generar
+            </button>
+
+            <!-- Botones de Exportación -->
+            <div class="flex gap-2">
+                @if (vistaActual === 'ventas' && reporteData) {
+                <button (click)="exportarVentasExcel()"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <i class="fas fa-file-excel mr-2"></i>Excel
+                </button>
+                <button (click)="exportarVentasPDF()"
+                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    <i class="fas fa-file-pdf mr-2"></i>PDF
+                </button>
+                }
+                @if (vistaActual === 'compras' && reporteCompras) {
+                <button (click)="exportarComprasExcel()"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <i class="fas fa-file-excel mr-2"></i>Excel
+                </button>
+                }
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- Botón para Stock (separado porque no tiene filtros de fecha) -->
+    @if (vistaActual === 'stock') {
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-6">
+        <div class="flex justify-end">
+            <button (click)="exportarInventarioExcel()"
+                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                <i class="fas fa-file-excel mr-2"></i>Exportar Excel
+            </button>
+        </div>
+    </div>
+    }
+
+    <!-- Reporte Ventas -->
+    @if (vistaActual === 'ventas' && reporteData) {
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200">
+            <div class="text-sm font-medium text-blue-600 mb-1">Total Ventas</div>
+            <div class="text-2xl font-bold">Bs. {{ reporteData.resumen.total_ventas | number:'1.2-2' }}</div>
+        </div>
+        <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200">
+            <div class="text-sm font-medium text-green-600 mb-1">Transacciones</div>
+            <div class="text-2xl font-bold">{{ reporteData.resumen.cantidad_transacciones }}</div>
+        </div>
+        <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200">
+            <div class="text-sm font-medium text-purple-600 mb-1">Ticket Promedio</div>
+            <div class="text-2xl font-bold">Bs. {{ reporteData.resumen.ticket_promedio | number:'1.2-2' }}</div>
+        </div>
+    </div>
+
+    <!-- Tabla de Ventas -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase">Fecha</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase">Cliente</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase">Tipo</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium uppercase">Total</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                @for (venta of reporteData.ventas; track venta.id) {
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-6 py-4 text-sm">{{ venta.fecha_hora | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td class="px-6 py-4">{{ venta.cliente?.nombre || 'Cliente General' }}</td>
+                    <td class="px-6 py-4 text-sm">{{ venta.tipoVenta?.nombre_tipo_venta }}</td>
+                    <td class="px-6 py-4 text-right font-semibold text-green-600">Bs. {{ venta.total | number:'1.2-2' }}
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+
+    <!-- Reporte Compras -->
+    @if (vistaActual === 'compras' && reporteCompras) {
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200">
+            <div class="text-sm font-medium text-orange-600 mb-1">Total Compras</div>
+            <div class="text-2xl font-bold">Bs. {{ reporteCompras.resumen.total_compras | number:'1.2-2' }}</div>
+        </div>
+        <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 border border-indigo-200">
+            <div class="text-sm font-medium text-indigo-600 mb-1">Transacciones</div>
+            <div class="text-2xl font-bold">{{ reporteCompras.resumen.cantidad_compras }}</div>
+        </div>
+        <div class="bg-pink-50 dark:bg-pink-900/20 rounded-lg p-4 border border-pink-200">
+            <div class="text-sm font-medium text-pink-600 mb-1">Compra Promedio</div>
+            <div class="text-2xl font-bold">Bs. {{ reporteCompras.resumen.promedio_compra | number:'1.2-2' }}</div>
+        </div>
+    </div>
+
+    <!-- Tabla de Compras -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase">Fecha</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase">Proveedor</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium uppercase">Total</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                @for (compra of reporteCompras.compras; track compra.id) {
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-6 py-4 text-sm">{{ compra.fecha_hora | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td class="px-6 py-4">Proveedor #{{ compra.proveedor_id }}</td>
+                    <td class="px-6 py-4 text-right font-semibold text-orange-600">Bs. {{ compra.total | number:'1.2-2'
+                        }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+
+    <!-- Productos Más Vendidos -->
+    @if (vistaActual === 'productos') {
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase">#</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase">Producto</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium uppercase">Cantidad Vendida</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium uppercase">Total Ventas</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium uppercase">Transacciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                @for (prod of productosMasVendidos; track $index) {
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-6 py-4 text-sm font-bold text-blue-600">{{ $index + 1 }}</td>
+                    <td class="px-6 py-4">{{ prod.articulo.nombre }}</td>
+                    <td class="px-6 py-4 text-right font-semibold">{{ prod.total_cantidad | number:'1.2-2' }}</td>
+                    <td class="px-6 py-4 text-right font-semibold text-green-600">Bs. {{ prod.total_ventas |
+                        number:'1.2-2' }}</td>
+                    <td class="px-6 py-4 text-right">{{ prod.num_transacciones }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+
+    <!-- Stock Bajo -->
+    @if (vistaActual === 'stock') {
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase">Producto</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium uppercase">Stock Actual</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium uppercase">Stock Mínimo</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium uppercase">Diferencia</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase">Estado</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium uppercase">Sugerencia</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                @for (item of stockBajo; track item.articulo.id) {
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">{{ item.articulo.nombre }}</td>
+                    <td class="px-6 py-4 text-right font-semibold">{{ item.stock_actual }}</td>
+                    <td class="px-6 py-4 text-right">{{ item.stock_minimo }}</td>
+                    <td class="px-6 py-4 text-right font-bold text-red-600">{{ item.diferencia }}</td>
+                    <td class="px-6 py-4">
+                        <span [class]="getColorEstado(item.estado)" class="px-2 py-1 text-xs rounded-full">
+                            {{ item.estado }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right text-blue-600 font-semibold">{{ item.sugerencia_reorden }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+
+    <!-- Reporte Utilidad -->
+    @if (vistaActual === 'utilidad' && reporteUtilidad) {
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200">
+            <div class="text-sm font-medium text-green-600 mb-1">Total Ventas</div>
+            <div class="text-2xl font-bold">Bs. {{ reporteUtilidad.resumen.total_ventas | number:'1.2-2' }}</div>
+        </div>
+        <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200">
+            <div class="text-sm font-medium text-red-600 mb-1">Total Costos</div>
+            <div class="text-2xl font-bold">Bs. {{ reporteUtilidad.resumen.total_costos | number:'1.2-2' }}</div>
+        </div>
+        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200">
+            <div class="text-sm font-medium text-blue-600 mb-1">Utilidad Bruta</div>
+            <div class="text-2xl font-bold">Bs. {{ reporteUtilidad.resumen.utilidad_bruta | number:'1.2-2' }}</div>
+        </div>
+        <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200">
+            <div class="text-sm font-medium text-purple-600 mb-1">Margen %</div>
+            <div class="text-2xl font-bold">{{ reporteUtilidad.resumen.margen_porcentaje | number:'1.2-2' }}%</div>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase">Producto</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium uppercase">Cantidad</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium uppercase">Ventas</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium uppercase">Costos</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium uppercase">Utilidad</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium uppercase">Margen %</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                @for (prod of reporteUtilidad.por_producto; track prod.articulo) {
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">{{ prod.articulo }}</td>
+                    <td class="px-6 py-4 text-right">{{ prod.cantidad_vendida }}</td>
+                    <td class="px-6 py-4 text-right text-green-600 font-semibold">Bs. {{ prod.total_ventas |
+                        number:'1.2-2' }}</td>
+                    <td class="px-6 py-4 text-right text-red-600">Bs. {{ prod.total_costos | number:'1.2-2' }}</td>
+                    <td class="px-6 py-4 text-right text-blue-600 font-bold">Bs. {{ prod.utilidad | number:'1.2-2' }}
+                    </td>
+                    <td class="px-6 py-4 text-right font-bold">{{ prod.margen_porcentaje | number:'1.2-2' }}%</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+
+    @if (isLoading) {
+    <div class="text-center py-8">
+        <i class="fas fa-spinner fa-spin text-3xl text-blue-600"></i>
+        <p class="mt-2 text-gray-600">Cargando reporte...</p>
+    </div>
+    }
+</div>

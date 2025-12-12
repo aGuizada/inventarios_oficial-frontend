@@ -4,10 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { Categoria } from '../../../../../../interfaces';
 import { ProductoInventario } from '../../../../../../services/venta.service';
 
+import { ArticuloDetailComponent } from '../../../../../inventory/articulos/articulo-detail/articulo-detail.component';
+
 @Component({
     selector: 'app-product-list',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, ArticuloDetailComponent],
     templateUrl: './product-list.component.html',
 })
 export class ProductListComponent implements OnChanges {
@@ -24,6 +26,19 @@ export class ProductListComponent implements OnChanges {
     productosFiltrados: ProductoInventario[] = [];
     productosFiltradosPorCategoria: ProductoInventario[] = [];
     categoriaSeleccionada: number | null = null;
+
+    selectedProductForDetail: ProductoInventario | null = null;
+    isDetailModalOpen: boolean = false;
+
+    openProductDetail(producto: ProductoInventario): void {
+        this.selectedProductForDetail = producto;
+        this.isDetailModalOpen = true;
+    }
+
+    closeProductDetail(): void {
+        this.isDetailModalOpen = false;
+        this.selectedProductForDetail = null;
+    }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes['productosInventario'] || changes['almacenId']) {
@@ -109,7 +124,7 @@ export class ProductListComponent implements OnChanges {
         }, 200);
     }
 
-    agregarProductoAVenta(producto?: ProductoInventario): void {
+    agregarProductoAVenta(producto?: ProductoInventario | null): void {
         const productoAAgregar = producto || this.productoSeleccionado;
 
         if (!productoAAgregar) {

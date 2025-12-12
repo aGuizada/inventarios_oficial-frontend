@@ -68,8 +68,16 @@ export class SidebarComponent {
       icon: 'fas fa-cogs',
       isOpen: false,
       children: [
+        { label: 'Kardex', icon: 'fas fa-book', route: '/operaciones/kardex' },
         { label: 'Traspasos', icon: 'fas fa-dolly', route: '/operaciones/traspasos' },
-        { label: 'Precios', icon: 'fas fa-tags', route: '/operaciones/precios' },]
+        { label: 'Devoluciones', icon: 'fas fa-undo', route: '/operaciones/devoluciones' },
+        { label: 'Precios', icon: 'fas fa-tags', route: '/operaciones/precios' },
+      ]
+    },
+    {
+      label: 'Reportes',
+      icon: 'fas fa-chart-bar',
+      route: '/reportes'
     },
     {
       label: 'Configuración',

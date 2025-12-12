@@ -65,4 +65,11 @@ export class InventarioService {
     getById(id: number): Observable<Inventario> {
         return this.http.get<Inventario>(`${this.apiUrl}/${id}`);
     }
+    exportExcel(): void {
+        window.open(`${this.apiUrl}/export-excel`, '_blank');
+    }
+
+    exportPDF(): void {
+        window.open(`${this.apiUrl}/export-pdf`, '_blank');
+    }
 }

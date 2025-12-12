@@ -50,4 +50,11 @@ export class ClienteService {
             params: { q: term }
         });
     }
+    exportExcel(): void {
+        window.open(`${this.apiUrl}/export-excel`, '_blank');
+    }
+
+    exportPDF(): void {
+        window.open(`${this.apiUrl}/export-pdf`, '_blank');
+    }
 }

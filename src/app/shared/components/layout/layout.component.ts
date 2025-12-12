@@ -43,6 +43,7 @@ export class LayoutComponent implements OnInit, AfterViewInit {
     const noPaddingRoutes = [
       '/perfil',
       '/inventario',
+      '/kardex',
       '/ventas',
       '/compras',
       '/finanzas',

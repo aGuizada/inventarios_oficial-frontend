@@ -1,0 +1,490 @@
+<div class="container mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-2">Kardex de Inventario</h1>
+            <p class="text-gray-600 dark:text-slate-400">Registro detallado de movimientos de inventario</p>
+        </div>
+        <!-- Botón Nuevo Ajuste -->
+        <button (click)="abrirModalAjuste()"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 shadow-lg">
+            <i class="fas fa-plus"></i>
+            <span>Nuevo Ajuste</span>
+        </button>
+    </div>
+
+    <!-- Toggle Físico / Valorado y Exportación -->
+    <div class="mb-6 flex justify-between items-center flex-wrap gap-4">
+        <div class="flex gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+            <button (click)="cambiarVista('fisico')"
+                [class]="vistaActual === 'fisico' ? 'bg-white dark:bg-gray-600 shadow-sm' : 'bg-transparent'"
+                class="px-6 py-2 rounded-md font-medium transition-all duration-200"
+                [class.text-blue-600]="vistaActual === 'fisico'" [class.text-gray-600]="vistaActual !== 'fisico'"
+                [class.dark:text-blue-400]="vistaActual === 'fisico'"
+                [class.dark:text-gray-300]="vistaActual !== 'fisico'">
+                <i class="fas fa-boxes mr-2"></i>
+                Kardex Físico
+            </button>
+            <button (click)="cambiarVista('valorado')"
+                [class]="vistaActual === 'valorado' ? 'bg-white dark:bg-gray-600 shadow-sm' : 'bg-transparent'"
+                class="px-6 py-2 rounded-md font-medium transition-all duration-200"
+                [class.text-blue-600]="vistaActual === 'valorado'" [class.text-gray-600]="vistaActual !== 'valorado'"
+                [class.dark:text-blue-400]="vistaActual === 'valorado'"
+                [class.dark:text-gray-300]="vistaActual !== 'valorado'">
+                <i class="fas fa-dollar-sign mr-2"></i>
+                Kardex Valorado
+            </button>
+        </div>
+
+        <!-- Botones de Exportación -->
+        <div class="flex gap-2">
+            <button (click)="exportarPDF()"
+                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200">
+                <i class="fas fa-file-pdf mr-2"></i>
+                PDF
+            </button>
+            <button (click)="exportarExcel()"
+                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200">
+                <i class="fas fa-file-excel mr-2"></i>
+                Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-slate-100">
+            <i class="fas fa-filter mr-2"></i>Filtros
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Artículo -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Artículo</label>
+                <select [(ngModel)]="articuloSeleccionado"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    <option [value]="null">Todos</option>
+                    @if (articulos && articulos.length > 0) {
+                    @for (art of articulos; track art.id) {
+                    <option [value]="art.id">{{ art.nombre }}</option>
+                    }
+                    }
+                </select>
+            </div>
+
+            <!-- Almacén -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Almacén</label>
+                <select [(ngModel)]="almacenSeleccionado"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    <option [value]="null">Todos</option>
+                    @if (almacenes && almacenes.length > 0) {
+                    @for (alm of almacenes; track alm.id) {
+                    <option [value]="alm.id">{{ alm.nombre_almacen }}</option>
+                    }
+                    }
+                </select>
+            </div>
+
+            <!-- Tipo Movimiento -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo Movimiento</label>
+                <select [(ngModel)]="tipoMovimiento"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    <option value="">Todos</option>
+                    <option value="compra">Compra</option>
+                    <option value="venta">Venta</option>
+                    <option value="ajuste">Ajuste</option>
+                    <option value="traspaso_entrada">Traspaso Entrada</option>
+                    <option value="traspaso_salida">Traspaso Salida</option>
+                </select>
+            </div>
+
+            <!-- Fecha Desde -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Desde</label>
+                <input type="date" [(ngModel)]="fechaDesde"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+            </div>
+
+            <!-- Fecha Hasta -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Hasta</label>
+                <input type="date" [(ngModel)]="fechaHasta"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+            </div>
+
+            <!-- Botones -->
+            <div class="flex items-end gap-2">
+                <button (click)="aplicarFiltros()"
+                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                    <i class="fas fa-search mr-2"></i>
+                    Buscar
+                </button>
+                <button (click)="limpiarFiltros()"
+                    class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200">
+                    <i class="fas fa-times mr-2"></i>
+                    Limpiar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen desde Backend -->
+    @if (resumen && !isLoadingResumen) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div
+            class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800 hover:shadow-lg transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-sm font-medium text-green-600 dark:text-green-400 mb-1">Total Entradas</div>
+                    <div class="text-2xl font-bold text-green-900 dark:text-green-200">{{ resumen.total_entradas |
+                        number:'1.2-2' }}</div>
+                </div>
+                <i class="fas fa-arrow-down text-green-500 text-3xl"></i>
+            </div>
+        </div>
+        <div
+            class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800 hover:shadow-lg transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-sm font-medium text-red-600 dark:text-red-400 mb-1">Total Salidas</div>
+                    <div class="text-2xl font-bold text-red-900 dark:text-red-200">{{ resumen.total_salidas |
+                        number:'1.2-2' }}</div>
+                </div>
+                <i class="fas fa-arrow-up text-red-500 text-3xl"></i>
+            </div>
+        </div>
+        <div
+            class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800 hover:shadow-lg transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Saldo Neto</div>
+                    <div class="text-2xl font-bold text-blue-900 dark:text-blue-200">{{ resumen.saldo_neto |
+                        number:'1.2-2' }}</div>
+                </div>
+                <i class="fas fa-balance-scale text-blue-500 text-3xl"></i>
+            </div>
+        </div>
+        @if (vistaActual === 'valorado') {
+        <div
+            class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800 hover:shadow-lg transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-sm font-medium text-purple-600 dark:text-purple-400 mb-1">Margen</div>
+                    <div class="text-2xl font-bold text-purple-900 dark:text-purple-200">{{ resumen.margen |
+                        number:'1.1-1' }}%</div>
+                </div>
+                <i class="fas fa-percentage text-purple-500 text-3xl"></i>
+            </div>
+        </div>
+        } @else {
+        <div
+            class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 border border-indigo-200 dark:border-indigo-800 hover:shadow-lg transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-1">Total Movimientos</div>
+                    <div class="text-2xl font-bold text-indigo-900 dark:text-indigo-200">{{ resumen.total_movimientos }}
+                    </div>
+                </div>
+                <i class="fas fa-exchange-alt text-indigo-500 text-3xl"></i>
+            </div>
+        </div>
+        }
+    </div>
+    }
+
+    <!-- Tabla Kardex Físico -->
+    @if (vistaActual === 'fisico') {
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Fecha</th>
+                        <th
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Tipo</th>
+                        <th
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Documento</th>
+                        <th
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Artículo</th>
+                        <th
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Almacén</th>
+                        <th
+                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Entrada</th>
+                        <th
+                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Salida</th>
+                        <th
+                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Saldo</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    @if (isLoading) {
+                    <tr>
+                        <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>Cargando...
+                        </td>
+                    </tr>
+                    } @else if (kardexMovimientos.length === 0) {
+                    <tr>
+                        <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
+                            <p>No hay movimientos registrados</p>
+                        </td>
+                    </tr>
+                    } @else {
+                    @for (mov of kardexMovimientos; track mov.id) {
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                            {{ mov.fecha | date:'dd/MM/yyyy' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span [class]="getTipoMovimientoClass(mov.tipo_movimiento)"
+                                class="px-2 py-1 text-xs rounded-full font-medium">
+                                {{ mov.tipo_movimiento }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            {{ mov.documento_numero }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                            {{ mov.articulo?.nombre || 'N/A' }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            {{ mov.almacen?.nombre_almacen || 'N/A' }}
+                        </td>
+                        <td
+                            class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-green-600 dark:text-green-400">
+                            {{ mov.cantidad_entrada | number:'1.2-2' }}
+                        </td>
+                        <td
+                            class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-red-600 dark:text-red-400">
+                            {{ mov.cantidad_salida | number:'1.2-2' }}
+                        </td>
+                        <td
+                            class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600 dark:text-blue-400">
+                            {{ mov.cantidad_saldo | number:'1.2-2' }}
+                        </td>
+                    </tr>
+                    }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    }
+
+    <!-- Tabla Kardex Valorado -->
+    @if (vistaActual === 'valorado') {
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Fecha</th>
+                        <th
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Tipo</th>
+                        <th
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Artículo</th>
+                        <th
+                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Entrada</th>
+                        <th
+                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Salida</th>
+                        <th
+                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Saldo</th>
+                        <th
+                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Costo Unit.</th>
+                        <th
+                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Costo Total</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    @if (isLoading) {
+                    <tr>
+                        <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>Cargando...
+                        </td>
+                    </tr>
+                    } @else if (kardexMovimientos.length === 0) {
+                    <tr>
+                        <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            No hay movimientos registrados
+                        </td>
+                    </tr>
+                    } @else {
+                    @for (mov of kardexMovimientos; track mov.id) {
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                            {{ mov.fecha | date:'dd/MM/yyyy' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span [class]="getTipoMovimientoClass(mov.tipo_movimiento)"
+                                class="px-2 py-1 text-xs rounded-full font-medium">
+                                {{ mov.tipo_movimiento }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                            {{ mov.articulo?.nombre || 'N/A' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600 dark:text-green-400">
+                            {{ mov.cantidad_entrada | number:'1.2-2' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 dark:text-red-400">
+                            {{ mov.cantidad_salida | number:'1.2-2' }}
+                        </td>
+                        <td
+                            class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600 dark:text-blue-400">
+                            {{ mov.cantidad_saldo | number:'1.2-2' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
+                            Bs. {{ mov.costo_unitario | number:'1.2-2' }}
+                        </td>
+                        <td
+                            class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-purple-600 dark:text-purple-400">
+                            Bs. {{ mov.costo_total | number:'1.2-2' }}
+                        </td>
+                    </tr>
+                    }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    }
+
+    <!-- Paginación -->
+    <div class="mt-6">
+        <app-pagination [currentPage]="currentPage" [lastPage]="lastPage" [total]="total" [perPage]="perPage"
+            (pageChange)="onPageChange($event)">
+        </app-pagination>
+    </div>
+</div>
+
+<!-- Modal Nuevo Ajuste -->
+@if (mostrarModalAjuste) {
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Nuevo Ajuste de Inventario</h2>
+                <button (click)="cerrarModalAjuste()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+
+            <form (ngSubmit)="guardarAjuste()">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Fecha -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fecha *</label>
+                        <input type="date" [(ngModel)]="nuevoAjuste.fecha" name="fecha" required
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <!-- Artículo -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Artículo
+                            *</label>
+                        <select [(ngModel)]="nuevoAjuste.articulo_id" name="articulo_id" required
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                            <option [value]="null">Seleccione...</option>
+                            @if (articulos && articulos.length > 0) {
+                            @for (art of articulos; track art.id) {
+                            <option [value]="art.id">{{ art.nombre }}</option>
+                            }
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Almacén -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Almacén
+                            *</label>
+                        <select [(ngModel)]="nuevoAjuste.almacen_id" name="almacen_id" required
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                            <option [value]="null">Seleccione...</option>
+                            @if (almacenes && almacenes.length > 0) {
+                            @for (alm of almacenes; track alm.id) {
+                            <option [value]="alm.id">{{ alm.nombre_almacen }}</option>
+                            }
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Costo Unitario -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Costo Unitario
+                            *</label>
+                        <input type="number" [(ngModel)]="nuevoAjuste.costo_unitario" name="costo_unitario" required
+                            step="0.01" min="0"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <!-- Cantidad Entrada -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cantidad
+                            Entrada</label>
+                        <input type="number" [(ngModel)]="nuevoAjuste.cantidad_entrada" name="cantidad_entrada"
+                            step="0.01" min="0"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <!-- Cantidad Salida -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cantidad
+                            Salida</label>
+                        <input type="number" [(ngModel)]="nuevoAjuste.cantidad_salida" name="cantidad_salida"
+                            step="0.01" min="0"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <!-- Motivo -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Motivo</label>
+                        <input type="text" [(ngModel)]="nuevoAjuste.motivo" name="motivo"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="md:col-span-2">
+                        <label
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Observaciones</label>
+                        <textarea [(ngModel)]="nuevoAjuste.observaciones" name="observaciones" rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"></textarea>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" (click)="cerrarModalAjuste()"
+                        class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200">
+                        Cancelar
+                    </button>
+                    <button type="submit" [disabled]="isLoading"
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50">
+                        <i class="fas fa-save mr-2"></i>
+                        {{isLoading ? 'Guardando...' : 'Guardar Ajuste'}}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+}

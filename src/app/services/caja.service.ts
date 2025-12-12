@@ -18,7 +18,7 @@ export class CajaService {
 
     getPaginated(params?: PaginationParams): Observable<ApiResponse<PaginatedResponse<Caja>>> {
         let httpParams = new HttpParams();
-        
+
         if (params?.page) {
             httpParams = httpParams.set('page', params.page.toString());
         }
@@ -34,7 +34,7 @@ export class CajaService {
         if (params?.sort_order) {
             httpParams = httpParams.set('sort_order', params.sort_order);
         }
-        
+
         return this.http.get<ApiResponse<PaginatedResponse<Caja>>>(this.apiUrl, { params: httpParams });
     }
 
@@ -48,6 +48,10 @@ export class CajaService {
 
     update(id: number, caja: Partial<Caja>): Observable<ApiResponse<Caja>> {
         return this.http.put<ApiResponse<Caja>>(`${this.apiUrl}/${id}`, caja);
+    }
+
+    getCajaDetails(id: number): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/${id}/details`);
     }
 
     abrir(id: number, saldoInicial: number): Observable<ApiResponse<any>> {

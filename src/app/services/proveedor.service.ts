@@ -68,4 +68,11 @@ export class ProveedorService {
         formData.append('file', file);
         return this.http.post(`${this.apiUrl}/import`, formData);
     }
+    exportExcel(): void {
+        window.open(`${this.apiUrl}/export-excel`, '_blank');
+    }
+
+    exportPDF(): void {
+        window.open(`${this.apiUrl}/export-pdf`, '_blank');
+    }
 }

@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormGroup, FormArray, ReactiveFormsModule } from '@angular/forms';
+import { FormGroup, FormArray, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ClienteSelectorComponent } from '../cliente-selector/cliente-selector.component';
 import { Cliente, TipoVenta, TipoPago, Medida } from '../../../../../../interfaces';
 import { ProductoInventario } from '../../../../../../services/venta.service';
@@ -23,7 +23,7 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
 
     unidadesMedida: string[] = ['Unidad']; // Default fallback
 
-    constructor(private medidaService: MedidaService) { }
+    constructor(private medidaService: MedidaService, private fb: FormBuilder) { }
 
     ngOnInit(): void {
         this.loadMedidas();
@@ -52,6 +52,10 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
         return this.parentForm.get('detalles') as FormArray;
     }
 
+    get pagos() {
+        return this.parentForm.get('pagos') as FormArray;
+    }
+
     trackByIndex(index: number): number {
         return index;
     }
@@ -75,9 +79,57 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
         this.parentForm.get('tipo_venta_id')?.updateValueAndValidity();
     }
 
-    seleccionarTipoPago(tipoPagoId: number): void {
-        this.parentForm.patchValue({ tipo_pago_id: tipoPagoId });
-        this.parentForm.get('tipo_pago_id')?.updateValueAndValidity();
+    agregarPago(tipoPagoId: number): void {
+        const totalVenta = this.parentForm.get('total')?.value || 0;
+        const totalPagado = this.calcularTotalPagado();
+        const restante = totalVenta - totalPagado;
+
+        if (restante <= 0) {
+            alert('El total de la venta ya ha sido cubierto.');
+            return;
+        }
+
+        const pagoGroup = this.fb.group({
+            tipo_pago_id: [tipoPagoId, Validators.required],
+            monto: [parseFloat(restante.toFixed(2)), [Validators.required, Validators.min(0)]],
+            referencia: ['']
+        });
+
+        this.pagos.push(pagoGroup);
+
+        // Si es el primer pago, también actualizamos el tipo_pago_id principal por compatibilidad
+        if (this.pagos.length === 1) {
+            this.parentForm.patchValue({ tipo_pago_id: tipoPagoId });
+        }
+    }
+
+    removerPago(index: number): void {
+        this.pagos.removeAt(index);
+        // Si borramos todos, limpiamos el principal
+        if (this.pagos.length === 0) {
+            this.parentForm.patchValue({ tipo_pago_id: '' });
+        }
+    }
+
+    calcularTotalPagado(): number {
+        return this.pagos.controls.reduce((acc, control) => {
+            return acc + (parseFloat(control.get('monto')?.value) || 0);
+        }, 0);
+    }
+
+    get montoRestante(): number {
+        const totalVenta = this.parentForm.get('total')?.value || 0;
+        const totalPagado = this.calcularTotalPagado();
+        return Math.max(0, totalVenta - totalPagado);
+    }
+
+    isPagoAdded(tipoPagoId: number): boolean {
+        return this.pagos.controls.some(p => p.get('tipo_pago_id')?.value === tipoPagoId);
+    }
+
+    getNombreTipoPago(id: number): string {
+        const tipo = this.tiposPago.find(t => t.id === id);
+        return tipo ? (tipo.nombre_tipo_pago || tipo.nombre || 'Desconocido') : 'Desconocido';
     }
 
     isContado(tipo: any): boolean {

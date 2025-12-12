@@ -1,0 +1,144 @@
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-slate-100">Nueva Devolución</h1>
+            <a routerLink="/operaciones/devoluciones"
+                class="text-gray-600 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200">
+                Volver
+            </a>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
+            <form [formGroup]="devolucionForm" (ngSubmit)="onSubmit()">
+                <!-- Buscar Venta -->
+                <div class="mb-6 border-b border-gray-200 dark:border-slate-700 pb-6">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Buscar Venta
+                        (ID)</label>
+                    <div class="flex gap-2">
+                        <input type="number" formControlName="venta_id" placeholder="Ingrese ID de venta"
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                        <button type="button" (click)="buscarVenta()" [disabled]="isSearchingVenta"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 disabled:opacity-50">
+                            {{ isSearchingVenta ? 'Buscando...' : 'Buscar' }}
+                        </button>
+                    </div>
+                </div>
+
+                @if (venta) {
+                <!-- Datos de la Venta -->
+                <div class="mb-6 bg-gray-50 dark:bg-slate-700 p-4 rounded-md">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200 mb-2">Datos de la Venta #{{
+                        venta.id }}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                            <span class="block text-gray-500 dark:text-slate-400">Cliente:</span>
+                            <span class="font-medium text-gray-900 dark:text-slate-200">
+                                {{ venta.cliente?.nombre }}
+                            </span>
+                        </div>
+                        <div>
+                            <span class="block text-gray-500 dark:text-slate-400">Fecha:</span>
+                            <span class="font-medium text-gray-900 dark:text-slate-200">{{ venta.fecha_hora |
+                                date:'dd/MM/yyyy' }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-gray-500 dark:text-slate-400">Total Venta:</span>
+                            <span class="font-medium text-gray-900 dark:text-slate-200">{{ venta.total | currency
+                                }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos de la Devolución -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Fecha
+                            Devolución</label>
+                        <input type="date" formControlName="fecha"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Motivo</label>
+                        <input type="text" formControlName="motivo" placeholder="Ej: Producto defectuoso"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label
+                            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Observaciones</label>
+                        <textarea formControlName="observaciones" rows="2"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white"></textarea>
+                    </div>
+                </div>
+
+                <!-- Detalles -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-200 mb-4">Seleccionar Productos a
+                        Devolver</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-slate-700">
+                                <tr>
+                                    <th
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase">
+                                        Sel.</th>
+                                    <th
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase">
+                                        Producto</th>
+                                    <th
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase">
+                                        Cant. Vendida</th>
+                                    <th
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase">
+                                        Cant. Devolver</th>
+                                    <th
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase">
+                                        Almacén Destino</th>
+                                </tr>
+                            </thead>
+                            <tbody formArrayName="detalles"
+                                class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr *ngFor="let detalle of detalles.controls; let i = index" [formGroupName]="i">
+                                    <td class="px-4 py-4">
+                                        <input type="checkbox" formControlName="seleccionado"
+                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    </td>
+                                    <td class="px-4 py-4 text-sm text-gray-900 dark:text-slate-200">
+                                        {{ detalle.get('articulo_nombre')?.value }}
+                                    </td>
+                                    <td class="px-4 py-4 text-sm text-gray-900 dark:text-slate-200">
+                                        {{ detalle.get('cantidad_vendida')?.value }}
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <input type="number" formControlName="cantidad_devolver"
+                                            [max]="detalle.get('cantidad_vendida')?.value" min="0"
+                                            class="w-24 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <select formControlName="almacen_id"
+                                            class="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                                            <option *ngFor="let alm of almacenes" [value]="alm.id">{{ alm.nombre_almacen
+                                                }}
+                                            </option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-4">
+                    <button type="button" routerLink="/operaciones/devoluciones"
+                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-300 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600">
+                        Cancelar
+                    </button>
+                    <button type="submit" [disabled]="isLoading || devolucionForm.invalid"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300 disabled:opacity-50">
+                        {{ isLoading ? 'Guardando...' : 'Registrar Devolución' }}
+                    </button>
+                </div>
+                }
+            </form>
+        </div>
+    </div>
+</div>
