@@ -75,7 +75,7 @@ export class InventarioComponent implements OnInit {
   loadInventarios(): void {
     this.isLoading = true;
 
-    const params: PaginationParams = {
+    const params: any = {
       page: this.currentPage,
       per_page: this.perPage,
       sort_by: 'id',
@@ -86,28 +86,49 @@ export class InventarioComponent implements OnInit {
       params.search = this.searchTerm;
     }
 
-    this.inventarioService.getPaginated(params)
+    // Agregar filtro por almacén si está seleccionado
+    if (this.almacenSeleccionado !== null && this.almacenSeleccionado !== undefined) {
+      params.almacen_id = this.almacenSeleccionado;
+    }
+
+    // Usar getPorLotes para mostrar todas las compras que van al inventario
+    this.inventarioService.getPorLotes(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response) => {
-          if (response.data) {
+          if (response.success && response.data) {
             this.inventarios = response.data.data || [];
             this.currentPage = response.data.current_page;
             this.lastPage = response.data.last_page;
             this.total = response.data.total;
             this.perPage = response.data.per_page;
             this.aplicarFiltros();
+          } else if (response.data) {
+            // Si viene directamente como array
+            this.inventarios = Array.isArray(response.data) ? response.data : [];
+            this.aplicarFiltros();
           }
         },
         error: (error) => {
           console.error('Error al cargar inventarios:', error);
-          // Fallback a getAll si falla la paginación
-          this.inventarioService.getAll()
+          // Fallback a getPaginated si falla porLotes
+          this.inventarioService.getPaginated(params)
             .pipe(finalize(() => this.isLoading = false))
             .subscribe({
-              next: (inventarios) => {
-                this.inventarios = inventarios;
-                this.aplicarFiltros();
+              next: (response) => {
+                if (response.data) {
+                  this.inventarios = response.data.data || [];
+                  this.currentPage = response.data.current_page;
+                  this.lastPage = response.data.last_page;
+                  this.total = response.data.total;
+                  this.perPage = response.data.per_page;
+                  this.aplicarFiltros();
+                }
+              },
+              error: (err) => {
+                console.error('Error al cargar inventarios (fallback):', err);
+                this.inventarios = [];
+                this.inventariosFiltrados = [];
               }
             });
         }
@@ -128,7 +149,8 @@ export class InventarioComponent implements OnInit {
 
   onAlmacenChange(almacenId: number | null): void {
     this.almacenSeleccionado = almacenId;
-    this.aplicarFiltros();
+    this.currentPage = 1; // Resetear a la primera página cuando cambia el filtro
+    this.loadInventarios(); // Recargar desde el servidor con el nuevo filtro
   }
 
   onBusquedaChange(busqueda: string): void {
