@@ -1,0 +1,21 @@
+.inventario-importar-container {
+  max-width: 500px;
+  margin: auto;
+  padding: 2em;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.file-upload {
+  margin: 1em 0;
+}
+.import-result {
+  margin-top: 1.5em;
+  background: #e6ffe6;
+  padding: 1em;
+  border-radius: 5px;
+}
+.error-message {
+  margin-top: 1em;
+  color: #c00;
+}

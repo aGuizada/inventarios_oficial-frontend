@@ -9,6 +9,7 @@ import { finalize } from 'rxjs/operators';
 // Import child components
 import { InventarioListComponent } from './inventario-list/inventario-list.component';
 import { InventarioFiltersComponent } from './inventario-filters/inventario-filters.component';
+import { InventarioImportarComponent } from './inventario-importar.component';
 import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
@@ -19,6 +20,7 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
     CommonModule,
     InventarioListComponent,
     InventarioFiltersComponent,
+    InventarioImportarComponent,
     SearchBarComponent,
     PaginationComponent
   ],
@@ -33,6 +35,11 @@ export class InventarioComponent implements OnInit {
   isLoading = false;
   busqueda: string = '';
   vista: 'item' | 'lotes' = 'lotes'; // Vista por defecto
+
+  onImportSuccess(): void {
+    this.loadInventarios();
+    this.loadInventariosPorItem();
+  }
 
   // Paginación
   currentPage: number = 1;

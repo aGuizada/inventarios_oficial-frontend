@@ -1,0 +1,297 @@
+<!-- Botón para abrir modal -->
+<button (click)="openImportModal()"
+  class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center">
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+    <path fill-rule="evenodd"
+      d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"
+      clip-rule="evenodd" />
+  </svg>
+  Importar Inventario
+</button>
+
+<!-- Modal de Importación con Wizard -->
+<div *ngIf="isModalOpen" class="fixed inset-0 overflow-y-auto z-50" aria-labelledby="import-wizard-title" role="dialog"
+  aria-modal="true">
+  <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+    <!-- Background overlay -->
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+    <div
+      class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full">
+      <!-- Header con Steps Indicator -->
+      <div class="bg-white px-6 pt-6 pb-4 border-b">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="import-wizard-title">
+          Importar Inventario desde Excel
+        </h3>
+
+        <!-- Steps Progress -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center flex-1">
+            <div
+              [class]="1 === currentStep ? 'bg-blue-600 text-white' : 1 < currentStep ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'"
+              class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm">
+              <svg *ngIf="1 < currentStep" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd" />
+              </svg>
+              <span *ngIf="1 >= currentStep">1</span>
+            </div>
+            <div class="ml-3 flex-shrink-0">
+              <p class="text-sm font-medium"
+                [class]="1 === currentStep ? 'text-blue-600' : 1 < currentStep ? 'text-blue-600' : 'text-gray-500'">
+                Subir Archivo
+              </p>
+            </div>
+            <div class="flex-1 h-0.5 mx-4" [class]="1 < currentStep ? 'bg-blue-500' : 'bg-gray-300'">
+            </div>
+          </div>
+
+          <div class="flex items-center flex-1">
+            <div
+              [class]="2 === currentStep ? 'bg-blue-600 text-white' : 2 < currentStep ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'"
+              class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm">
+              <svg *ngIf="2 < currentStep" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd" />
+              </svg>
+              <span *ngIf="2 >= currentStep">2</span>
+            </div>
+            <div class="ml-3 flex-shrink-0">
+              <p class="text-sm font-medium"
+                [class]="2 === currentStep ? 'text-blue-600' : 2 < currentStep ? 'text-blue-600' : 'text-gray-500'">
+                Previsualizar
+              </p>
+            </div>
+            <div class="flex-1 h-0.5 mx-4" [class]="2 < currentStep ? 'bg-blue-500' : 'bg-gray-300'">
+            </div>
+          </div>
+
+          <div class="flex items-center">
+            <div
+              [class]="3 === currentStep ? 'bg-blue-600 text-white' : 3 < currentStep ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'"
+              class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm">
+              <span *ngIf="3 >= currentStep">3</span>
+            </div>
+            <div class="ml-3 flex-shrink-0">
+              <p class="text-sm font-medium"
+                [class]="3 === currentStep ? 'text-blue-600' : 3 < currentStep ? 'text-blue-600' : 'text-gray-500'">
+                Confirmar
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="bg-white px-6 py-6 min-h-[400px]">
+        <!-- STEP 1: Upload -->
+        <div *ngIf="currentStep === 1" class="space-y-4">
+          <!-- Drag & Drop Zone -->
+          <div (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)"
+            [class]="isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50'"
+            class="mt-2 flex justify-center px-6 pt-8 pb-8 border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer"
+            (click)="fileInput.click()">
+            <div class="space-y-2 text-center">
+              <svg class="mx-auto h-16 w-16" [class]="isDragging ? 'text-blue-500' : 'text-gray-400'"
+                stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                <path
+                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <div class="flex text-sm text-gray-600 justify-center">
+                <label class="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500">
+                  <span>Arrastra tu archivo Excel aquí</span>
+                  <input #fileInput type="file" class="sr-only" accept=".xlsx,.xls" (change)="onFileSelected($event)">
+                </label>
+                <p class="pl-1">o haz click para seleccionar</p>
+              </div>
+              <p class="text-xs text-gray-500">Archivos XLSX o XLS</p>
+
+              <div *ngIf="selectedFile" class="mt-4 flex items-center justify-center text-sm text-blue-600">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clip-rule="evenodd" />
+                </svg>
+                {{ selectedFile.name }} ({{ previewData.length }} registros)
+              </div>
+            </div>
+          </div>
+
+          <!-- Download Template Button -->
+          <div class="flex justify-center">
+            <button (click)="descargarPlantilla()" type="button"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+              <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                fill="currentColor">
+                <path fill-rule="evenodd"
+                  d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                  clip-rule="evenodd" />
+              </svg>
+              Descargar Plantilla Excel
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 2: Preview -->
+        <div *ngIf="currentStep === 2" class="space-y-4">
+          <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                    clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm text-blue-700">
+                  Previsualización: {{ previewData.length }} registros listos para importar
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preview Table -->
+          <div class="overflow-x-auto border rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Artículo</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sucursal</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Almacén</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Saldo</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cant.</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vencimiento</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr *ngFor="let item of previewPageData; let i = index" class="hover:bg-gray-50">
+                  <td class="px-4 py-3 text-sm text-gray-500">{{ (previewPage - 1) * previewPerPage + i + 1 }}</td>
+                  <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ item.codigo_articulo }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-500">{{ item.nombre_articulo }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-500">{{ item.sucursal || '-' }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-500">{{ item.almacen }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-500">{{ item.saldo_stock }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-500">{{ item.cantidad }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-500">{{ item.fecha_vencimiento || '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3">
+            <div>
+              <p class="text-sm text-gray-700">
+                Mostrando página <span class="font-medium">{{ previewPage }}</span> de <span class="font-medium">{{
+                  totalPreviewPages }}</span>
+                (Total: {{ previewData.length }} registros)
+              </p>
+            </div>
+            <div>
+              <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                <button (click)="changePage(previewPage - 1)" [disabled]="previewPage === 1"
+                  class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
+                  Anterior
+                </button>
+                <button (click)="changePage(previewPage + 1)" [disabled]="previewPage === totalPreviewPages"
+                  class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
+                  Siguiente
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: Confirm & Import -->
+        <div *ngIf="currentStep === 3" class="space-y-6">
+          <div *ngIf="isImporting" class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4">
+            </div>
+            <p class="text-sm text-gray-600">Importando inventario...</p>
+            <div class="mt-4 w-full bg-gray-200 rounded-full h-2.5">
+              <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" [style.width.%]="importProgress">
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="!isImporting">
+            <div *ngIf="importMessage"
+              [class]="importErrors.length > 0 ? 'bg-yellow-50 border-l-4 border-yellow-400' : 'bg-green-50 border-l-4 border-green-400'"
+              class="p-4">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg *ngIf="importErrors.length === 0" class="h-5 w-5 text-green-400" viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clip-rule="evenodd" />
+                  </svg>
+                  <svg *ngIf="importErrors.length > 0" class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path fill-rule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p [class]="importErrors.length > 0 ? 'text-yellow-700' : 'text-green-700'"
+                    class="text-sm font-medium">
+                    {{ importMessage }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="importErrors.length > 0" class="mt-4">
+              <h4 class="text-sm font-medium text-gray-900 mb-2">Detalles de Errores:</h4>
+              <div class="max-h-64 overflow-y-auto bg-gray-50 rounded-md p-3">
+                <div *ngFor="let error of importErrors" class="mb-3 pb-3 border-b border-gray-200 last:border-0">
+                  <p class="text-sm font-semibold text-red-600">Fila {{ error.fila }}</p>
+                  <p class="text-sm text-gray-700">Campo: <span class="font-medium">{{ error.atributo }}</span></p>
+                  <ul class="mt-1 list-disc list-inside text-sm text-gray-600">
+                    <li *ngFor="let err of error.errores">{{ err }}</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="bg-gray-50 px-6 py-4 sm:flex sm:flex-row-reverse sm:px-6">
+        <button *ngIf="currentStep === 1" (click)="nextStep()" [disabled]="!canProceedToStep2()" type="button"
+          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+          Siguiente
+        </button>
+
+        <button *ngIf="currentStep === 2" (click)="importarInventario()" type="button"
+          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+          Importar Ahora
+        </button>
+        <button *ngIf="currentStep === 2" (click)="previousStep()" type="button"
+          class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+          Anterior
+        </button>
+
+        <button *ngIf="currentStep === 3 && !isImporting" (click)="closeImportModal()" type="button"
+          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+          Cerrar
+        </button>
+
+        <button *ngIf="currentStep !== 3 || !isImporting" (click)="closeImportModal()" type="button"
+          class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

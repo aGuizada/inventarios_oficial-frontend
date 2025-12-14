@@ -72,4 +72,20 @@ export class InventarioService {
     exportPDF(): void {
         window.open(`${this.apiUrl}/export-pdf`, '_blank');
     }
+
+    /**
+     * Descarga la plantilla de importación de inventario
+     */
+    downloadTemplate(): void {
+        window.open(`${this.apiUrl}/template/download`, '_blank');
+    }
+
+    /**
+     * Importa inventario desde un archivo Excel
+     */
+    importInventario(file: File): Observable<any> {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this.http.post(`${this.apiUrl}/import`, formData);
+    }
 }
