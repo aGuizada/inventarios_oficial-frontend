@@ -15,6 +15,7 @@ export class VentasListComponent {
   @Output() view = new EventEmitter<Venta>();
   @Output() edit = new EventEmitter<Venta>();
   @Output() delete = new EventEmitter<number>();
+  @Output() print = new EventEmitter<Venta>();
 
   onView(venta: Venta): void {
     this.view.emit(venta);
@@ -26,6 +27,10 @@ export class VentasListComponent {
 
   onDelete(id: number): void {
     this.delete.emit(id);
+  }
+
+  onPrint(venta: Venta): void {
+    this.print.emit(venta);
   }
 }
 

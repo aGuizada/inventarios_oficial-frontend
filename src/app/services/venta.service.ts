@@ -58,4 +58,9 @@ export class VentaService {
     anular(id: number): Observable<any> {
         return this.http.post<any>(`${this.apiUrl}/${id}/anular`, {});
     }
+
+    imprimirComprobante(id: number, formato: 'rollo' | 'carta'): void {
+        const url = `${this.apiUrl}/${id}/imprimir/${formato}`;
+        window.open(url, '_blank');
+    }
 }

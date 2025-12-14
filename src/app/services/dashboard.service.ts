@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { DateFilter, ArticuloUtilidad } from '../interfaces/date-filter.interface';
+
 
 // Interfaces
 export interface DashboardKpis {
@@ -143,5 +145,69 @@ export class DashboardService {
 
     getRotacionInventario(): Observable<RotacionInventario> {
         return this.http.get<RotacionInventario>(`${this.apiUrl}/rotacion-inventario`);
+    }
+
+    // ====== NUEVOS MÉTODOS CON FILTROS ======
+
+    /**
+   * Obtiene lista de sucursales para filtros
+   */
+    getSucursales(): Observable<any[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/sucursales`);
+    }
+
+    /**
+     * Obtiene KPIs filtrados por fecha y sucursal
+     */
+    getKpisFiltrados(filtros: DateFilter): Observable<DashboardKpis> {
+        let params = this.buildDateFilterParams(filtros);
+        return this.http.get<DashboardKpis>(`${this.apiUrl}/kpis-filtrados`, { params });
+    }
+
+    /**
+     * Obtiene utilidad/ganancia por artículo con filtros opcionales
+     */
+    getUtilidadArticulos(filtros?: DateFilter): Observable<ArticuloUtilidad[]> {
+        let params = new HttpParams();
+        if (filtros) {
+            params = this.buildDateFilterParams(filtros);
+        }
+        return this.http.get<ArticuloUtilidad[]>(`${this.apiUrl}/utilidad-articulos`, { params });
+    }
+
+    /**
+     * Obtiene gráfica de ventas filtrada por fecha
+     */
+    getVentasChartFiltrado(filtros: DateFilter): Observable<ChartData> {
+        let params = this.buildDateFilterParams(filtros);
+        return this.http.get<ChartData>(`${this.apiUrl}/chart-ventas-filtrado`, { params });
+    }
+
+    /**
+     * Método auxiliar para construir parámetros HTTP desde DateFilter
+     */
+    private buildDateFilterParams(filtros: DateFilter): HttpParams {
+        let params = new HttpParams();
+
+        if (filtros.fecha_inicio) {
+            params = params.set('fecha_inicio', filtros.fecha_inicio);
+        }
+        if (filtros.fecha_fin) {
+            params = params.set('fecha_fin', filtros.fecha_fin);
+        }
+        if (filtros.year) {
+            params = params.set('year', filtros.year.toString());
+        }
+        if (filtros.month) {
+            params = params.set('month', filtros.month.toString());
+        }
+        if (filtros.day) {
+            params = params.set('day', filtros.day.toString());
+        }
+        if (filtros.sucursal_id) {
+            params = params.set('sucursal_id', filtros.sucursal_id.toString());
+        }
+
+        return params;
     }
 }

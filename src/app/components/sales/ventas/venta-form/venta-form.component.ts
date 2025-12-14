@@ -11,6 +11,7 @@ import { CategoriaService } from '../../../../services/categoria.service';
 import { AuthService } from '../../../../services/auth.service';
 import { Cliente, Almacen, Caja, TipoVenta, TipoPago, Categoria } from '../../../../interfaces';
 import { finalize } from 'rxjs/operators';
+import Swal from 'sweetalert2';
 
 // Import child components
 import { ProductListComponent } from './components/product-list/product-list.component';
@@ -458,7 +459,7 @@ export class VentaFormComponent implements OnInit {
             return;
         }
 
-        const tipoComprobante = formValue.tipo_comprobante?.trim() || 'BOLETA';
+        const tipoComprobante = formValue.tipo_comprobante?.trim() || 'RECIBO';
         const numComprobante = formValue.num_comprobante?.trim() || this.generarNumeroComprobante();
         const serieComprobante = formValue.serie_comprobante?.trim() || null;
 
@@ -498,12 +499,31 @@ export class VentaFormComponent implements OnInit {
             .pipe(finalize(() => this.isLoading = false))
             .subscribe({
                 next: (response: any) => {
-                    alert('Venta registrada con éxito');
+                    // alert('Venta registrada con éxito');
                     this.saleCompleted.emit();
+
+                    const ventaId = response.id;
+
+                    Swal.fire({
+                        title: 'Venta registrada con éxito',
+                        text: '¿Desea imprimir el comprobante?',
+                        icon: 'success',
+                        showCancelButton: true,
+                        showDenyButton: true,
+                        confirmButtonText: 'Imprimir Carta',
+                        denyButtonText: 'Imprimir Rollo',
+                        cancelButtonText: 'Cerrar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.ventaService.imprimirComprobante(ventaId, 'carta');
+                        } else if (result.isDenied) {
+                            this.ventaService.imprimirComprobante(ventaId, 'rollo');
+                        }
+                    });
                 },
                 error: (error) => {
                     console.error('Error al registrar venta:', error);
-                    alert('Error al registrar la venta. Por favor intente nuevamente.');
+                    Swal.fire('Error', 'Error al registrar la venta. Por favor intente nuevamente.', 'error');
                 }
             });
     }

@@ -1,4 +1,26 @@
 <div class="space-y-6">
+    <!-- Date Filter Component -->
+    <app-date-filter (filterChanged)="onFiltrosChanged($event)" (filterReset)="onFiltrosReset()">
+    </app-date-filter>
+
+    <!-- Filter Active Indicator -->
+    <div *ngIf="filtrosAplicados" class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <span class="text-blue-700 font-semibold mr-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    Filtros Activos
+                </span>
+                <span class="text-blue-600 text-sm">Los datos mostrados están filtrados por el período
+                    seleccionado</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Stats Cards Component -->
     <app-stats-cards [ventasHoy]="ventasHoy" [ventasMes]="ventasMes" [totalVentas]="totalVentas"
         [crecimientoVentas]="crecimientoVentas" [productosBajoStockCount]="productosBajoStockCount"
@@ -93,8 +115,12 @@
                 </div>
             </div>
             <div *ngIf="!isLoading && productosMasVendidos.length === 0"
-                class="p-6 text-center text-slate-500 dark:text-slate-400 py-12">
-                <i class="fas fa-star text-4xl mb-3 text-slate-300 dark:text-slate-600"></i>
+                class="p-6 text-center text-slate-500 dark:text-slate-400 py-12 flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-3 text-slate-300 dark:text-slate-600"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
                 <p>No hay datos de ventas</p>
             </div>
             <div *ngIf="!isLoading && productosMasVendidos.length > 0"
@@ -139,8 +165,12 @@
                 </div>
             </div>
             <div *ngIf="!isLoading && productosMenosVendidos.length === 0"
-                class="p-6 text-center text-slate-500 dark:text-slate-400 py-12">
-                <i class="fas fa-chart-line text-4xl mb-3 text-slate-300 dark:text-slate-600"></i>
+                class="p-6 text-center text-slate-500 dark:text-slate-400 py-12 flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-3 text-slate-300 dark:text-slate-600"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                </svg>
                 <p>No hay datos de ventas</p>
             </div>
             <div *ngIf="!isLoading && productosMenosVendidos.length > 0"
@@ -177,8 +207,12 @@
                     </div>
                 </div>
                 <div *ngIf="!isLoading && clientesMasFrecuentes.length === 0"
-                    class="p-6 text-center text-slate-500 dark:text-slate-400 py-12">
-                    <i class="fas fa-users text-4xl mb-3 text-slate-300 dark:text-slate-600"></i>
+                    class="p-6 text-center text-slate-500 dark:text-slate-400 py-12 flex flex-col items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-3 text-slate-300 dark:text-slate-600"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
                     <p>No hay datos de clientes</p>
                 </div>
                 <div *ngIf="!isLoading && clientesMasFrecuentes.length > 0"
@@ -216,8 +250,12 @@
                     </div>
                 </div>
                 <div *ngIf="!isLoading && productosMasComprados.length === 0"
-                    class="p-6 text-center text-slate-500 dark:text-slate-400 py-12">
-                    <i class="fas fa-shopping-bag text-4xl mb-3 text-slate-300 dark:text-slate-600"></i>
+                    class="p-6 text-center text-slate-500 dark:text-slate-400 py-12 flex flex-col items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-3 text-slate-300 dark:text-slate-600"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
                     <p>No hay datos de compras</p>
                 </div>
                 <div *ngIf="!isLoading && productosMasComprados.length > 0"
@@ -245,4 +283,10 @@
 
 
     </div>
+
+    <!-- Article Profitability Section -->
+    <div class="mt-6">
+        <app-article-profit [filtros]="filtrosActivos || undefined"></app-article-profit>
+    </div>
+
 </div>
