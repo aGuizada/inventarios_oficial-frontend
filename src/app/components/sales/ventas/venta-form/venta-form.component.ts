@@ -1,7 +1,5 @@
 import { Component, OnInit, HostListener, Output, EventEmitter } from '@angular/core';
 import { CommonModule, NgClass } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { VentaService, ProductoInventario } from '../../../../services/venta.service';
 import { ClienteService } from '../../../../services/cliente.service';
@@ -60,6 +58,13 @@ export class VentaFormComponent implements OnInit {
     currentUserId = 1;
     currentUserSucursalId: number | null = null;
     defaultCliente: Cliente | null = null;
+    isAdmin: boolean = false;
+    selectedSucursalId: number | null = null;
+
+    // Para alertas visuales
+    alertMessage: string = '';
+    showAlert: boolean = false;
+    alertType: 'error' | 'success' | 'warning' | 'info' = 'error';
 
     constructor(
         private fb: FormBuilder,
