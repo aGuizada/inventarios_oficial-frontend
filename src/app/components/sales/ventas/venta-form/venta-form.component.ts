@@ -1,7 +1,5 @@
 import { Component, OnInit, HostListener, Output, EventEmitter } from '@angular/core';
 import { CommonModule, NgClass } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { VentaService, ProductoInventario } from '../../../../services/venta.service';
 import { ClienteService } from '../../../../services/cliente.service';
@@ -11,9 +9,11 @@ import { TipoVentaService } from '../../../../services/tipo-venta.service';
 import { TipoPagoService } from '../../../../services/tipo-pago.service';
 import { CategoriaService } from '../../../../services/categoria.service';
 import { AuthService } from '../../../../services/auth.service';
-import { Cliente, Almacen, Caja, TipoVenta, TipoPago, Categoria, Sucursal } from '../../../../interfaces';
+import { Cliente, Almacen, Caja, TipoVenta, TipoPago, Categoria, Sucursal, PaginationParams } from '../../../../interfaces';
 import { SucursalService } from '../../../../services/sucursal.service';
 import { finalize } from 'rxjs/operators';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
 // Import child components
@@ -55,11 +55,24 @@ export class VentaFormComponent implements OnInit {
     esVentaCredito = false;
     isModalCreditoOpen = false;
     isLoading = false;
+    isLoadingProductos = false; // Indicador de carga específico para productos
     mostrarMenuAlmacenes = false;
+    
+    // Caché de productos por almacén para evitar recargas innecesarias
+    productosCache: Map<number, ProductoInventario[]> = new Map();
 
     currentUserId = 1;
     currentUserSucursalId: number | null = null;
     defaultCliente: Cliente | null = null;
+    
+    // Propiedades para alertas
+    showAlert: boolean = false;
+    alertType: 'error' | 'success' | 'warning' | 'info' = 'error';
+    alertMessage: string = '';
+    
+    // Propiedades para administrador y sucursal
+    isAdmin: boolean = false;
+    selectedSucursalId: number | null = null;
 
     constructor(
         private fb: FormBuilder,
@@ -108,10 +121,12 @@ export class VentaFormComponent implements OnInit {
             this.form.patchValue({ user_id: this.currentUserId });
         }
 
+        // Cargar sucursales solo si es admin (no bloquea la carga principal)
         if (this.isAdmin) {
             this.loadSucursales();
         }
 
+        // Cargar dependencias y cajas en paralelo
         this.loadDependencies();
         this.loadCajas();
         this.actualizarFechaHora();
@@ -208,67 +223,95 @@ export class VentaFormComponent implements OnInit {
     }
 
     loadDependencies(): void {
-        this.clienteService.getAll().subscribe({
-            next: (response: any) => {
-                this.clientes = Array.isArray(response) ? response : (response.data || []);
-                this.buscarClientePorDefecto();
-            },
-            error: (error) => console.error('Error al cargar clientes:', error)
-        });
+        // Preparar todas las peticiones HTTP en paralelo
+        const almacenRequest = this.isAdmin
+            ? this.almacenService.getPaginated({ per_page: 100 }).pipe(
+                map((response: any) => response.data?.data || response.data || []),
+                catchError(() => this.almacenService.getAll().pipe(
+                    map((response: any) => Array.isArray(response) ? response : (response.data || []))
+                ))
+            )
+            : this.almacenService.getAll().pipe(
+                map((response: any) => Array.isArray(response) ? response : (response.data || []))
+            );
 
-        this.almacenService.getAll().subscribe({
-            next: (response: any) => {
-                // Request a large number to ensure we get all warehouses for admin
-                // Ideally we should use pagination or a specific endpoint
-                this.almacenes = Array.isArray(response) ? response : (response.data || []);
-                this.filtrarAlmacenes();
-                this.seleccionarAlmacenPorDefecto();
-            },
-            error: (error) => console.error('Error al cargar almacenes:', error)
-        });
+        const clienteRequest = this.clienteService.getAll().pipe(
+            map((response: any) => Array.isArray(response) ? response : (response.data || [])),
+            catchError(() => of([]))
+        );
 
-        // Force load all warehouses if admin by requesting a large page
-        if (this.isAdmin) {
-            this.almacenService.getPaginated({ per_page: 100 }).subscribe({
-                next: (response: any) => {
-                    this.almacenes = response.data.data || [];
-                    this.filtrarAlmacenes();
-                    this.seleccionarAlmacenPorDefecto();
-                }
-            });
-        }
+        const categoriaRequest = this.categoriaService.getAll().pipe(
+            map((response: any) => Array.isArray(response) ? response : (response.data || [])),
+            catchError(() => of([]))
+        );
 
-        this.categoriaService.getAll().subscribe({
-            next: (response: any) => this.categorias = Array.isArray(response) ? response : (response.data || []),
-            error: (error) => console.error('Error al cargar categorías:', error)
-        });
-
-        this.tipoVentaService.getAll().subscribe({
-            next: (response: any) => {
+        const tipoVentaRequest = this.tipoVentaService.getAll().pipe(
+            map((response: any) => {
                 const datos = Array.isArray(response) ? response : (response.data || response || []);
-                this.tiposVenta = datos.map((item: any) => ({
+                return datos.map((item: any) => ({
                     ...item,
                     nombre: item.nombre_tipo_ventas || item.nombre
                 }));
-            },
-            error: (error) => console.error('Error al cargar tipos de venta:', error)
-        });
+            }),
+            catchError(() => of([]))
+        );
 
-        this.tipoPagoService.getAll().subscribe({
-            next: (response: any) => {
+        const tipoPagoRequest = this.tipoPagoService.getAll().pipe(
+            map((response: any) => {
                 const datos = Array.isArray(response) ? response : (response.data || response || []);
-                this.tiposPago = datos.map((item: any) => ({
+                return datos.map((item: any) => ({
                     ...item,
                     nombre: item.nombre_tipo_pago || item.nombre
                 }));
+            }),
+            catchError(() => of([]))
+        );
+
+        // Cargar todo en paralelo usando forkJoin
+        forkJoin({
+            almacenes: almacenRequest,
+            clientes: clienteRequest,
+            categorias: categoriaRequest,
+            tiposVenta: tipoVentaRequest,
+            tiposPago: tipoPagoRequest
+        }).subscribe({
+            next: (results) => {
+                // Asignar resultados
+                let almacenesData = results.almacenes;
+                
+                // Si es vendedor, filtrar solo almacenes de su sucursal
+                if (this.authService.isVendedor() && this.currentUserSucursalId) {
+                    almacenesData = almacenesData.filter((almacen: Almacen) => 
+                        almacen.sucursal_id === this.currentUserSucursalId
+                    );
+                }
+                
+                this.almacenes = almacenesData;
+                this.clientes = results.clientes;
+                this.categorias = results.categorias;
+                this.tiposVenta = results.tiposVenta;
+                this.tiposPago = results.tiposPago;
+
+                // Filtrar almacenes y seleccionar por defecto
+                this.filtrarAlmacenes();
+                const almacenId = this.seleccionarAlmacenPorDefecto();
+                
+                // Buscar cliente por defecto
+                this.buscarClientePorDefecto();
+
+                // Precargar productos del almacén por defecto inmediatamente
+                if (almacenId) {
+                    this.loadProductosInventario(almacenId);
+                }
             },
-            error: (error) => console.error('Error al cargar tipos de pago:', error)
+            error: (error) => {
+                console.error('Error al cargar dependencias:', error);
+            }
         });
     }
 
     buscarClientePorDefecto(): void {
         const terminos = ['sin nombre', 's/n', 'cliente casual', 'sn'];
-        console.log('Buscando cliente por defecto entre', this.clientes.length, 'clientes');
 
         const clienteEncontrado = this.clientes.find(c => {
             const nombre = (c.nombre || '').toLowerCase();
@@ -277,59 +320,126 @@ export class VentaFormComponent implements OnInit {
 
         if (clienteEncontrado) {
             this.defaultCliente = clienteEncontrado;
-            console.log('Cliente por defecto encontrado:', this.defaultCliente);
         } else {
-            console.log('Cliente por defecto NO encontrado. Creando automáticamente...');
+            // Intentar crear cliente por defecto automáticamente solo una vez
+            // Si falla, simplemente no establecer cliente por defecto (el usuario deberá seleccionar uno)
+            const timestamp = Date.now();
+            const randomSuffix = Math.floor(Math.random() * 10000);
             const nuevoCliente: any = {
                 nombre: 'Sin Nombre',
-                estado: 'Activo',
-                tipo_documento: 'CI', // Valor por defecto común
-                num_documento: '0'    // Valor por defecto común
+                estado: true, // El backend requiere un booleano, no una cadena
+                tipo_documento: 'CI',
+                num_documento: `SN-${timestamp}-${randomSuffix}`, // Generar número único
+                telefono: '',
+                email: '',
+                direccion: ''
             };
 
             this.clienteService.create(nuevoCliente).subscribe({
                 next: (response: any) => {
                     const clienteCreado = response.data || response;
-                    console.log('Cliente por defecto creado:', clienteCreado);
-                    this.clientes.push(clienteCreado);
-                    this.defaultCliente = clienteCreado;
+                    if (clienteCreado) {
+                        this.clientes.push(clienteCreado);
+                        this.defaultCliente = clienteCreado;
+                    }
                 },
-                error: (error) => {
-                    console.error('Error al crear cliente por defecto:', error);
-                    // No bloqueamos, simplemente no habrá default
+                error: (error: any) => {
+                    // Silenciar completamente el error - simplemente no establecer cliente por defecto
+                    // El usuario deberá seleccionar un cliente manualmente
+                    // No mostrar ningún mensaje en consola para errores esperados (422, 500)
+                    this.defaultCliente = null;
                 }
             });
         }
     }
 
     loadCajas(): void {
-        this.cajaService.getAll().subscribe({
-            next: (response: any) => {
-                this.cajas = Array.isArray(response) ? response : (response.data || []);
-                this.seleccionarCajaAbierta();
-            },
-            error: (error) => {
-                console.error('Error al cargar cajas:', error);
-                this.cajas = [];
-            }
-        });
+        // Si es vendedor, cargar solo sus cajas de su sucursal
+        if (this.authService.isVendedor() && this.currentUserId && this.currentUserSucursalId) {
+            const params: PaginationParams = {
+                page: 1,
+                per_page: 100,
+                user_id: this.currentUserId
+            };
+            
+            this.cajaService.getPaginated(params).subscribe({
+                next: (response: any) => {
+                    let cajasData = Array.isArray(response.data?.data) ? response.data.data : 
+                                   (Array.isArray(response.data) ? response.data : []);
+                    
+                    // Filtrar solo las cajas de la sucursal del usuario
+                    this.cajas = cajasData.filter((caja: Caja) => 
+                        caja.sucursal_id === this.currentUserSucursalId
+                    );
+                    this.seleccionarCajaAbierta();
+                },
+                error: (error) => {
+                    console.error('Error al cargar cajas:', error);
+                    // Fallback a getAll y filtrar
+                    this.cajaService.getAll().subscribe({
+                        next: (response: any) => {
+                            let cajasData = Array.isArray(response) ? response : (response.data || []);
+                            // Filtrar por usuario y sucursal
+                            this.cajas = cajasData.filter((caja: Caja) => 
+                                caja.user_id === this.currentUserId && 
+                                caja.sucursal_id === this.currentUserSucursalId
+                            );
+                            this.seleccionarCajaAbierta();
+                        },
+                        error: () => {
+                            this.cajas = [];
+                        }
+                    });
+                }
+            });
+        } else {
+            // Si es admin, cargar todas las cajas
+            this.cajaService.getAll().subscribe({
+                next: (response: any) => {
+                    this.cajas = Array.isArray(response) ? response : (response.data || []);
+                    this.seleccionarCajaAbierta();
+                },
+                error: (error) => {
+                    console.error('Error al cargar cajas:', error);
+                    this.cajas = [];
+                }
+            });
+        }
     }
 
     seleccionarCajaAbierta(): void {
-        let cajaAbierta = this.cajas.find(caja =>
-            this.isCajaOpen(caja) && caja.user_id === this.currentUserId
-        );
+        // Si es vendedor, solo buscar cajas de su sucursal
+        if (this.authService.isVendedor() && this.currentUserSucursalId) {
+            const cajaAbierta = this.cajas.find(caja =>
+                this.isCajaOpen(caja) && 
+                caja.user_id === this.currentUserId &&
+                caja.sucursal_id === this.currentUserSucursalId
+            );
 
-        if (!cajaAbierta) {
-            cajaAbierta = this.cajas.find(caja => this.isCajaOpen(caja));
-        }
-
-        if (cajaAbierta) {
-            this.cajaSeleccionada = cajaAbierta;
-            this.form.patchValue({ caja_id: cajaAbierta.id });
+            if (cajaAbierta) {
+                this.cajaSeleccionada = cajaAbierta;
+                this.form.patchValue({ caja_id: cajaAbierta.id });
+            } else {
+                this.cajaSeleccionada = null;
+                this.form.patchValue({ caja_id: '' });
+            }
         } else {
-            this.cajaSeleccionada = null;
-            this.form.patchValue({ caja_id: '' });
+            // Si es admin, buscar cualquier caja abierta del usuario primero
+            let cajaAbierta = this.cajas.find(caja =>
+                this.isCajaOpen(caja) && caja.user_id === this.currentUserId
+            );
+
+            if (!cajaAbierta) {
+                cajaAbierta = this.cajas.find(caja => this.isCajaOpen(caja));
+            }
+
+            if (cajaAbierta) {
+                this.cajaSeleccionada = cajaAbierta;
+                this.form.patchValue({ caja_id: cajaAbierta.id });
+            } else {
+                this.cajaSeleccionada = null;
+                this.form.patchValue({ caja_id: '' });
+            }
         }
     }
 
@@ -337,26 +447,35 @@ export class VentaFormComponent implements OnInit {
         return caja.estado === 'abierta' || caja.estado === '1' || caja.estado === 1 || caja.estado === true;
     }
 
-    seleccionarAlmacenPorDefecto(): void {
-        if (this.form.get('almacen_id')?.value) return;
+    seleccionarAlmacenPorDefecto(): number | null {
+        // Si ya hay un almacén seleccionado, retornar su ID
+        const almacenIdActual = this.form.get('almacen_id')?.value;
+        if (almacenIdActual) return almacenIdActual;
 
+        // Si no hay almacenes cargados aún, retornar null
+        if (!this.almacenes || this.almacenes.length === 0) return null;
+
+        let almacenPorDefecto: Almacen | undefined;
+
+        // Prioridad 1: Almacén de la sucursal del usuario actual
         if (this.currentUserSucursalId) {
-            const almacenPorDefecto = this.almacenes.find(almacen =>
+            almacenPorDefecto = this.almacenes.find(almacen =>
                 almacen.sucursal_id === this.currentUserSucursalId && almacen.estado !== false
             );
-
-            if (almacenPorDefecto) {
-                this.form.patchValue({ almacen_id: almacenPorDefecto.id });
-                this.onAlmacenChange();
-                return;
-            }
         }
 
-        const primerAlmacen = this.almacenes.find(almacen => almacen.estado !== false);
-        if (primerAlmacen) {
-            this.form.patchValue({ almacen_id: primerAlmacen.id });
-            this.onAlmacenChange();
+        // Prioridad 2: Primer almacén activo disponible
+        if (!almacenPorDefecto) {
+            almacenPorDefecto = this.almacenes.find(almacen => almacen.estado !== false);
         }
+
+        // Si encontramos un almacén, seleccionarlo y retornar su ID
+        if (almacenPorDefecto && almacenPorDefecto.id) {
+            this.form.patchValue({ almacen_id: almacenPorDefecto.id }, { emitEvent: false });
+            return almacenPorDefecto.id;
+        }
+
+        return null;
     }
 
     onAlmacenChange(): void {
@@ -369,15 +488,29 @@ export class VentaFormComponent implements OnInit {
     }
 
     loadProductosInventario(almacenId: number): void {
-        this.ventaService.getProductosInventario(almacenId).subscribe({
-            next: (productos) => {
-                this.productosInventario = productos;
-            },
-            error: (error) => {
-                console.error('Error al cargar productos del inventario:', error);
-                this.productosInventario = [];
-            }
-        });
+        // Verificar si ya tenemos los productos en caché
+        if (this.productosCache.has(almacenId)) {
+            this.productosInventario = this.productosCache.get(almacenId)!;
+            return;
+        }
+
+        // Si no están en caché, cargarlos
+        this.isLoadingProductos = true;
+        this.ventaService.getProductosInventario(almacenId)
+            .pipe(
+                finalize(() => this.isLoadingProductos = false)
+            )
+            .subscribe({
+                next: (productos) => {
+                    // Guardar en caché para futuras consultas
+                    this.productosCache.set(almacenId, productos);
+                    this.productosInventario = productos;
+                },
+                error: (error) => {
+                    console.error('Error al cargar productos del inventario:', error);
+                    this.productosInventario = [];
+                }
+            });
     }
 
     toggleMenuAlmacenes(): void {
@@ -393,6 +526,20 @@ export class VentaFormComponent implements OnInit {
     }
 
     cambiarAlmacen(almacenId: number): void {
+        // Validar que el almacén pertenezca a la sucursal del usuario (si es vendedor)
+        if (this.authService.isVendedor() && this.currentUserSucursalId) {
+            const almacen = this.almacenes.find(a => a.id === almacenId);
+            if (!almacen) {
+                this.showAlertMessage('Almacén no encontrado', 'error');
+                return;
+            }
+            
+            if (almacen.sucursal_id !== this.currentUserSucursalId) {
+                this.showAlertMessage('No puede seleccionar un almacén de otra sucursal', 'error');
+                return;
+            }
+        }
+        
         this.form.patchValue({ almacen_id: almacenId });
         this.onAlmacenChange();
         this.mostrarMenuAlmacenes = false;
@@ -528,12 +675,16 @@ export class VentaFormComponent implements OnInit {
 
         // Asignar cliente por defecto si no se seleccionó uno
         const currentClienteId = this.form.get('cliente_id')?.value;
-        console.log('Cliente ID actual:', currentClienteId);
-        console.log('Default Cliente:', this.defaultCliente);
-
-        if (!currentClienteId && this.defaultCliente) {
-            console.log('Asignando cliente por defecto:', this.defaultCliente.id);
-            this.form.patchValue({ cliente_id: this.defaultCliente.id });
+        
+        if (!currentClienteId) {
+            if (this.defaultCliente) {
+                // Si hay un cliente por defecto, asignarlo
+                this.form.patchValue({ cliente_id: this.defaultCliente.id });
+            } else {
+                // Si no hay cliente seleccionado ni por defecto, mostrar error
+                this.showAlertMessage('Por favor seleccione un cliente para la venta', 'warning');
+                return;
+            }
         }
 
         const camposRequeridos = ['cliente_id', 'tipo_venta_id', 'tipo_pago_id', 'almacen_id', 'caja_id'];
@@ -546,7 +697,7 @@ export class VentaFormComponent implements OnInit {
 
         const cajaId = this.form.get('caja_id')?.value;
         if (!cajaId) {
-            this.showAlertMessage('No hay una caja abierta disponible. Por favor abra una caja antes de realizar una venta.', 'error');
+            this.showAlertMessage('No hay una caja abierta disponible en su sucursal. Por favor abra una caja antes de realizar una venta.', 'error');
             return;
         }
 
@@ -556,7 +707,35 @@ export class VentaFormComponent implements OnInit {
             return;
         }
 
+        // Validar que la caja pertenezca a la sucursal del usuario (si es vendedor)
+        if (this.authService.isVendedor() && this.currentUserSucursalId) {
+            if (caja.sucursal_id !== this.currentUserSucursalId) {
+                this.showAlertMessage('La caja seleccionada no pertenece a su sucursal. Por favor seleccione una caja de su sucursal.', 'error');
+                return;
+            }
+            
+            if (caja.user_id !== this.currentUserId) {
+                this.showAlertMessage('La caja seleccionada no le pertenece. Por favor abra su propia caja antes de realizar una venta.', 'error');
+                return;
+            }
+        }
+
         const almacenId = this.form.get('almacen_id')?.value;
+        
+        // Validar que el almacén pertenezca a la sucursal del usuario (si es vendedor)
+        if (this.authService.isVendedor() && this.currentUserSucursalId && almacenId) {
+            const almacen = this.almacenes.find(a => a.id === almacenId);
+            if (!almacen) {
+                this.showAlertMessage('Almacén no encontrado', 'error');
+                return;
+            }
+            
+            if (almacen.sucursal_id !== this.currentUserSucursalId) {
+                this.showAlertMessage('No puede realizar ventas con un almacén de otra sucursal', 'error');
+                return;
+            }
+        }
+        
         for (let i = 0; i < this.detalles.length; i++) {
             const detalle = this.detalles.at(i);
             const articuloId = detalle.get('articulo_id')?.value;
@@ -643,7 +822,7 @@ export class VentaFormComponent implements OnInit {
                         confirmButtonText: 'Imprimir Carta',
                         denyButtonText: 'Imprimir Rollo',
                         cancelButtonText: 'Cerrar'
-                    }).then((result) => {
+                    }).then((result: any) => {
                         if (result.isConfirmed) {
                             this.ventaService.imprimirComprobante(ventaId, 'carta');
                         } else if (result.isDenied) {

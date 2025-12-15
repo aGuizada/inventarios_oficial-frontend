@@ -34,6 +34,9 @@ export class CajaService {
         if (params?.sort_order) {
             httpParams = httpParams.set('sort_order', params.sort_order);
         }
+        if (params?.user_id) {
+            httpParams = httpParams.set('user_id', params.user_id.toString());
+        }
 
         return this.http.get<ApiResponse<PaginatedResponse<Caja>>>(this.apiUrl, { params: httpParams });
     }

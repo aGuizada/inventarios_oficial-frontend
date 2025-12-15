@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { VentaService } from '../../../services/venta.service';
-import { Venta, PaginationParams } from '../../../interfaces';
+import { CajaService } from '../../../services/caja.service';
+import { Venta, PaginationParams, Caja } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
@@ -45,9 +46,12 @@ export class VentasComponent implements OnInit {
 
   sucursales: Sucursal[] = [];
   isAdmin: boolean = false;
+  cajasUsuario: Caja[] = [];
+  cajasIdsUsuario: number[] = [];
 
   constructor(
     private ventaService: VentaService,
+    private cajaService: CajaService,
     private router: Router,
     private route: ActivatedRoute,
     private authService: AuthService,
@@ -67,7 +71,68 @@ export class VentasComponent implements OnInit {
       this.isHistorialView = path === 'historial';
 
       if (this.isHistorialView) {
-        this.loadVentas();
+        // Si es vendedor, cargar cajas primero y luego ventas
+        if (this.authService.isVendedor() && user) {
+          this.loadCajasUsuario(() => {
+            this.loadVentas();
+          });
+        } else {
+          this.loadVentas();
+        }
+      }
+    });
+  }
+
+  loadCajasUsuario(callback?: () => void): void {
+    const user = this.authService.getCurrentUser();
+    if (!user) {
+      if (callback) callback();
+      return;
+    }
+
+    const params: PaginationParams = {
+      page: 1,
+      per_page: 100,
+      user_id: user.id
+    };
+
+    this.cajaService.getPaginated(params).subscribe({
+      next: (response) => {
+        if (response.data) {
+          this.cajasUsuario = response.data.data || [];
+          // Obtener solo los IDs de las cajas del usuario de su sucursal
+          if (user.sucursal_id) {
+            this.cajasIdsUsuario = this.cajasUsuario
+              .filter(caja => caja.sucursal_id === user.sucursal_id)
+              .map(caja => caja.id);
+          } else {
+            this.cajasIdsUsuario = this.cajasUsuario.map(caja => caja.id);
+          }
+        }
+        if (callback) callback();
+      },
+      error: (error) => {
+        console.error('Error al cargar cajas del usuario:', error);
+        // Fallback a getAll
+        this.cajaService.getAll().subscribe({
+          next: (response: any) => {
+            const cajas = Array.isArray(response) ? response : (response.data || []);
+            this.cajasUsuario = cajas.filter((caja: Caja) => caja.user_id === user.id);
+            if (user.sucursal_id) {
+              this.cajasIdsUsuario = this.cajasUsuario
+                .filter(caja => caja.sucursal_id === user.sucursal_id)
+                .map(caja => caja.id);
+            } else {
+              this.cajasIdsUsuario = this.cajasUsuario.map(caja => caja.id);
+            }
+            if (callback) callback();
+          },
+          error: () => {
+            // Si falla todo, continuar sin filtrar por cajas
+            this.cajasIdsUsuario = [];
+            if (callback) callback();
+          }
+        });
       }
     });
   }
@@ -84,7 +149,10 @@ export class VentasComponent implements OnInit {
   loadVentas(): void {
     this.isLoading = true;
 
-    const params: PaginationParams & { estado?: string; has_devoluciones?: string; sucursal_id?: string } = {
+    const user = this.authService.getCurrentUser();
+    const isVendedor = this.authService.isVendedor();
+
+    const params: PaginationParams & { estado?: string; has_devoluciones?: string; sucursal_id?: string; user_id?: number } = {
       page: this.currentPage,
       per_page: this.perPage,
       sort_by: 'id',
@@ -103,7 +171,15 @@ export class VentasComponent implements OnInit {
       params.has_devoluciones = 'true';
     }
 
-    if (this.filterSucursalId) {
+    // Si es vendedor, filtrar por su usuario y sucursal
+    if (isVendedor && user) {
+      params.user_id = user.id;
+      // Si el usuario tiene sucursal_id, filtrar por esa sucursal
+      if (user.sucursal_id) {
+        params.sucursal_id = user.sucursal_id.toString();
+      }
+    } else if (this.filterSucursalId) {
+      // Solo aplicar filtro de sucursal si es admin y se seleccionó una sucursal
       params.sucursal_id = this.filterSucursalId;
     }
 
@@ -112,7 +188,44 @@ export class VentasComponent implements OnInit {
       .subscribe({
         next: (response) => {
           if (response.data) {
-            this.ventas = response.data.data || [];
+            let ventasData = response.data.data || [];
+            
+            // Filtro adicional en frontend para asegurar que solo vea sus ventas de su sucursal
+            if (isVendedor && user) {
+              console.log('Filtrando ventas para vendedor:', {
+                userId: user.id,
+                sucursalId: user.sucursal_id,
+                cajasIdsUsuario: this.cajasIdsUsuario,
+                totalVentasAntes: ventasData.length,
+                ventasEjemplo: ventasData.slice(0, 3).map(v => ({ id: v.id, user_id: v.user_id, caja_id: v.caja_id }))
+              });
+              
+              ventasData = ventasData.filter((venta: Venta) => {
+                // Primero verificar que sea del usuario
+                if (venta.user_id !== user.id) {
+                  console.log('Venta filtrada - no es del usuario:', venta.id, 'user_id:', venta.user_id, 'esperado:', user.id);
+                  return false;
+                }
+                
+                // Si tenemos las cajas cargadas, filtrar por cajas de su sucursal
+                if (this.cajasIdsUsuario.length > 0) {
+                  const perteneceACajaUsuario = this.cajasIdsUsuario.includes(venta.caja_id);
+                  if (!perteneceACajaUsuario) {
+                    console.log('Venta filtrada - no pertenece a caja del usuario:', venta.id, 'caja_id:', venta.caja_id, 'cajasIdsUsuario:', this.cajasIdsUsuario);
+                  }
+                  return perteneceACajaUsuario;
+                }
+                
+                // Si no tenemos las cajas aún, mostrar todas las ventas del usuario
+                // (se recargará cuando se carguen las cajas)
+                console.warn('Cajas no cargadas aún, mostrando todas las ventas del usuario');
+                return true;
+              });
+              
+              console.log('Total ventas después del filtro:', ventasData.length);
+            }
+            
+            this.ventas = ventasData;
             this.currentPage = response.data.current_page;
             this.lastPage = response.data.last_page;
             this.total = response.data.total;
@@ -126,7 +239,25 @@ export class VentasComponent implements OnInit {
             .pipe(finalize(() => this.isLoading = false))
             .subscribe({
               next: (ventas) => {
-                this.ventas = Array.isArray(ventas) ? ventas : [];
+                let ventasData = Array.isArray(ventas) ? ventas : [];
+                
+                // Filtro adicional en frontend para vendedores
+                if (isVendedor && user) {
+                  ventasData = ventasData.filter((venta: Venta) => {
+                    // Filtrar por usuario
+                    if (venta.user_id !== user.id) return false;
+                    
+                    // Si tenemos las cajas cargadas, filtrar por cajas de su sucursal
+                    if (this.cajasIdsUsuario.length > 0) {
+                      return this.cajasIdsUsuario.includes(venta.caja_id);
+                    }
+                    
+                    // Si no tenemos las cajas aún, solo filtrar por usuario
+                    return true;
+                  });
+                }
+                
+                this.ventas = ventasData;
               }
             });
         }
@@ -186,8 +317,15 @@ export class VentasComponent implements OnInit {
   }
 
   onSaleCompleted(): void {
-    // Cuando se completa una venta, navegar al historial
-    this.router.navigate(['/ventas/historial']);
+    // Cuando se completa una venta, recargar cajas y navegar al historial
+    const user = this.authService.getCurrentUser();
+    if (this.authService.isVendedor() && user) {
+      this.loadCajasUsuario(() => {
+        this.router.navigate(['/ventas/historial']);
+      });
+    } else {
+      this.router.navigate(['/ventas/historial']);
+    }
   }
 
   onFilterChange(): void {
@@ -227,7 +365,7 @@ export class VentasComponent implements OnInit {
       confirmButtonText: 'Imprimir Carta',
       denyButtonText: 'Imprimir Rollo',
       cancelButtonText: 'Cancelar'
-    }).then((result) => {
+    }).then((result: any) => {
       if (result.isConfirmed) {
         this.ventaService.imprimirComprobante(venta.id!, 'carta');
       } else if (result.isDenied) {

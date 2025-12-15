@@ -169,10 +169,20 @@
         <div class="flex flex-row gap-4" style="min-height: 65vh;">
             <!-- Columna Izquierda - Productos -->
             <div [class]="detalles.length > 0 ? 'w-2/3 overflow-y-auto' : 'w-full overflow-y-auto'">
-                <app-product-list [almacenId]="form.get('almacen_id')?.value"
-                    [productosInventario]="productosInventario" [categorias]="categorias"
-                    (addProduct)="agregarProductoAVenta($event)">
-                </app-product-list>
+                <!-- Indicador de carga de productos -->
+                @if (isLoadingProductos) {
+                    <div class="flex items-center justify-center py-12">
+                        <div class="text-center">
+                            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mb-4"></div>
+                            <p class="text-sm text-gray-600 dark:text-slate-400">Cargando productos...</p>
+                        </div>
+                    </div>
+                } @else {
+                    <app-product-list [almacenId]="form.get('almacen_id')?.value"
+                        [productosInventario]="productosInventario" [categorias]="categorias"
+                        (addProduct)="agregarProductoAVenta($event)">
+                    </app-product-list>
+                }
             </div>
 
             <!-- Columna Derecha - Carrito -->

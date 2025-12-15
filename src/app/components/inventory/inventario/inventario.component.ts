@@ -40,6 +40,7 @@ export class InventarioComponent implements OnInit {
   isLoading = false;
   busqueda: string = '';
   vista: 'item' | 'lotes' = 'lotes'; // Vista por defecto
+  currentUserSucursalId: number | null = null;
 
   onImportSuccess(): void {
     this.loadInventarios();
@@ -64,9 +65,15 @@ export class InventarioComponent implements OnInit {
   ngOnInit(): void {
     const user = this.authService.getCurrentUser();
     this.isAdmin = user?.rol_id === 1;
+    this.currentUserSucursalId = user?.sucursal_id || null;
 
     if (this.isAdmin) {
       this.loadSucursales();
+    } else {
+      // Si es vendedor, establecer automáticamente su sucursal
+      if (this.currentUserSucursalId) {
+        this.sucursalSeleccionada = this.currentUserSucursalId;
+      }
     }
 
     this.loadAlmacenes();
@@ -87,12 +94,20 @@ export class InventarioComponent implements OnInit {
     this.almacenService.getAll().subscribe({
       next: (response: ApiResponse<Almacen[]> | { data: Almacen[] }) => {
         // El backend devuelve { data: [...] }
+        let almacenesData: Almacen[] = [];
         if ('data' in response) {
-          this.almacenes = response.data || [];
+          almacenesData = response.data || [];
         } else if (Array.isArray(response)) {
-          this.almacenes = response;
+          almacenesData = response;
+        }
+        
+        // Si es vendedor, filtrar solo almacenes de su sucursal
+        if (!this.isAdmin && this.currentUserSucursalId) {
+          this.almacenes = almacenesData.filter(almacen => 
+            almacen.sucursal_id === this.currentUserSucursalId
+          );
         } else {
-          this.almacenes = [];
+          this.almacenes = almacenesData;
         }
       },
       error: (error) => {
@@ -116,14 +131,17 @@ export class InventarioComponent implements OnInit {
       params.search = this.searchTerm;
     }
 
+    // Si es vendedor, siempre filtrar por su sucursal
+    if (!this.isAdmin && this.currentUserSucursalId) {
+      params.sucursal_id = this.currentUserSucursalId;
+    } else if (this.sucursalSeleccionada !== null && this.sucursalSeleccionada !== undefined) {
+      // Solo aplicar filtro de sucursal si es admin y se seleccionó una
+      params.sucursal_id = this.sucursalSeleccionada;
+    }
+
     // Agregar filtro por almacén si está seleccionado
     if (this.almacenSeleccionado !== null && this.almacenSeleccionado !== undefined) {
       params.almacen_id = this.almacenSeleccionado;
-    }
-
-    // Agregar filtro por sucursal si está seleccionado
-    if (this.sucursalSeleccionada !== null && this.sucursalSeleccionada !== undefined) {
-      params.sucursal_id = this.sucursalSeleccionada;
     }
 
     // Usar getPorLotes para mostrar todas las compras que van al inventario
@@ -132,7 +150,17 @@ export class InventarioComponent implements OnInit {
       .subscribe({
         next: (response) => {
           if (response.success && response.data) {
-            this.inventarios = response.data.data || [];
+            let inventariosData = response.data.data || [];
+            
+            // Filtro adicional en frontend para vendedores (asegurar independencia)
+            if (!this.isAdmin && this.currentUserSucursalId) {
+              inventariosData = inventariosData.filter((inv: Inventario) => {
+                const almacen = this.almacenes.find(a => a.id === inv.almacen_id);
+                return almacen && almacen.sucursal_id === this.currentUserSucursalId;
+              });
+            }
+            
+            this.inventarios = inventariosData;
             this.currentPage = response.data.current_page;
             this.lastPage = response.data.last_page;
             this.total = response.data.total;
@@ -140,7 +168,17 @@ export class InventarioComponent implements OnInit {
             this.aplicarFiltros();
           } else if (response.data) {
             // Si viene directamente como array
-            this.inventarios = Array.isArray(response.data) ? response.data : [];
+            let inventariosData = Array.isArray(response.data) ? response.data : [];
+            
+            // Filtro adicional en frontend para vendedores (asegurar independencia)
+            if (!this.isAdmin && this.currentUserSucursalId) {
+              inventariosData = inventariosData.filter((inv: Inventario) => {
+                const almacen = this.almacenes.find(a => a.id === inv.almacen_id);
+                return almacen && almacen.sucursal_id === this.currentUserSucursalId;
+              });
+            }
+            
+            this.inventarios = inventariosData;
             this.aplicarFiltros();
           }
         },
@@ -152,7 +190,17 @@ export class InventarioComponent implements OnInit {
             .subscribe({
               next: (response) => {
                 if (response.data) {
-                  this.inventarios = response.data.data || [];
+                  let inventariosData = response.data.data || [];
+                  
+                  // Filtro adicional en frontend para vendedores (asegurar independencia)
+                  if (!this.isAdmin && this.currentUserSucursalId) {
+                    inventariosData = inventariosData.filter((inv: Inventario) => {
+                      const almacen = this.almacenes.find(a => a.id === inv.almacen_id);
+                      return almacen && almacen.sucursal_id === this.currentUserSucursalId;
+                    });
+                  }
+                  
+                  this.inventarios = inventariosData;
                   this.currentPage = response.data.current_page;
                   this.lastPage = response.data.last_page;
                   this.total = response.data.total;
@@ -183,12 +231,25 @@ export class InventarioComponent implements OnInit {
   }
 
   onAlmacenChange(almacenId: number | null): void {
+    // Si es vendedor, validar que el almacén pertenezca a su sucursal
+    if (!this.isAdmin && this.currentUserSucursalId && almacenId !== null) {
+      const almacen = this.almacenes.find(a => a.id === almacenId);
+      if (!almacen || almacen.sucursal_id !== this.currentUserSucursalId) {
+        console.warn('El vendedor intentó seleccionar un almacén de otra sucursal');
+        return;
+      }
+    }
+    
     this.almacenSeleccionado = almacenId;
     this.currentPage = 1; // Resetear a la primera página cuando cambia el filtro
     this.loadInventarios(); // Recargar desde el servidor con el nuevo filtro
   }
 
   onSucursalChange(): void {
+    // Si es vendedor, no permitir cambiar la sucursal
+    if (!this.isAdmin && this.currentUserSucursalId) {
+      this.sucursalSeleccionada = this.currentUserSucursalId;
+    }
     this.currentPage = 1;
     this.loadInventarios();
   }
@@ -207,7 +268,18 @@ export class InventarioComponent implements OnInit {
     console.log('Inventarios totales:', filtrados.length);
     console.log('Almacén seleccionado para filtrar:', this.almacenSeleccionado);
 
-    // Filtrar por almacén
+    // Si es vendedor, filtrar SOLO por sucursal del usuario (independiente)
+    if (!this.isAdmin && this.currentUserSucursalId) {
+      filtrados = filtrados.filter(inv => {
+        // Buscar el almacén del inventario
+        const almacen = this.almacenes.find(a => a.id === inv.almacen_id);
+        // Solo incluir si el almacén pertenece a la sucursal del usuario
+        return almacen && almacen.sucursal_id === this.currentUserSucursalId;
+      });
+      console.log('Inventarios filtrados por sucursal (vendedor):', filtrados.length);
+    }
+
+    // Filtrar por almacén (solo si está seleccionado)
     if (this.almacenSeleccionado !== null && this.almacenSeleccionado !== undefined) {
       const almacenIdNum = Number(this.almacenSeleccionado);
       filtrados = filtrados.filter(inv => {
@@ -236,7 +308,12 @@ export class InventarioComponent implements OnInit {
 
   limpiarFiltros(): void {
     this.almacenSeleccionado = null;
-    this.sucursalSeleccionada = null;
+    // Si es vendedor, mantener su sucursal seleccionada
+    if (this.isAdmin) {
+      this.sucursalSeleccionada = null;
+    } else {
+      this.sucursalSeleccionada = this.currentUserSucursalId;
+    }
     this.busqueda = '';
     this.aplicarFiltros();
     this.loadInventarios(); // Recargar para limpiar filtros de servidor también
@@ -251,9 +328,46 @@ export class InventarioComponent implements OnInit {
   }
 
   loadInventariosPorItem(): void {
-    this.inventarioService.getPorItem().subscribe({
+    const params: any = {};
+    
+    // Si es vendedor, filtrar por su sucursal
+    if (!this.isAdmin && this.currentUserSucursalId) {
+      params.sucursal_id = this.currentUserSucursalId;
+    } else if (this.sucursalSeleccionada !== null && this.sucursalSeleccionada !== undefined) {
+      // Solo aplicar filtro de sucursal si es admin y se seleccionó una
+      params.sucursal_id = this.sucursalSeleccionada;
+    }
+    
+    this.inventarioService.getPorItem(params).subscribe({
       next: (response) => {
-        this.inventariosPorItem = response.data || [];
+        let inventariosPorItemData = response.data || [];
+        
+        // Filtro adicional en frontend para vendedores (asegurar independencia total)
+        if (!this.isAdmin && this.currentUserSucursalId) {
+          inventariosPorItemData = inventariosPorItemData.filter((item: any) => {
+            // Filtrar por almacenes de la sucursal del usuario
+            if (item.almacenes && Array.isArray(item.almacenes)) {
+              // Solo mostrar ítems que tengan almacenes de la sucursal del usuario
+              const almacenesValidos = item.almacenes.filter((alm: any) => {
+                const almacen = this.almacenes.find(a => a.nombre_almacen === alm.almacen);
+                return almacen && almacen.sucursal_id === this.currentUserSucursalId;
+              });
+              
+              // Si hay almacenes válidos, actualizar la lista de almacenes del ítem
+              if (almacenesValidos.length > 0) {
+                item.almacenes = almacenesValidos;
+                // Recalcular totales solo con almacenes de la sucursal
+                item.total_stock = almacenesValidos.reduce((sum: number, alm: any) => sum + (alm.cantidad || 0), 0);
+                item.total_saldo = almacenesValidos.reduce((sum: number, alm: any) => sum + (alm.saldo || alm.cantidad || 0), 0);
+                return true;
+              }
+              return false;
+            }
+            return false;
+          });
+        }
+        
+        this.inventariosPorItem = inventariosPorItemData;
       },
       error: (error) => {
         console.error('Error al cargar inventarios por ítem:', error);
