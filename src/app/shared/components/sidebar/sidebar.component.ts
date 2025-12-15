@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { AuthService } from '../../../services/auth.service';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
@@ -16,10 +17,10 @@ interface MenuItem {
   imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './sidebar.component.html',
 })
-export class SidebarComponent {
-  menuItems: MenuItem[] = [
+export class SidebarComponent implements OnInit {
+  private allMenuItems: MenuItem[] = [
     {
-      label: 'Dashboard',
+      label: 'Inicio',
       icon: 'fas fa-home',
       route: '/dashboard'
     },
@@ -95,6 +96,49 @@ export class SidebarComponent {
       ]
     }
   ];
+
+  menuItems: MenuItem[] = [];
+
+  constructor(private authService: AuthService) { }
+
+  ngOnInit() {
+    this.authService.currentUser$.subscribe(() => {
+      this.updateMenu();
+    });
+  }
+
+  updateMenu() {
+    console.log('Updating menu. Is Vendedor?', this.authService.isVendedor());
+    if (this.authService.isVendedor()) {
+      this.menuItems = this.allMenuItems.filter(item => {
+        if (item.label === 'Ventas') return true;
+
+        if (item.label === 'Finanzas') {
+          return true;
+        }
+
+        if (item.label === 'Configuración') {
+          return true;
+        }
+
+        return false;
+      }).map(item => {
+        const newItem = { ...item };
+
+        if (newItem.label === 'Finanzas' && newItem.children) {
+          newItem.children = newItem.children.filter(child => child.label === 'Cajas');
+        }
+
+        if (newItem.label === 'Configuración' && newItem.children) {
+          newItem.children = newItem.children.filter(child => child.label === 'Clientes');
+        }
+
+        return newItem;
+      });
+    } else {
+      this.menuItems = [...this.allMenuItems];
+    }
+  }
 
   toggleSubmenu(item: MenuItem): void {
     if (item.children) {

@@ -2,6 +2,7 @@ import { Cliente } from './cliente.interface';
 import { TipoVenta } from './tipo-venta.interface';
 import { TipoPago } from './tipo-pago.interface';
 import { Articulo } from './articulo.interface';
+import { User } from './user.interface';
 
 export interface Venta {
     id?: number;
@@ -23,6 +24,7 @@ export interface Venta {
     tipo_venta?: TipoVenta;
     tipo_pago?: TipoPago;
     detalles?: DetalleVenta[];
+    user?: User;
 }
 
 export interface DetalleVenta {
@@ -35,4 +37,5 @@ export interface DetalleVenta {
     created_at?: string;
     updated_at?: string;
     articulo?: Articulo;
+    unidad_medida?: string;
 }

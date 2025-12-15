@@ -23,6 +23,7 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
     @Output() remove = new EventEmitter<number>();
 
     unidadesMedida: string[] = ['Unidad']; // Default fallback
+    openPriceSelectorIndex: number | null = null;
 
     constructor(private medidaService: MedidaService, private fb: FormBuilder) { }
 
@@ -175,5 +176,57 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
 
             detalle.patchValue({ precio: nuevoPrecio });
         }
+    }
+
+    getPreciosDisponibles(index: number): { label: string, value: number }[] {
+        const detalle = this.detalles.at(index);
+        const articuloId = detalle.get('articulo_id')?.value;
+        const producto = this.productosInventario.find(p => p.articulo_id === articuloId);
+
+        if (!producto || !producto.articulo) return [];
+
+        const precios = [
+            { label: 'Normal', value: Number(producto.articulo.precio_venta) },
+            { label: 'Precio 1', value: Number(producto.articulo.precio_uno) },
+            { label: 'Precio 2', value: Number(producto.articulo.precio_dos) },
+            { label: 'Precio 3', value: Number(producto.articulo.precio_tres) },
+            { label: 'Precio 4', value: Number(producto.articulo.precio_cuatro) }
+        ];
+
+        return precios.filter(p => p.value > 0);
+    }
+
+    dropdownPosition = { top: 0, left: 0 };
+
+    togglePriceSelector(index: number, event?: MouseEvent): void {
+        if (this.openPriceSelectorIndex === index) {
+            this.openPriceSelectorIndex = null;
+        } else {
+            this.openPriceSelectorIndex = index;
+            if (event && event.target) {
+                const button = (event.target as HTMLElement).closest('button');
+                if (button) {
+                    const rect = button.getBoundingClientRect();
+                    this.dropdownPosition = {
+                        top: rect.bottom + window.scrollY + 5,
+                        left: rect.right - 192 // 192px is w-48 (12rem)
+                    };
+                }
+            }
+        }
+    }
+
+    closePriceSelector(): void {
+        this.openPriceSelectorIndex = null;
+    }
+
+    seleccionarPrecio(index: number, precio: number): void {
+        const detalle = this.detalles.at(index);
+        detalle.patchValue({ precio: precio });
+        this.closePriceSelector();
+    }
+
+    getProducto(articuloId: number): ProductoInventario | undefined {
+        return this.productosInventario.find(p => p.articulo_id === articuloId);
     }
 }

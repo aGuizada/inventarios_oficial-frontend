@@ -16,6 +16,7 @@ export class VentasHistoryComponent {
     @Output() verDetalle = new EventEmitter<Venta>();
     @Output() devolverVenta = new EventEmitter<Venta>();
     @Output() anularVenta = new EventEmitter<Venta>();
+    @Output() imprimirComprobante = new EventEmitter<Venta>();
 
     onNuevaVenta(): void {
         this.nuevaVenta.emit();
@@ -31,5 +32,9 @@ export class VentasHistoryComponent {
 
     onAnularVenta(venta: Venta): void {
         this.anularVenta.emit(venta);
+    }
+
+    onImprimirComprobante(venta: Venta): void {
+        this.imprimirComprobante.emit(venta);
     }
 }

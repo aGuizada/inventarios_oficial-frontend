@@ -5,23 +5,29 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { VentaService } from '../../../services/venta.service';
 import { Venta, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
+import Swal from 'sweetalert2';
 
+// Import child components
 // Import child components
 import { VentasHistoryComponent } from './ventas-history/ventas-history.component';
 import { VentaFormComponent } from './venta-form/venta-form.component';
+import { VentaDetailModalComponent } from './venta-detail-modal/venta-detail-modal.component';
 import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-ventas',
   standalone: true,
-  imports: [CommonModule, FormsModule, VentasHistoryComponent, VentaFormComponent, SearchBarComponent, PaginationComponent],
+  imports: [CommonModule, FormsModule, VentasHistoryComponent, VentaFormComponent, VentaDetailModalComponent, SearchBarComponent, PaginationComponent],
   templateUrl: './ventas.component.html',
 })
 export class VentasComponent implements OnInit {
   ventas: Venta[] = [];
   isLoading = false;
   isHistorialView = false;
+
+  selectedVenta: Venta | null = null;
+  isDetailModalOpen = false;
 
   // Paginación
   currentPage: number = 1;
@@ -114,8 +120,40 @@ export class VentasComponent implements OnInit {
   }
 
   verDetalleVenta(venta: Venta): void {
-    // Aquí podrías navegar a una vista de detalle o abrir un modal
-    // this.router.navigate(['/ventas/detalle', venta.id]);
+    // Show loading state if needed, or just fetch
+    // Using a separate loading flag would be better, but for now let's just fetch
+    // We could add isDetailLoading property
+
+    // Optimistic open or wait? Let's wait for data to ensure we have details
+    // But we need to show feedback. 
+    // Let's use Swal for loading or just a simple flag if we had one.
+    // Since we don't want to hide the table, let's just use Swal to show loading
+
+    Swal.fire({
+      title: 'Cargando detalles...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    this.ventaService.getById(venta.id!)
+      .pipe(finalize(() => Swal.close()))
+      .subscribe({
+        next: (fullVenta) => {
+          this.selectedVenta = fullVenta;
+          this.isDetailModalOpen = true;
+        },
+        error: (error) => {
+          console.error('Error al cargar detalles de venta:', error);
+          Swal.fire('Error', 'No se pudieron cargar los detalles de la venta', 'error');
+        }
+      });
+  }
+
+  closeDetailModal(): void {
+    this.selectedVenta = null;
+    this.isDetailModalOpen = false;
   }
 
   onSaleCompleted(): void {
@@ -148,5 +186,24 @@ export class VentasComponent implements OnInit {
           }
         });
     }
+  }
+
+  onImprimirComprobante(venta: Venta): void {
+    Swal.fire({
+      title: 'Imprimir Comprobante',
+      text: 'Seleccione el formato de impresión',
+      icon: 'question',
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: 'Imprimir Carta',
+      denyButtonText: 'Imprimir Rollo',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.ventaService.imprimirComprobante(venta.id!, 'carta');
+      } else if (result.isDenied) {
+        this.ventaService.imprimirComprobante(venta.id!, 'rollo');
+      }
+    });
   }
 }

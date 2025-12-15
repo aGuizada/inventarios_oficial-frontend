@@ -7,11 +7,14 @@ import { finalize } from 'rxjs/operators';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 import { forkJoin } from 'rxjs';
+import { DateFilter } from '../../interfaces/date-filter.interface';
 
 // Import child components
 import { StatsCardsComponent } from './stats-cards/stats-cards.component';
 import { RecentSalesComponent } from './recent-sales/recent-sales.component';
 import { LowStockComponent } from './low-stock/low-stock.component';
+import { DateFilterComponent } from './date-filter/date-filter.component';
+import { ArticleProfitComponent } from './article-profit/article-profit.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -22,6 +25,8 @@ import { LowStockComponent } from './low-stock/low-stock.component';
     StatsCardsComponent,
     RecentSalesComponent,
     LowStockComponent,
+    DateFilterComponent,
+    ArticleProfitComponent,
     BaseChartDirective
   ],
   templateUrl: './dashboard.component.html',
@@ -58,6 +63,10 @@ export class DashboardComponent implements OnInit {
 
   // Rotación Inventario
   rotacionInventario: any = null;
+
+  // Filtros de fecha
+  filtrosActivos: DateFilter | null = null;
+  filtrosAplicados = false;
 
   // Gráficos
   public barChartOptions: ChartConfiguration['options'] = {
@@ -314,5 +323,147 @@ export class DashboardComponent implements OnInit {
     if (cliente?.nombre_cliente) return cliente.nombre_cliente;
     if (cliente?.nombre) return cliente.nombre;
     return `Cliente #${clienteId}`;
+  }
+
+  /**
+   * Maneja cambios en el filtro de fecha
+   */
+  onFiltrosChanged(filtros: DateFilter): void {
+    this.filtrosActivos = filtros;
+    this.filtrosAplicados = true;
+    this.cargarDatosConFiltros(filtros);
+  }
+
+  /**
+   * Maneja reset del filtro
+   */
+  onFiltrosReset(): void {
+    this.filtrosActivos = null;
+    this.filtrosAplicados = false;
+    this.cargarDatos();
+  }
+
+  /**
+   * Carga datos con filtros aplicados
+   */
+  private cargarDatosConFiltros(filtros: DateFilter): void {
+    this.isLoading = true;
+
+    forkJoin({
+      kpis: this.dashboardService.getKpisFiltrados(filtros),
+      ventasChart: this.dashboardService.getVentasChartFiltrado(filtros),
+      // Los demás endpoints no cambian con los filtros
+      alertas: this.dashboardService.getAlertas(),
+      resumenCajas: this.dashboardService.getResumenCajas(),
+      rotacionInventario: this.dashboardService.getRotacionInventario(),
+      ventasRecientes: this.dashboardService.getVentasRecientes(),
+      productosTop: this.dashboardService.getProductosTop(),
+      inventarioChart: this.dashboardService.getInventarioChart(),
+      comparativaChart: this.dashboardService.getComparativaChart(),
+      proveedoresTop: this.dashboardService.getProveedoresTop(),
+      clientesFrecuentes: this.dashboardService.getClientesFrecuentes(),
+      productosBajoStock: this.dashboardService.getProductosBajoStock(),
+      productosMasComprados: this.dashboardService.getProductosMasComprados(),
+      topStock: this.dashboardService.getTopStock()
+    }).pipe(
+      finalize(() => this.isLoading = false)
+    ).subscribe({
+      next: (data: any) => {
+        // Extraer KPIs del Resource (viene con estructura anidada)
+        const kpisData = data.kpis.data || data.kpis;
+        const ventasData = kpisData.ventas || {};
+        const inventarioData = kpisData.inventario || {};
+        const comprasData = kpisData.compras || {};
+        const creditosData = kpisData.creditos || {};
+        const analisisData = kpisData.analisis || {};
+
+        // Actualizar KPIs
+        this.ventasHoy = ventasData.ventas_hoy || 0;
+        this.ventasMes = ventasData.ventas_mes || 0;
+        this.ventasMesAnterior = ventasData.ventas_mes_anterior || 0;
+        this.totalVentas = ventasData.total_ventas || 0;
+        this.crecimientoVentas = ventasData.crecimiento_ventas || 0;
+        this.productosBajoStockCount = inventarioData.productos_bajo_stock || 0;
+        this.productosAgotados = inventarioData.productos_agotados || 0;
+        this.valorTotalInventario = inventarioData.valor_total_inventario || 0;
+        this.comprasMes = comprasData.compras_mes || 0;
+        this.creditosPendientes = creditosData.creditos_pendientes || 0;
+        this.montoCreditosPendientes = creditosData.monto_creditos_pendientes || 0;
+        this.margenBruto = analisisData.margen_bruto || 0;
+
+        // Actualizar gráfico de ventas filtrado
+        this.lineChartData = {
+          labels: data.ventasChart.labels,
+          datasets: [{
+            data: data.ventasChart.data,
+            label: 'Ventas ($)',
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            tension: 0.4
+          }]
+        };
+
+        // Actualizar resto de datos (sin filtros)
+        this.alertas = data.alertas;
+        this.resumenCajas = data.resumenCajas;
+        this.rotacionInventario = data.rotacionInventario;
+        this.ventasRecientes = data.ventasRecientes;
+        this.productosMasVendidos = data.productosTop.mas_vendidos;
+        this.productosMenosVendidos = data.productosTop.menos_vendidos;
+        this.productosMasComprados = data.productosMasComprados;
+        this.productosBajoStock = data.productosBajoStock;
+        this.clientesMasFrecuentes = data.clientesFrecuentes;
+
+        // Actualizar otros gráficos
+        if (this.productosMasVendidos.length > 0) {
+          this.barChartData = {
+            labels: this.productosMasVendidos.map(p => p.articulo?.nombre_articulo || `Artículo #${p.articulo_id}`),
+            datasets: [{
+              data: this.productosMasVendidos.map(p => p.total_ventas),
+              label: 'Ventas ($)',
+              backgroundColor: '#3b82f6'
+            }]
+          };
+        }
+
+        this.categoryChartData = {
+          labels: data.inventarioChart.labels,
+          datasets: [{
+            data: data.inventarioChart.data,
+            backgroundColor: ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308']
+          }]
+        };
+
+        this.comparisonChartData = {
+          labels: data.comparativaChart.labels,
+          datasets: [
+            { data: data.comparativaChart.ventas, label: 'Ventas', backgroundColor: '#10b981' },
+            { data: data.comparativaChart.compras, label: 'Compras', backgroundColor: '#ef4444' }
+          ]
+        };
+
+        this.supplierChartData = {
+          labels: data.proveedoresTop.labels,
+          datasets: [{
+            data: data.proveedoresTop.data,
+            label: 'Total Comprado ($)',
+            backgroundColor: '#8b5cf6'
+          }]
+        };
+
+        this.pieChartData = {
+          labels: data.topStock.labels,
+          datasets: [{
+            data: data.topStock.data,
+            backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444']
+          }]
+        };
+      },
+      error: (error) => {
+        console.error('Error al cargar datos filtrados:', error);
+        this.isLoading = false;
+      }
+    });
   }
 }

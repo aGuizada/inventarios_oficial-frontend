@@ -42,7 +42,11 @@ export class LoginComponent {
     this.authService.login({ usuario, password }).subscribe({
       next: () => {
         this.isLoading = false;
-        this.router.navigate(['/dashboard']);
+        if (this.authService.isVendedor()) {
+          this.router.navigate(['/ventas/nueva']);
+        } else {
+          this.router.navigate(['/dashboard']);
+        }
       },
       error: (err) => {
         this.isLoading = false;

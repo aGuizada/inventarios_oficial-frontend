@@ -1,0 +1,156 @@
+@if (isOpen && venta) {
+<div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" (click)="onClose()">
+        </div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div
+            class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+
+            <!-- Header -->
+            <div
+                class="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-200 dark:border-slate-700">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-slate-100" id="modal-title">
+                        Detalle de Venta #{{ venta.id }}
+                    </h3>
+                    <button (click)="onClose()" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                        <span class="sr-only">Cerrar</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="px-4 py-5 sm:p-6">
+                <!-- General Info -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-slate-400">Cliente</p>
+                        <p class="text-base text-gray-900 dark:text-slate-100">{{ venta.cliente?.nombre || 'N/A' }}</p>
+                        <p class="text-sm text-gray-500 dark:text-slate-400">{{ venta.cliente?.num_documento }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-slate-400">Fecha y Hora</p>
+                        <p class="text-base text-gray-900 dark:text-slate-100">{{ venta.fecha_hora | date:'medium' }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-slate-400">Vendedor</p>
+                        <p class="text-base text-gray-900 dark:text-slate-100">{{ venta.user?.name || 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-slate-400">Tipo de Venta</p>
+                        <p class="text-base text-gray-900 dark:text-slate-100">{{ venta.tipo_venta?.nombre_tipo_ventas
+                            || venta.tipo_venta?.nombre || 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-slate-400">Comprobante</p>
+                        <p class="text-base text-gray-900 dark:text-slate-100">
+                            {{ venta.tipo_comprobante }} {{ venta.serie_comprobante ? venta.serie_comprobante + '-' : ''
+                            }}{{ venta.num_comprobante }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-slate-400">Tipo de Pago</p>
+                        <p class="text-base text-gray-900 dark:text-slate-100">{{ venta.tipo_pago?.nombre_tipo_pago ||
+                            venta.tipo_pago?.nombre || 'N/A' }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-slate-400">Estado</p>
+                        <span [ngClass]="{
+                            'bg-green-100 text-green-800': venta.estado === 'Activo',
+                            'bg-red-100 text-red-800': venta.estado === 'Cancelada',
+                            'bg-yellow-100 text-yellow-800': venta.estado !== 'Activo' && venta.estado !== 'Cancelada'
+                        }" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                            {{ venta.estado }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Products Table -->
+                <div class="mt-6 border-t border-gray-200 dark:border-slate-700 pt-4">
+                    <h4 class="text-md font-medium text-gray-900 dark:text-slate-100 mb-4">Productos</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                            <thead class="bg-gray-50 dark:bg-slate-700">
+                                <tr>
+                                    <th
+                                        class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                                        Producto</th>
+                                    <th
+                                        class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                                        Cant.</th>
+                                    <th
+                                        class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                                        Unidad</th>
+                                    <th
+                                        class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                                        Precio</th>
+                                    <th
+                                        class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                                        Desc.</th>
+                                    <th
+                                        class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                                        Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                                @for (detalle of venta.detalles; track $index) {
+                                <tr>
+                                    <td class="px-4 py-2 text-sm text-gray-900 dark:text-slate-100">{{
+                                        detalle.articulo?.nombre }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-900 dark:text-slate-100 text-right">{{
+                                        detalle.cantidad }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-500 dark:text-slate-400">{{
+                                        detalle.unidad_medida }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-900 dark:text-slate-100 text-right">{{
+                                        detalle.precio | currency }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-900 dark:text-slate-100 text-right">{{
+                                        detalle.descuento | currency }}</td>
+                                    <td
+                                        class="px-4 py-2 text-sm font-medium text-gray-900 dark:text-slate-100 text-right">
+                                        {{ ((detalle.cantidad * detalle.precio) - (detalle.descuento || 0)) | currency
+                                        }}
+                                    </td>
+                                </tr>
+                                }
+                            </tbody>
+                            <tfoot class="bg-gray-50 dark:bg-slate-700">
+                                <tr>
+                                    <td colspan="5"
+                                        class="px-4 py-2 text-right text-sm font-bold text-gray-900 dark:text-slate-100">
+                                        Total:</td>
+                                    <td
+                                        class="px-4 py-2 text-right text-sm font-bold text-gray-900 dark:text-slate-100">
+                                        {{ venta.total | currency }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="bg-gray-50 dark:bg-slate-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" (click)="onPrint()"
+                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-purple-600 text-base font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    <i class="fas fa-print mr-2"></i> Imprimir
+                </button>
+                <button type="button" (click)="onClose()"
+                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm dark:bg-slate-600 dark:text-slate-200 dark:border-slate-500 dark:hover:bg-slate-500">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+}

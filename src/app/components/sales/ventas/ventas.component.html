@@ -24,12 +24,16 @@
 
   <app-ventas-history [ventas]="ventas" [isLoading]="isLoading" (nuevaVenta)="navegarANuevaVenta()"
     (verDetalle)="verDetalleVenta($event)" (devolverVenta)="onDevolverVenta($event)"
-    (anularVenta)="onAnularVenta($event)">
+    (anularVenta)="onAnularVenta($event)" (imprimirComprobante)="onImprimirComprobante($event)">
   </app-ventas-history>
 
   <app-pagination [currentPage]="currentPage" [lastPage]="lastPage" [total]="total" [perPage]="perPage"
     (pageChange)="onPageChange($event)">
   </app-pagination>
+
+  <app-venta-detail-modal [venta]="selectedVenta" [isOpen]="isDetailModalOpen" (close)="closeDetailModal()"
+    (print)="onImprimirComprobante($event)">
+  </app-venta-detail-modal>
   }
 
   <!-- Formulario de Nueva Venta -->
