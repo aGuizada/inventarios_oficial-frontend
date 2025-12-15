@@ -52,6 +52,7 @@ export class VentaFormComponent implements OnInit {
 
     currentUserId = 1;
     currentUserSucursalId: number | null = null;
+    defaultCliente: Cliente | null = null;
 
     constructor(
         private fb: FormBuilder,
@@ -163,7 +164,10 @@ export class VentaFormComponent implements OnInit {
 
     loadDependencies(): void {
         this.clienteService.getAll().subscribe({
-            next: (response: any) => this.clientes = Array.isArray(response) ? response : (response.data || []),
+            next: (response: any) => {
+                this.clientes = Array.isArray(response) ? response : (response.data || []);
+                this.buscarClientePorDefecto();
+            },
             error: (error) => console.error('Error al cargar clientes:', error)
         });
 
@@ -201,6 +205,42 @@ export class VentaFormComponent implements OnInit {
             },
             error: (error) => console.error('Error al cargar tipos de pago:', error)
         });
+    }
+
+    buscarClientePorDefecto(): void {
+        const terminos = ['sin nombre', 's/n', 'cliente casual', 'sn'];
+        console.log('Buscando cliente por defecto entre', this.clientes.length, 'clientes');
+
+        const clienteEncontrado = this.clientes.find(c => {
+            const nombre = (c.nombre || '').toLowerCase();
+            return terminos.some(t => nombre.includes(t));
+        });
+
+        if (clienteEncontrado) {
+            this.defaultCliente = clienteEncontrado;
+            console.log('Cliente por defecto encontrado:', this.defaultCliente);
+        } else {
+            console.log('Cliente por defecto NO encontrado. Creando automáticamente...');
+            const nuevoCliente: any = {
+                nombre: 'Sin Nombre',
+                estado: 'Activo',
+                tipo_documento: 'CI', // Valor por defecto común
+                num_documento: '0'    // Valor por defecto común
+            };
+
+            this.clienteService.create(nuevoCliente).subscribe({
+                next: (response: any) => {
+                    const clienteCreado = response.data || response;
+                    console.log('Cliente por defecto creado:', clienteCreado);
+                    this.clientes.push(clienteCreado);
+                    this.defaultCliente = clienteCreado;
+                },
+                error: (error) => {
+                    console.error('Error al crear cliente por defecto:', error);
+                    // No bloqueamos, simplemente no habrá default
+                }
+            });
+        }
     }
 
     loadCajas(): void {
@@ -413,6 +453,18 @@ export class VentaFormComponent implements OnInit {
                 alert('Por favor ingrese los días entre cuotas para la venta a crédito');
                 return;
             }
+        }
+
+
+
+        // Asignar cliente por defecto si no se seleccionó uno
+        const currentClienteId = this.form.get('cliente_id')?.value;
+        console.log('Cliente ID actual:', currentClienteId);
+        console.log('Default Cliente:', this.defaultCliente);
+
+        if (!currentClienteId && this.defaultCliente) {
+            console.log('Asignando cliente por defecto:', this.defaultCliente.id);
+            this.form.patchValue({ cliente_id: this.defaultCliente.id });
         }
 
         const camposRequeridos = ['cliente_id', 'tipo_venta_id', 'tipo_pago_id', 'almacen_id', 'caja_id'];
