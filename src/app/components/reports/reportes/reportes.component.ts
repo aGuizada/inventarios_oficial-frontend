@@ -25,6 +25,11 @@ export class ReportesComponent implements OnInit {
     reporteUtilidad: any;
     reporteData: any = null;
     isLoading: boolean = false;
+    showFilters: boolean = false;
+
+    toggleFilters(): void {
+        this.showFilters = !this.showFilters;
+    }
 
     constructor(private reporteService: ReporteService) {
         // Fechas por defecto: último mes

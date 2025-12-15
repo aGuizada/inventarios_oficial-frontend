@@ -43,6 +43,11 @@ export class KardexComponent implements OnInit {
     isLoading = false;
     isLoadingResumen = false;
     searchTerm = '';
+    showFilters = false;
+
+    toggleFilters(): void {
+        this.showFilters = !this.showFilters;
+    }
 
     // Nuevo: Modal de ajuste
     mostrarModalAjuste = false;

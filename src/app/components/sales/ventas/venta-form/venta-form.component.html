@@ -1,60 +1,67 @@
 <div class="mt-2">
     <!-- Alerta Visual -->
     @if (showAlert) {
-        <div class="fixed top-4 right-4 z-[9999] max-w-md animate-slide-in-right">
-            <div [ngClass]="{
+    <div class="fixed top-4 right-4 z-[9999] max-w-md animate-slide-in-right">
+        <div [ngClass]="{
                 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800': alertType === 'error',
                 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800': alertType === 'success',
                 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800': alertType === 'warning',
                 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800': alertType === 'info'
-            }" 
-            class="border rounded-lg shadow-lg p-4 flex items-start gap-3">
-                <div [ngClass]="{
+            }" class="border rounded-lg shadow-lg p-4 flex items-start gap-3">
+            <div [ngClass]="{
                     'text-red-600 dark:text-red-400': alertType === 'error',
                     'text-green-600 dark:text-green-400': alertType === 'success',
                     'text-yellow-600 dark:text-yellow-400': alertType === 'warning',
                     'text-blue-600 dark:text-blue-400': alertType === 'info'
                 }">
-                    @if (alertType === 'error') {
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    } @else if (alertType === 'success') {
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    } @else if (alertType === 'warning') {
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                    } @else {
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    }
-                </div>
-                <div class="flex-1">
-                    <p [ngClass]="{
+                @if (alertType === 'error') {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                } @else if (alertType === 'success') {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                } @else if (alertType === 'warning') {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                }
+            </div>
+            <div class="flex-1">
+                <p [ngClass]="{
                         'text-red-800 dark:text-red-200': alertType === 'error',
                         'text-green-800 dark:text-green-200': alertType === 'success',
                         'text-yellow-800 dark:text-yellow-200': alertType === 'warning',
                         'text-blue-800 dark:text-blue-200': alertType === 'info'
                     }" class="text-sm font-medium whitespace-pre-line">{{ alertMessage }}</p>
-                </div>
-                <button (click)="closeAlert()" 
-                    [ngClass]="{
+            </div>
+            <button (click)="closeAlert()" [ngClass]="{
                         'text-red-400 hover:text-red-600 dark:hover:text-red-300': alertType === 'error',
                         'text-green-400 hover:text-green-600 dark:hover:text-green-300': alertType === 'success',
                         'text-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300': alertType === 'warning',
                         'text-blue-400 hover:text-blue-600 dark:hover:text-blue-300': alertType === 'info'
-                    }"
-                    class="flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                </button>
-            </div>
+                    }" class="flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+            </button>
         </div>
+    </div>
     }
 
     <form [formGroup]="form" (ngSubmit)="save()" class="flex flex-col">
@@ -166,21 +173,75 @@
         </div>
 
         <!-- Contenido principal - Dos columnas -->
-        <div class="flex flex-row gap-4" style="min-height: 65vh;">
+        <div class="flex flex-col lg:flex-row gap-4" style="min-height: 65vh;">
             <!-- Columna Izquierda - Productos -->
-            <div [class]="detalles.length > 0 ? 'w-2/3 overflow-y-auto' : 'w-full overflow-y-auto'">
+            <div [class]="detalles.length > 0 ? 'w-full lg:w-2/3 overflow-y-auto' : 'w-full overflow-y-auto'">
                 <app-product-list [almacenId]="form.get('almacen_id')?.value"
                     [productosInventario]="productosInventario" [categorias]="categorias"
                     (addProduct)="agregarProductoAVenta($event)">
                 </app-product-list>
             </div>
 
-            <!-- Columna Derecha - Carrito -->
-            <div *ngIf="detalles.length > 0" class="w-1/3 overflow-y-auto">
+            <!-- Columna Derecha - Carrito (Desktop) -->
+            <div *ngIf="detalles.length > 0" class="hidden lg:block w-1/3 overflow-y-auto">
                 <app-shopping-cart [parentForm]="form" [clientes]="clientes" [isLoading]="isLoading"
                     [productosInventario]="productosInventario" [tiposVenta]="tiposVenta" [tiposPago]="tiposPago"
                     (remove)="removeDetalle($event)">
                 </app-shopping-cart>
+            </div>
+        </div>
+
+        <!-- Mobile Cart FAB -->
+        <button *ngIf="detalles.length > 0" (click)="toggleMobileCart()"
+            class="fixed bottom-6 right-6 lg:hidden z-40 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-transform active:scale-95">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <span
+                class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800">
+                {{ detalles.length }}
+            </span>
+        </button>
+
+        <!-- Mobile Cart Overlay -->
+        <div *ngIf="isMobileCartOpen" class="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
+            <!-- Backdrop -->
+            <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" (click)="toggleMobileCart()">
+            </div>
+
+            <!-- Cart Panel -->
+            <div
+                class="fixed inset-x-0 bottom-0 h-[85vh] bg-white dark:bg-slate-800 rounded-t-2xl shadow-xl overflow-hidden flex flex-col animate-slide-up">
+                <!-- Header -->
+                <div
+                    class="px-4 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between bg-gray-50 dark:bg-slate-900/50">
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-slate-100 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Carrito de Compras
+                    </h3>
+                    <button (click)="toggleMobileCart()"
+                        class="p-2 text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Cart Content -->
+                <div class="flex-1 overflow-y-auto p-4">
+                    <app-shopping-cart [parentForm]="form" [clientes]="clientes" [isLoading]="isLoading"
+                        [productosInventario]="productosInventario" [tiposVenta]="tiposVenta" [tiposPago]="tiposPago"
+                        (remove)="removeDetalle($event)">
+                    </app-shopping-cart>
+                </div>
             </div>
         </div>
     </form>

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../../services/auth.service';
+import { SidebarService } from '../../../services/sidebar.service';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
@@ -18,6 +19,8 @@ interface MenuItem {
   templateUrl: './sidebar.component.html',
 })
 export class SidebarComponent implements OnInit {
+  isCollapsed = false;
+
   private allMenuItems: MenuItem[] = [
     {
       label: 'Dashboard',
@@ -99,11 +102,18 @@ export class SidebarComponent implements OnInit {
 
   menuItems: MenuItem[] = [];
 
-  constructor(private authService: AuthService) { }
+  constructor(
+    private authService: AuthService,
+    private sidebarService: SidebarService
+  ) { }
 
   ngOnInit() {
     this.authService.currentUser$.subscribe(() => {
       this.updateMenu();
+    });
+
+    this.sidebarService.isCollapsed$.subscribe(collapsed => {
+      this.isCollapsed = collapsed;
     });
   }
 
@@ -141,8 +151,21 @@ export class SidebarComponent implements OnInit {
   }
 
   toggleSubmenu(item: MenuItem): void {
-    if (item.children) {
-      item.isOpen = !item.isOpen;
+    if (this.isCollapsed) {
+      this.sidebarService.setCollapsed(false);
+      setTimeout(() => {
+        if (item.children) {
+          item.isOpen = !item.isOpen;
+        }
+      }, 100);
+    } else {
+      if (item.children) {
+        item.isOpen = !item.isOpen;
+      }
     }
+  }
+
+  toggleSidebar() {
+    this.sidebarService.toggle();
   }
 }

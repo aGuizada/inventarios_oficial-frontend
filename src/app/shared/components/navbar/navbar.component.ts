@@ -2,6 +2,7 @@ import { Component, OnInit, inject, effect } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
+import { SidebarService } from '../../../services/sidebar.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -19,6 +20,7 @@ export class NavbarComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
+    private sidebarService: SidebarService,
     private router: Router
   ) {
     this.user$ = this.authService.currentUser$;
@@ -45,6 +47,10 @@ export class NavbarComponent implements OnInit {
     this.document.addEventListener('webkitfullscreenchange', () => this.checkFullscreen());
     this.document.addEventListener('mozfullscreenchange', () => this.checkFullscreen());
     this.document.addEventListener('MSFullscreenChange', () => this.checkFullscreen());
+  }
+
+  toggleSidebar(): void {
+    this.sidebarService.toggle();
   }
 
   toggleProfileMenu(): void {

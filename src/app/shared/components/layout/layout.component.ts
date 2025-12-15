@@ -5,6 +5,7 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
 import { NavbarComponent } from '../navbar/navbar.component';
 import { inject } from '@angular/core';
 import { filter } from 'rxjs/operators';
+import { SidebarService } from '../../../services/sidebar.service';
 
 @Component({
   selector: 'app-layout',
@@ -15,6 +16,7 @@ import { filter } from 'rxjs/operators';
 export class LayoutComponent implements OnInit, AfterViewInit {
   private document = inject(DOCUMENT);
   private router = inject(Router);
+  sidebarService = inject(SidebarService); // Public for template access
   isDarkMode = false;
   isNoPaddingRoute = false;
 
@@ -35,7 +37,12 @@ export class LayoutComponent implements OnInit, AfterViewInit {
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.checkRoute(event.url);
+      this.closeMobileSidebar();
     });
+  }
+
+  closeMobileSidebar() {
+    this.sidebarService.setMobileOpen(false);
   }
 
   private checkRoute(url: string): void {

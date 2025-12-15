@@ -11,6 +11,7 @@ import { CategoriaService } from '../../../../services/categoria.service';
 import { AuthService } from '../../../../services/auth.service';
 import { Cliente, Almacen, Caja, TipoVenta, TipoPago, Categoria, Sucursal } from '../../../../interfaces';
 import { SucursalService } from '../../../../services/sucursal.service';
+import { ChangeDetectorRef } from '@angular/core';
 import { finalize } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
@@ -66,6 +67,19 @@ export class VentaFormComponent implements OnInit {
     showAlert: boolean = false;
     alertType: 'error' | 'success' | 'warning' | 'info' = 'error';
 
+    // Estado del carrito móvil
+    isMobileCartOpen = false;
+
+    checkScreenSize() {
+        if (window.innerWidth >= 1024) {
+            this.isMobileCartOpen = false;
+        }
+    }
+
+    toggleMobileCart() {
+        this.isMobileCartOpen = !this.isMobileCartOpen;
+    }
+
     constructor(
         private fb: FormBuilder,
         private ventaService: VentaService,
@@ -76,7 +90,8 @@ export class VentaFormComponent implements OnInit {
         private tipoPagoService: TipoPagoService,
         private categoriaService: CategoriaService,
         private authService: AuthService,
-        private sucursalService: SucursalService
+        private sucursalService: SucursalService,
+        private cdr: ChangeDetectorRef // Added
     ) {
         this.detallesFormArray = this.fb.array([]);
         const fechaHoraActual = new Date();
@@ -127,7 +142,7 @@ export class VentaFormComponent implements OnInit {
             next: (response: any) => {
                 this.sucursales = Array.isArray(response) ? response : (response.data || []);
             },
-            error: (error) => console.error('Error al cargar sucursales:', error)
+            error: (error: any) => console.error('Error al cargar sucursales:', error)
         });
     }
 
@@ -218,7 +233,7 @@ export class VentaFormComponent implements OnInit {
                 this.clientes = Array.isArray(response) ? response : (response.data || []);
                 this.buscarClientePorDefecto();
             },
-            error: (error) => console.error('Error al cargar clientes:', error)
+            error: (error: any) => console.error('Error al cargar clientes:', error)
         });
 
         this.almacenService.getAll().subscribe({
@@ -229,7 +244,7 @@ export class VentaFormComponent implements OnInit {
                 this.filtrarAlmacenes();
                 this.seleccionarAlmacenPorDefecto();
             },
-            error: (error) => console.error('Error al cargar almacenes:', error)
+            error: (error: any) => console.error('Error al cargar almacenes:', error)
         });
 
         // Force load all warehouses if admin by requesting a large page
@@ -245,7 +260,7 @@ export class VentaFormComponent implements OnInit {
 
         this.categoriaService.getAll().subscribe({
             next: (response: any) => this.categorias = Array.isArray(response) ? response : (response.data || []),
-            error: (error) => console.error('Error al cargar categorías:', error)
+            error: (error: any) => console.error('Error al cargar categorías:', error)
         });
 
         this.tipoVentaService.getAll().subscribe({
@@ -256,7 +271,7 @@ export class VentaFormComponent implements OnInit {
                     nombre: item.nombre_tipo_ventas || item.nombre
                 }));
             },
-            error: (error) => console.error('Error al cargar tipos de venta:', error)
+            error: (error: any) => console.error('Error al cargar tipos de venta:', error)
         });
 
         this.tipoPagoService.getAll().subscribe({
@@ -267,7 +282,7 @@ export class VentaFormComponent implements OnInit {
                     nombre: item.nombre_tipo_pago || item.nombre
                 }));
             },
-            error: (error) => console.error('Error al cargar tipos de pago:', error)
+            error: (error: any) => console.error('Error al cargar tipos de pago:', error)
         });
     }
 
@@ -299,7 +314,7 @@ export class VentaFormComponent implements OnInit {
                     this.clientes.push(clienteCreado);
                     this.defaultCliente = clienteCreado;
                 },
-                error: (error) => {
+                error: (error: any) => {
                     console.error('Error al crear cliente por defecto:', error);
                     // No bloqueamos, simplemente no habrá default
                 }
@@ -313,7 +328,7 @@ export class VentaFormComponent implements OnInit {
                 this.cajas = Array.isArray(response) ? response : (response.data || []);
                 this.seleccionarCajaAbierta();
             },
-            error: (error) => {
+            error: (error: any) => {
                 console.error('Error al cargar cajas:', error);
                 this.cajas = [];
             }
@@ -378,7 +393,7 @@ export class VentaFormComponent implements OnInit {
             next: (productos) => {
                 this.productosInventario = productos;
             },
-            error: (error) => {
+            error: (error: any) => {
                 console.error('Error al cargar productos del inventario:', error);
                 this.productosInventario = [];
             }
@@ -656,7 +671,7 @@ export class VentaFormComponent implements OnInit {
                         }
                     });
                 },
-                error: (error) => {
+                error: (error: any) => {
                     console.error('Error al registrar venta:', error);
                     this.showAlertMessage('Error al registrar la venta. Por favor intente nuevamente.', 'error');
                 }

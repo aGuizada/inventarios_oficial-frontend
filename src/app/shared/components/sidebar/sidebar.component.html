@@ -1,47 +1,73 @@
-<div class="h-screen w-64 bg-slate-900 dark:bg-slate-800 text-white flex flex-col transition-all duration-300 shadow-xl border-r border-slate-800 dark:border-slate-700">
+<div [class.lg:w-64]="!isCollapsed" [class.lg:w-20]="isCollapsed"
+    class="h-screen w-64 bg-slate-900 dark:bg-slate-800 text-white flex flex-col transition-all duration-300 shadow-xl border-r border-slate-800 dark:border-slate-700 relative group/sidebar">
+
     <!-- Logo Area -->
-    <div class="p-6 flex items-center justify-center border-b border-slate-800 dark:border-slate-700">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30">
+    <div
+        class="h-16 flex items-center justify-center border-b border-slate-800 dark:border-slate-700 overflow-hidden shrink-0">
+        <div class="flex items-center gap-3 transition-all duration-300" [class.px-6]="!isCollapsed"
+            [class.px-2]="isCollapsed">
+            <div
+                class="w-10 h-10 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
                 <i class="fas fa-cube text-xl"></i>
             </div>
-            <span class="text-xl font-bold tracking-wide">Inventario</span>
+            <span class="text-xl font-bold tracking-wide whitespace-nowrap transition-opacity duration-200"
+                [class.opacity-0]="isCollapsed" [class.w-0]="isCollapsed" [class.hidden]="isCollapsed">
+                Inventario
+            </span>
         </div>
     </div>
 
     <!-- Navigation -->
-    <nav class="flex-1 overflow-y-auto py-4 custom-scrollbar">
+    <nav class="flex-1 overflow-y-auto overflow-x-hidden py-4 custom-scrollbar">
         <ul class="space-y-1 px-3">
             <li *ngFor="let item of menuItems">
                 <!-- Single Item -->
                 <a *ngIf="!item.children" [routerLink]="item.route"
                     routerLinkActive="bg-blue-600 dark:bg-blue-500 text-white shadow-lg shadow-blue-500/30"
-                    class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 dark:text-slate-300 hover:bg-slate-800 dark:hover:bg-slate-700 hover:text-white transition-all duration-200 group cursor-pointer">
-                    <i [class]="item.icon + ' w-5 text-center transition-transform group-hover:scale-110'"></i>
-                    <span class="font-medium">{{ item.label }}</span>
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 dark:text-slate-300 hover:bg-slate-800 dark:hover:bg-slate-700 hover:text-white transition-all duration-200 group cursor-pointer relative"
+                    [title]="isCollapsed ? item.label : ''">
+                    <i [class]="item.icon + ' w-5 text-center transition-transform group-hover:scale-110 shrink-0'"></i>
+                    <span class="font-medium whitespace-nowrap transition-opacity duration-200"
+                        [class.opacity-0]="isCollapsed" [class.w-0]="isCollapsed" [class.hidden]="isCollapsed">
+                        {{ item.label }}
+                    </span>
                 </a>
 
                 <!-- Parent Item -->
                 <div *ngIf="item.children">
                     <button (click)="toggleSubmenu(item)" [class.text-white]="item.isOpen"
-                        class="w-full flex items-center justify-between px-4 py-3 rounded-lg text-slate-400 dark:text-slate-300 hover:bg-slate-800 dark:hover:bg-slate-700 hover:text-white transition-all duration-200 group">
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 dark:text-slate-300 hover:bg-slate-800 dark:hover:bg-slate-700 hover:text-white transition-all duration-200 group relative"
+                        [class.justify-center]="isCollapsed" [class.justify-between]="!isCollapsed"
+                        [title]="isCollapsed ? item.label : ''">
                         <div class="flex items-center gap-3">
-                            <i [class]="item.icon + ' w-5 text-center transition-transform group-hover:scale-110'"></i>
-                            <span class="font-medium">{{ item.label }}</span>
+                            <i
+                                [class]="item.icon + ' w-5 text-center transition-transform group-hover:scale-110 shrink-0'"></i>
+                            <span class="font-medium whitespace-nowrap transition-opacity duration-200"
+                                [class.opacity-0]="isCollapsed" [class.w-0]="isCollapsed" [class.hidden]="isCollapsed">
+                                {{ item.label }}
+                            </span>
                         </div>
-                        <i class="fas fa-chevron-down text-xs transition-transform duration-300"
-                            [class.rotate-180]="item.isOpen"></i>
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-300 shrink-0"
+                            [class.rotate-180]="item.isOpen" [class.hidden]="isCollapsed"></i>
                     </button>
 
                     <!-- Submenu -->
                     <div class="overflow-hidden transition-all duration-300 ease-in-out"
                         [style.max-height]="item.isOpen ? '500px' : '0'" [style.opacity]="item.isOpen ? '1' : '0'">
-                        <ul class="mt-1 ml-4 pl-4 border-l border-slate-700 dark:border-slate-600 space-y-1">
+                        <ul class="mt-1 space-y-1" [class.ml-4]="!isCollapsed" [class.pl-4]="!isCollapsed"
+                            [class.border-l]="!isCollapsed" [class.border-slate-700]="!isCollapsed"
+                            [class.dark:border-slate-600]="!isCollapsed">
                             <li *ngFor="let child of item.children">
-                                <a [routerLink]="child.route" routerLinkActive="text-blue-400 dark:text-blue-300 font-semibold"
-                                    class="flex items-center gap-2 px-4 py-2 text-sm text-slate-400 dark:text-slate-300 hover:text-white transition-colors rounded-lg hover:bg-slate-800/50 dark:hover:bg-slate-700/50">
-                                    <i [class]="child.icon + ' text-xs w-4 text-center opacity-70'"></i>
-                                    <span>{{ child.label }}</span>
+                                <a [routerLink]="child.route"
+                                    routerLinkActive="text-blue-400 dark:text-blue-300 font-semibold"
+                                    class="flex items-center gap-2 px-4 py-2 text-sm text-slate-400 dark:text-slate-300 hover:text-white transition-colors rounded-lg hover:bg-slate-800/50 dark:hover:bg-slate-700/50"
+                                    [title]="isCollapsed ? child.label : ''">
+                                    <i [class]="child.icon + ' text-xs w-4 text-center opacity-70 shrink-0'"></i>
+                                    <span class="whitespace-nowrap transition-opacity duration-200"
+                                        [class.opacity-0]="isCollapsed" [class.w-0]="isCollapsed"
+                                        [class.hidden]="isCollapsed">
+                                        {{ child.label }}
+                                    </span>
                                 </a>
                             </li>
                         </ul>
@@ -50,6 +76,4 @@
             </li>
         </ul>
     </nav>
-
-
 </div>

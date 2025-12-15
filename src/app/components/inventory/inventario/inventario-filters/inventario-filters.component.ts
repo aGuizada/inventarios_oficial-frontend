@@ -22,10 +22,16 @@ export class InventarioFiltersComponent {
   @Output() busquedaChange = new EventEmitter<string>();
   @Output() clearFilters = new EventEmitter<void>();
 
+  showFilters: boolean = false;
+
   onAlmacenChange(event: any): void {
     const value = event.target.value;
     const almacenId = value === '' || value === 'null' ? null : Number(value);
     this.almacenChange.emit(almacenId);
+  }
+
+  toggleFilters(): void {
+    this.showFilters = !this.showFilters;
   }
 
   onSucursalChange(event: any): void {
