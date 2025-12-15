@@ -5,7 +5,9 @@ import { CotizacionService } from '../../../services/cotizacion.service';
 import { ClienteService } from '../../../services/cliente.service';
 import { AlmacenService } from '../../../services/almacen.service';
 import { ArticuloService } from '../../../services/articulo.service';
-import { Cotizacion, DetalleCotizacion, Cliente, Almacen, Articulo, PaginationParams } from '../../../interfaces';
+import { Cotizacion, DetalleCotizacion, Cliente, Almacen, Articulo, PaginationParams, Sucursal } from '../../../interfaces';
+import { AuthService } from '../../../services/auth.service';
+import { SucursalService } from '../../../services/sucursal.service';
 import { finalize } from 'rxjs/operators';
 
 // Import child components
@@ -24,8 +26,9 @@ export class CotizacionesComponent implements OnInit {
   clientes: Cliente[] = [];
   clientesFiltrados: Cliente[] = [];
   almacenes: Almacen[] = [];
+  sucursales: Sucursal[] = [];
   articulos: Articulo[] = [];
-  
+
   form: FormGroup;
   detallesFormArray: FormArray;
   isModalOpen = false;
@@ -36,13 +39,17 @@ export class CotizacionesComponent implements OnInit {
   clienteBusqueda: string = '';
   mostrarSugerenciasCliente: boolean = false;
   clienteSeleccionado: Cliente | null = null;
-  
+
+  // Filtros
+  filterSucursalId: string = '';
+  isAdmin: boolean = false;
+
   // Para manejar búsqueda de artículos en el catálogo
   busquedaArticulo: string = '';
   articulosFiltrados: Articulo[] = [];
   articuloSeleccionado: Articulo | null = null;
   mostrarSugerenciasArticulo: boolean = false;
-  
+
   // Paginación
   currentPage: number = 1;
   lastPage: number = 1;
@@ -55,7 +62,9 @@ export class CotizacionesComponent implements OnInit {
     private clienteService: ClienteService,
     private almacenService: AlmacenService,
     private articuloService: ArticuloService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private sucursalService: SucursalService
   ) {
     this.detallesFormArray = this.fb.array([]);
     this.form = this.fb.group({
@@ -77,8 +86,24 @@ export class CotizacionesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const user = this.authService.getCurrentUser();
+    this.isAdmin = user?.rol_id === 1;
+
+    if (this.isAdmin) {
+      this.loadSucursales();
+    }
+
     this.loadCotizaciones();
     this.loadDependencies();
+  }
+
+  loadSucursales(): void {
+    this.sucursalService.getAll().subscribe({
+      next: (response: any) => {
+        this.sucursales = Array.isArray(response) ? response : (response.data || []);
+      },
+      error: (error) => console.error('Error al cargar sucursales:', error)
+    });
   }
 
   loadDependencies(): void {
@@ -111,18 +136,22 @@ export class CotizacionesComponent implements OnInit {
 
   loadCotizaciones(): void {
     this.isLoading = true;
-    
-    const params: PaginationParams = {
+
+    const params: PaginationParams & { sucursal_id?: string } = {
       page: this.currentPage,
       per_page: this.perPage,
       sort_by: 'id',
       sort_order: 'desc'
     };
-    
+
     if (this.searchTerm) {
       params.search = this.searchTerm;
     }
-    
+
+    if (this.filterSucursalId) {
+      params.sucursal_id = this.filterSucursalId;
+    }
+
     this.cotizacionService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
@@ -151,6 +180,11 @@ export class CotizacionesComponent implements OnInit {
 
   onSearch(search: string): void {
     this.searchTerm = search;
+    this.currentPage = 1;
+    this.loadCotizaciones();
+  }
+
+  onFilterChange(): void {
     this.currentPage = 1;
     this.loadCotizaciones();
   }
@@ -212,29 +246,29 @@ export class CotizacionesComponent implements OnInit {
     this.isEditing = true;
     this.currentId = cotizacion.id;
     this.detallesFormArray.clear();
-    
+
     // Limpiar búsqueda de artículos
     this.busquedaArticulo = '';
     this.articulosFiltrados = this.articulos || [];
     this.mostrarSugerenciasArticulo = false;
     this.articuloSeleccionado = null;
-    
+
     const cliente = cotizacion.cliente || this.clientes.find(c => c.id === cotizacion.cliente_id);
     this.clienteSeleccionado = cliente || null;
     this.clienteBusqueda = cliente ? cliente.nombre : '';
     this.mostrarSugerenciasCliente = false;
-    
+
     // Convertir estado numérico a string si es necesario
     let estadoString = 'Pendiente';
     if (cotizacion.estado !== undefined && cotizacion.estado !== null) {
       if (typeof cotizacion.estado === 'number') {
-        estadoString = cotizacion.estado === 1 ? 'Pendiente' : 
-                      (cotizacion.estado === 2 ? 'Aprobada' : 'Rechazada');
+        estadoString = cotizacion.estado === 1 ? 'Pendiente' :
+          (cotizacion.estado === 2 ? 'Aprobada' : 'Rechazada');
       } else if (typeof cotizacion.estado === 'string') {
         estadoString = cotizacion.estado;
       }
     }
-    
+
     this.form.patchValue({
       cliente_id: cotizacion.cliente_id || '',
       cliente_nombre: cliente ? cliente.nombre : '',
@@ -313,7 +347,7 @@ export class CotizacionesComponent implements OnInit {
     console.log('Form value:', this.form.value);
     console.log('Detalles length:', this.detallesFormArray.length);
     console.log('Cliente búsqueda:', this.clienteBusqueda);
-    
+
     // Validar que el nombre del cliente esté ingresado
     if (!this.form.get('cliente_nombre')?.value || this.clienteBusqueda.trim().length === 0) {
       alert('Por favor ingrese el nombre del cliente');
@@ -339,7 +373,7 @@ export class CotizacionesComponent implements OnInit {
     }
 
     const formValue = this.form.value;
-    
+
     // VALIDAR DETALLES ANTES DE PROCESAR NADA MÁS
     const detallesInvalidos: any[] = [];
     formValue.detalles.forEach((detalle: any) => {
@@ -353,7 +387,7 @@ export class CotizacionesComponent implements OnInit {
         detallesInvalidos.push({ detalle, motivo: 'No existe en catálogo', articulo_id: articuloId });
       }
     });
-    
+
     if (detallesInvalidos.length > 0) {
       const articulosInvalidos = detallesInvalidos
         .map(d => d.articulo_id || d.detalle?.articulo_id)
@@ -364,12 +398,12 @@ export class CotizacionesComponent implements OnInit {
       alert(`ERROR: Los siguientes artículos no están disponibles (IDs: ${articulosInvalidos}).\n\nPor favor, ELIMINE estos detalles de la tabla y seleccione artículos válidos del catálogo de productos (columna derecha).`);
       return;
     }
-    
+
     if (formValue.detalles.length === 0) {
       alert('Debe agregar al menos un artículo a la cotización');
       return;
     }
-    
+
     // Formatear fecha_hora correctamente para Laravel (formato Y-m-d H:i:s)
     let fechaHora = formValue.fecha_hora;
     if (fechaHora) {
@@ -382,15 +416,15 @@ export class CotizacionesComponent implements OnInit {
         fechaHora = fechaHora + ':00';
       }
     }
-    
+
     // Asegurar que estado sea siempre un string
     let estadoValue = formValue.estado || 'Pendiente';
     if (typeof estadoValue === 'number') {
-      estadoValue = estadoValue === 1 ? 'Pendiente' : 
-                   (estadoValue === 2 ? 'Aprobada' : 'Rechazada');
+      estadoValue = estadoValue === 1 ? 'Pendiente' :
+        (estadoValue === 2 ? 'Aprobada' : 'Rechazada');
     }
     estadoValue = String(estadoValue);
-    
+
     const cotizacionData: any = {
       cliente_nombre: this.clienteBusqueda.trim(),
       user_id: Number(formValue.user_id),
@@ -402,7 +436,7 @@ export class CotizacionesComponent implements OnInit {
         const articuloId = Number(detalle.articulo_id);
         const cantidad = Number(detalle.cantidad) || 1;
         const precioUnitario = Number(detalle.precio_unitario) || 0;
-        
+
         return {
           articulo_id: articuloId,
           cantidad: cantidad,
@@ -440,7 +474,7 @@ export class CotizacionesComponent implements OnInit {
     if (formValue.nota && formValue.nota.trim() !== '') {
       cotizacionData.nota = formValue.nota.trim();
     }
-    
+
     console.log('Datos a enviar:', cotizacionData);
     console.log('Detalles a enviar:', JSON.stringify(cotizacionData.detalles, null, 2));
     cotizacionData.detalles.forEach((detalle: any, index: number) => {
@@ -451,7 +485,7 @@ export class CotizacionesComponent implements OnInit {
         descuento: detalle.descuento
       });
     });
-    
+
     this.isLoading = true;
     if (this.isEditing && this.currentId) {
       this.cotizacionService.update(this.currentId, cotizacionData)
@@ -464,9 +498,9 @@ export class CotizacionesComponent implements OnInit {
           error: (error) => {
             console.error('Error updating cotizacion', error);
             console.log('Error response:', error?.error);
-            
+
             let errorMessage = 'Error al actualizar la cotización';
-            
+
             if (error?.error) {
               // Si hay errores de validación de Laravel
               if (error.error.errors) {
@@ -478,7 +512,7 @@ export class CotizacionesComponent implements OnInit {
                 errorMessage = error.error.error;
               }
             }
-            
+
             alert(errorMessage);
           }
         });
@@ -496,11 +530,11 @@ export class CotizacionesComponent implements OnInit {
             const errorMessage = errorResponse.message || errorResponse.error || 'Error al crear la cotización';
             const errorDetails = errorResponse.file ? `Archivo: ${errorResponse.file}\nLínea: ${errorResponse.line}` : '';
             const fullError = errorResponse.message || error?.message || 'Error desconocido';
-            
+
             console.log('Datos enviados:', cotizacionData);
             console.log('Error completo:', error);
             console.log('Error response:', errorResponse);
-            
+
             alert(`Error: ${errorMessage}\n\n${errorDetails}\n\nDetalles: ${fullError}`);
           }
         });
@@ -532,10 +566,10 @@ export class CotizacionesComponent implements OnInit {
   buscarCliente(event: any): void {
     const valor = event.target.value.toLowerCase();
     this.clienteBusqueda = event.target.value;
-    
+
     // Actualizar el campo del formulario
     this.form.patchValue({ cliente_nombre: event.target.value });
-    
+
     if (valor.length === 0) {
       this.clientesFiltrados = this.clientes;
       this.mostrarSugerenciasCliente = false;
@@ -547,10 +581,10 @@ export class CotizacionesComponent implements OnInit {
         (cliente.num_documento && cliente.num_documento.toLowerCase().includes(valor))
       );
       this.mostrarSugerenciasCliente = this.clientesFiltrados.length > 0;
-      
+
       // Si el texto escrito coincide exactamente con un cliente, seleccionarlo automáticamente
-      const clienteExacto = this.clientes.find(c => 
-        c.nombre.toLowerCase() === valor || 
+      const clienteExacto = this.clientes.find(c =>
+        c.nombre.toLowerCase() === valor ||
         c.nombre.toLowerCase() === event.target.value.toLowerCase()
       );
       if (clienteExacto) {
@@ -602,7 +636,7 @@ export class CotizacionesComponent implements OnInit {
   buscarArticulo(event: any): void {
     const valor = event.target.value.toLowerCase();
     this.busquedaArticulo = event.target.value;
-    
+
     if (valor.length === 0) {
       this.articulosFiltrados = this.articulos || [];
       this.mostrarSugerenciasArticulo = false;
@@ -630,7 +664,7 @@ export class CotizacionesComponent implements OnInit {
     }
 
     // Verificar si el artículo ya está agregado
-    const articuloYaAgregado = this.detallesFormArray.controls.some(control => 
+    const articuloYaAgregado = this.detallesFormArray.controls.some(control =>
       control.get('articulo_id')?.value === this.articuloSeleccionado?.id
     );
 
@@ -657,7 +691,7 @@ export class CotizacionesComponent implements OnInit {
 
     this.detallesFormArray.push(detalleGroup);
     this.calculateTotal();
-    
+
     // Limpiar selección
     this.articuloSeleccionado = null;
     this.busquedaArticulo = '';

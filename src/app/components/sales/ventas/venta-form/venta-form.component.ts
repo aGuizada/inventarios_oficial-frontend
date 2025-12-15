@@ -1,6 +1,6 @@
 import { Component, OnInit, HostListener, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { VentaService, ProductoInventario } from '../../../../services/venta.service';
 import { ClienteService } from '../../../../services/cliente.service';
 import { AlmacenService } from '../../../../services/almacen.service';
@@ -9,7 +9,8 @@ import { TipoVentaService } from '../../../../services/tipo-venta.service';
 import { TipoPagoService } from '../../../../services/tipo-pago.service';
 import { CategoriaService } from '../../../../services/categoria.service';
 import { AuthService } from '../../../../services/auth.service';
-import { Cliente, Almacen, Caja, TipoVenta, TipoPago, Categoria } from '../../../../interfaces';
+import { Cliente, Almacen, Caja, TipoVenta, TipoPago, Categoria, Sucursal } from '../../../../interfaces';
+import { SucursalService } from '../../../../services/sucursal.service';
 import { finalize } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
@@ -24,6 +25,7 @@ import { CreditoModalComponent } from './components/credito-modal/credito-modal.
     imports: [
         CommonModule,
         ReactiveFormsModule,
+        FormsModule,
         ProductListComponent,
         ShoppingCartComponent,
         CreditoModalComponent
@@ -38,6 +40,8 @@ export class VentaFormComponent implements OnInit {
 
     clientes: Cliente[] = [];
     almacenes: Almacen[] = [];
+    almacenesFiltrados: Almacen[] = [];
+    sucursales: Sucursal[] = [];
     productosInventario: ProductoInventario[] = [];
     categorias: Categoria[] = [];
     cajas: Caja[] = [];
@@ -52,6 +56,8 @@ export class VentaFormComponent implements OnInit {
 
     currentUserId = 1;
     currentUserSucursalId: number | null = null;
+    isAdmin: boolean = false;
+    selectedSucursalId: number | null = null;
     defaultCliente: Cliente | null = null;
 
     constructor(
@@ -63,7 +69,8 @@ export class VentaFormComponent implements OnInit {
         private tipoVentaService: TipoVentaService,
         private tipoPagoService: TipoPagoService,
         private categoriaService: CategoriaService,
-        private authService: AuthService
+        private authService: AuthService,
+        private sucursalService: SucursalService
     ) {
         this.detallesFormArray = this.fb.array([]);
         const fechaHoraActual = new Date();
@@ -96,12 +103,49 @@ export class VentaFormComponent implements OnInit {
         if (currentUser) {
             this.currentUserId = currentUser.id;
             this.currentUserSucursalId = currentUser.sucursal_id || null;
+            this.isAdmin = currentUser.rol_id === 1;
             this.form.patchValue({ user_id: this.currentUserId });
+        }
+
+        if (this.isAdmin) {
+            this.loadSucursales();
         }
 
         this.loadDependencies();
         this.loadCajas();
         this.actualizarFechaHora();
+    }
+
+    loadSucursales(): void {
+        this.sucursalService.getAll().subscribe({
+            next: (response: any) => {
+                this.sucursales = Array.isArray(response) ? response : (response.data || []);
+            },
+            error: (error) => console.error('Error al cargar sucursales:', error)
+        });
+    }
+
+    filtrarAlmacenes(): void {
+        if (this.selectedSucursalId) {
+            this.almacenesFiltrados = this.almacenes.filter(a => a.sucursal_id == this.selectedSucursalId);
+        } else {
+            this.almacenesFiltrados = [...this.almacenes];
+        }
+
+        // Si el almacén seleccionado no está en la lista filtrada, deseleccionarlo
+        const currentAlmacenId = this.form.get('almacen_id')?.value;
+        if (currentAlmacenId && !this.almacenesFiltrados.find(a => a.id == currentAlmacenId)) {
+            this.form.patchValue({ almacen_id: '' });
+            this.productosInventario = [];
+        }
+    }
+
+    onSucursalChange(): void {
+        this.filtrarAlmacenes();
+        // Opcional: Seleccionar el primer almacén de la sucursal automáticamente
+        if (this.almacenesFiltrados.length > 0) {
+            this.cambiarAlmacen(this.almacenesFiltrados[0].id!);
+        }
     }
 
     get detalles() {
@@ -173,11 +217,25 @@ export class VentaFormComponent implements OnInit {
 
         this.almacenService.getAll().subscribe({
             next: (response: any) => {
+                // Request a large number to ensure we get all warehouses for admin
+                // Ideally we should use pagination or a specific endpoint
                 this.almacenes = Array.isArray(response) ? response : (response.data || []);
+                this.filtrarAlmacenes();
                 this.seleccionarAlmacenPorDefecto();
             },
             error: (error) => console.error('Error al cargar almacenes:', error)
         });
+
+        // Force load all warehouses if admin by requesting a large page
+        if (this.isAdmin) {
+            this.almacenService.getPaginated({ per_page: 100 }).subscribe({
+                next: (response: any) => {
+                    this.almacenes = response.data.data || [];
+                    this.filtrarAlmacenes();
+                    this.seleccionarAlmacenPorDefecto();
+                }
+            });
+        }
 
         this.categoriaService.getAll().subscribe({
             next: (response: any) => this.categorias = Array.isArray(response) ? response : (response.data || []),

@@ -20,7 +20,7 @@ interface MenuItem {
 export class SidebarComponent implements OnInit {
   private allMenuItems: MenuItem[] = [
     {
-      label: 'Inicio',
+      label: 'Dashboard',
       icon: 'fas fa-home',
       route: '/dashboard'
     },

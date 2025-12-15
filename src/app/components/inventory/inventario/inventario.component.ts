@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { InventarioService } from '../../../services/inventario.service';
 import { AlmacenService } from '../../../services/almacen.service';
-import { Inventario, Almacen, ApiResponse, PaginationParams } from '../../../interfaces';
+import { AuthService } from '../../../services/auth.service';
+import { SucursalService } from '../../../services/sucursal.service';
+import { Inventario, Almacen, ApiResponse, PaginationParams, Sucursal } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
 // Import child components
@@ -31,7 +33,10 @@ export class InventarioComponent implements OnInit {
   inventariosFiltrados: Inventario[] = [];
   inventariosPorItem: any[] = [];
   almacenes: Almacen[] = [];
+  sucursales: Sucursal[] = [];
   almacenSeleccionado: number | null = null;
+  sucursalSeleccionada: number | null = null;
+  isAdmin: boolean = false;
   isLoading = false;
   busqueda: string = '';
   vista: 'item' | 'lotes' = 'lotes'; // Vista por defecto
@@ -51,13 +56,31 @@ export class InventarioComponent implements OnInit {
   constructor(
     private inventarioService: InventarioService,
     private almacenService: AlmacenService,
-    private router: Router
+    private router: Router,
+    private authService: AuthService,
+    private sucursalService: SucursalService
   ) { }
 
   ngOnInit(): void {
+    const user = this.authService.getCurrentUser();
+    this.isAdmin = user?.rol_id === 1;
+
+    if (this.isAdmin) {
+      this.loadSucursales();
+    }
+
     this.loadAlmacenes();
     this.loadInventarios();
     this.loadInventariosPorItem();
+  }
+
+  loadSucursales(): void {
+    this.sucursalService.getAll().subscribe({
+      next: (response: any) => {
+        this.sucursales = Array.isArray(response) ? response : (response.data || []);
+      },
+      error: (error) => console.error('Error al cargar sucursales:', error)
+    });
   }
 
   loadAlmacenes(): void {
@@ -96,6 +119,11 @@ export class InventarioComponent implements OnInit {
     // Agregar filtro por almacén si está seleccionado
     if (this.almacenSeleccionado !== null && this.almacenSeleccionado !== undefined) {
       params.almacen_id = this.almacenSeleccionado;
+    }
+
+    // Agregar filtro por sucursal si está seleccionado
+    if (this.sucursalSeleccionada !== null && this.sucursalSeleccionada !== undefined) {
+      params.sucursal_id = this.sucursalSeleccionada;
     }
 
     // Usar getPorLotes para mostrar todas las compras que van al inventario
@@ -160,6 +188,11 @@ export class InventarioComponent implements OnInit {
     this.loadInventarios(); // Recargar desde el servidor con el nuevo filtro
   }
 
+  onSucursalChange(): void {
+    this.currentPage = 1;
+    this.loadInventarios();
+  }
+
   onBusquedaChange(busqueda: string): void {
     this.busqueda = busqueda;
     this.aplicarFiltros();
@@ -203,8 +236,10 @@ export class InventarioComponent implements OnInit {
 
   limpiarFiltros(): void {
     this.almacenSeleccionado = null;
+    this.sucursalSeleccionada = null;
     this.busqueda = '';
     this.aplicarFiltros();
+    this.loadInventarios(); // Recargar para limpiar filtros de servidor también
   }
 
   getTotalCantidad(): number {

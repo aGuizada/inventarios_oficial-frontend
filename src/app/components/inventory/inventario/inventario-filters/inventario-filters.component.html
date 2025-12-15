@@ -1,7 +1,9 @@
-<div class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-md mb-6 border border-slate-100 dark:border-slate-700 transition-colors duration-200">
+<div
+    class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-md mb-6 border border-slate-100 dark:border-slate-700 transition-colors duration-200">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-            <label for="almacen" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Filtrar por Almacén</label>
+            <label for="almacen" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Filtrar por
+                Almacén</label>
             <select id="almacen" [value]="almacenSeleccionado || ''" (change)="onAlmacenChange($event)"
                 class="block w-full py-2 px-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors duration-200">
                 <option value="">Todos los almacenes</option>
@@ -10,8 +12,24 @@
                 }
             </select>
         </div>
+
+        @if (isAdmin) {
         <div>
-            <label for="busqueda" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Buscar</label>
+            <label for="sucursal" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Filtrar por
+                Sucursal</label>
+            <select id="sucursal" [value]="sucursalSeleccionada || ''" (change)="onSucursalChange($event)"
+                class="block w-full py-2 px-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors duration-200">
+                <option value="">Todas las sucursales</option>
+                @for (sucursal of sucursales; track sucursal.id) {
+                <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
+                }
+            </select>
+        </div>
+        }
+
+        <div>
+            <label for="busqueda"
+                class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Buscar</label>
             <input type="text" id="busqueda" [value]="busqueda" (input)="onBusquedaChange($event)"
                 placeholder="Buscar por nombre o código..."
                 class="block w-full py-2 px-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors duration-200">
@@ -24,4 +42,3 @@
         </div>
     </div>
 </div>
-

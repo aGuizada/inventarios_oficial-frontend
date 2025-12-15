@@ -13,6 +13,17 @@
         <option value="1">Completadas</option>
         <option value="0">Anuladas</option>
       </select>
+
+      @if (isAdmin) {
+      <select [(ngModel)]="filterSucursalId" (change)="onFilterChange()"
+        class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+        <option value="">Todas las sucursales</option>
+        @for (sucursal of sucursales; track sucursal.id) {
+        <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
+        }
+      </select>
+      }
+
       <div
         class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600">
         <input type="checkbox" id="chkDevoluciones" [(ngModel)]="filterDevoluciones" (change)="onFilterChange()"

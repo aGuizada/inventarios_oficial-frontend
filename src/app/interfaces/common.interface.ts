@@ -21,4 +21,5 @@ export interface PaginationParams {
     search?: string;
     sort_by?: string;
     sort_order?: 'asc' | 'desc';
+    sucursal_id?: number | string;
 }

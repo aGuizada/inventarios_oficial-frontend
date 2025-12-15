@@ -1,0 +1,37 @@
+name: Deploy Angular to cPanel
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  web-deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build -- --configuration production
+
+      - name: Sync with FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          # Ajusta esto si tu build genera una carpeta 'browser' dentro de dist
+          # Para Angular 17+ con builder 'application', suele ser ./dist/nombre-proyecto/browser/
+          local-dir: ./dist/inventarios_oficial-frontend/browser/
+          server-dir: ${{ secrets.FTP_SERVER_DIR_FRONTEND }}

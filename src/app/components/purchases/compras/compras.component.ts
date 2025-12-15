@@ -9,7 +9,8 @@ import { ArticuloService } from '../../../services/articulo.service';
 import { CajaService } from '../../../services/caja.service';
 import { CompraCuotaService } from '../../../services/compra-cuota.service';
 import { AuthService } from '../../../services/auth.service';
-import { Compra, DetalleCompra, Proveedor, Almacen, Articulo, Caja, PaginationParams } from '../../../interfaces';
+import { Compra, DetalleCompra, Proveedor, Almacen, Articulo, Caja, PaginationParams, Sucursal } from '../../../interfaces';
+import { SucursalService } from '../../../services/sucursal.service';
 import { finalize } from 'rxjs/operators';
 import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
@@ -29,7 +30,7 @@ export class ComprasComponent implements OnInit {
   articulos: Articulo[] = [];
   cajas: Caja[] = [];
   cajaAbierta: Caja | null = null;
-  
+
   form: FormGroup;
   detallesFormArray: FormArray;
   isModalOpen = false;
@@ -43,13 +44,13 @@ export class ComprasComponent implements OnInit {
   proveedorBusqueda: string = '';
   mostrarSugerenciasProveedor: boolean = false;
   proveedorSeleccionado: Proveedor | null = null;
-  
+
   // Para manejar búsqueda de artículos en el catálogo
   busquedaArticulo: string = '';
   articulosFiltrados: Articulo[] = [];
   articuloSeleccionado: Articulo | null = null;
   mostrarSugerenciasArticulo: boolean = false;
-  
+
   // Paginación
   currentPage: number = 1;
   lastPage: number = 1;
@@ -70,6 +71,11 @@ export class ComprasComponent implements OnInit {
   mostrarMenuAlmacenes = false;
   currentUserSucursalId: number | null = null;
 
+  // Filtro de sucursal para admin
+  sucursales: Sucursal[] = [];
+  filterSucursalId: number | null = null;
+  isAdmin: boolean = false;
+
   constructor(
     private compraService: CompraService,
     private proveedorService: ProveedorService,
@@ -78,6 +84,7 @@ export class ComprasComponent implements OnInit {
     private cajaService: CajaService,
     private compraCuotaService: CompraCuotaService,
     private authService: AuthService,
+    private sucursalService: SucursalService,
     private router: Router,
     private route: ActivatedRoute,
     private fb: FormBuilder
@@ -142,7 +149,7 @@ export class ComprasComponent implements OnInit {
 
   seleccionarTipoCompra(tipo: 'contado' | 'credito'): void {
     this.form.patchValue({ tipo_compra: tipo });
-    
+
     if (tipo === 'credito' && !this.isEditing) {
       // Abrir modal automáticamente solo si no hay número de cuotas configurado
       const numeroCuotas = this.form.get('numero_cuotas')?.value;
@@ -162,7 +169,7 @@ export class ComprasComponent implements OnInit {
     // Asegurar que los valores iniciales estén configurados
     const currentNumCuotas = this.form.get('numero_cuotas')?.value;
     const currentMontoPagado = this.form.get('monto_pagado')?.value;
-    
+
     // Solo establecer valores por defecto si no existen
     if (!currentNumCuotas || currentNumCuotas < 1) {
       this.form.patchValue({ numero_cuotas: 1 });
@@ -176,13 +183,13 @@ export class ComprasComponent implements OnInit {
     // Validar y guardar la configuración de crédito
     const numeroCuotas = this.form.get('numero_cuotas')?.value;
     const montoPagado = this.form.get('monto_pagado')?.value || 0;
-    
+
     // Validar que numero_cuotas sea válido
     if (!numeroCuotas || numeroCuotas < 1) {
       alert('Error: El número de cuotas debe ser mayor a 0.');
       return;
     }
-    
+
     // Los valores ya están en el formulario, solo cerrar el modal
     this.isCreditoModalOpen = false;
   }
@@ -192,7 +199,7 @@ export class ComprasComponent implements OnInit {
   }
 
   // Calcular vista previa de cuotas
-  getCuotasPreview(): Array<{numero: number, fecha: string, monto: number}> {
+  getCuotasPreview(): Array<{ numero: number, fecha: string, monto: number }> {
     const total = this.form.get('total')?.value || 0;
     const cuotaInicial = this.form.get('monto_pagado')?.value || 0;
     const numCuotas = this.form.get('numero_cuotas')?.value || 0;
@@ -209,7 +216,7 @@ export class ComprasComponent implements OnInit {
 
     const montoPorCuota = saldoPendiente / numCuotas;
     const frecuenciaDias = 30; // 30 días por defecto
-    const cuotas: Array<{numero: number, fecha: string, monto: number}> = [];
+    const cuotas: Array<{ numero: number, fecha: string, monto: number }> = [];
 
     // Calcular fecha base
     let fechaBase: Date;
@@ -233,10 +240,10 @@ export class ComprasComponent implements OnInit {
 
       cuotas.push({
         numero: i,
-        fecha: fechaVencimiento.toLocaleDateString('es-GT', { 
-          year: 'numeric', 
-          month: '2-digit', 
-          day: '2-digit' 
+        fecha: fechaVencimiento.toLocaleDateString('es-GT', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
         }),
         monto: montoCuota
       });
@@ -263,6 +270,13 @@ export class ComprasComponent implements OnInit {
       this.currentUserId = currentUser.id;
       this.currentUserSucursalId = currentUser.sucursal_id || null;
       this.form.patchValue({ user_id: this.currentUserId });
+
+      // Verificar si es admin
+      this.isAdmin = currentUser.rol_id === 1;
+
+      if (this.isAdmin) {
+        this.loadSucursales();
+      }
     }
 
     // Establecer fecha y hora inicial automáticamente
@@ -272,7 +286,7 @@ export class ComprasComponent implements OnInit {
     this.route.url.subscribe(url => {
       const path = url[0]?.path;
       this.isHistorialView = path === 'historial';
-      
+
       if (this.isHistorialView) {
         // En historial, solo cargar las compras
         this.isModalOpen = false;
@@ -337,13 +351,13 @@ export class ComprasComponent implements OnInit {
       next: (res) => {
         this.cajas = Array.isArray(res.data) ? res.data : [];
         // Buscar la caja abierta (estado = 1 o 'abierta')
-        this.cajaAbierta = this.cajas.find(caja => 
-          caja.estado === 1 || 
-          caja.estado === '1' || 
-          caja.estado === true || 
+        this.cajaAbierta = this.cajas.find(caja =>
+          caja.estado === 1 ||
+          caja.estado === '1' ||
+          caja.estado === true ||
           caja.estado === 'abierta'
         ) || null;
-        
+
         if (!this.cajaAbierta) {
           alert('No hay una caja abierta. Por favor, abra una caja antes de realizar compras.');
         }
@@ -357,20 +371,35 @@ export class ComprasComponent implements OnInit {
     });
   }
 
+  loadSucursales(): void {
+    this.sucursalService.getAll().subscribe({
+      next: (response) => {
+        if (response.data) {
+          this.sucursales = response.data;
+        }
+      },
+      error: (error) => console.error('Error loading sucursales', error)
+    });
+  }
+
   loadCompras(): void {
     this.isLoading = true;
-    
+
     const params: PaginationParams = {
       page: this.currentPage,
       per_page: this.perPage,
       sort_by: 'id',
       sort_order: 'desc'
     };
-    
+
     if (this.searchTerm) {
       params.search = this.searchTerm;
     }
-    
+
+    if (this.filterSucursalId) {
+      params.sucursal_id = this.filterSucursalId;
+    }
+
     this.compraService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
@@ -405,6 +434,11 @@ export class ComprasComponent implements OnInit {
 
   onPageChange(page: number): void {
     this.currentPage = page;
+    this.loadCompras();
+  }
+
+  onFilterChange(): void {
+    this.currentPage = 1;
     this.loadCompras();
   }
 
@@ -491,7 +525,7 @@ export class ComprasComponent implements OnInit {
             this.compraSeleccionada = compra;
           }
           this.isDetailModalOpen = true;
-          
+
           // Si es compra a crédito, cargar las cuotas
           if (this.compraSeleccionada.compra_credito?.id) {
             this.compraCuotaService.getByCompraCredito(this.compraSeleccionada.compra_credito.id)
@@ -528,18 +562,18 @@ export class ComprasComponent implements OnInit {
       this.isEditing = true;
       this.currentId = compra.id;
       this.detallesFormArray.clear();
-      
+
       // Limpiar búsqueda de artículos
       this.busquedaArticulo = '';
       this.articulosFiltrados = this.articulos || [];
       this.mostrarSugerenciasArticulo = false;
       this.articuloSeleccionado = null;
-      
+
       const proveedor = compra.proveedor || this.proveedores.find(p => p.id === compra.proveedor_id);
       this.proveedorSeleccionado = proveedor || null;
       this.proveedorBusqueda = proveedor ? proveedor.nombre : '';
       this.mostrarSugerenciasProveedor = false;
-      
+
       // Cargar datos de crédito si existe
       const numeroCuotas = compra.compra_credito?.num_cuotas || 1;
       const montoPagado = compra.compra_credito?.cuota_inicial || 0;
@@ -642,13 +676,13 @@ export class ComprasComponent implements OnInit {
     }
     const detalle = this.detallesFormArray.at(index);
     if (!detalle) return 0;
-    
+
     const subtotalProducto = detalle.get('subtotal')?.value || 0;
     if (subtotalProducto <= 0) return 0;
-    
+
     // Calcular el porcentaje que representa este producto del subtotal
     const porcentaje = subtotalProducto / this.subtotal;
-    
+
     // Aplicar ese porcentaje al descuento global
     return this.descuentoGlobal * porcentaje;
   }
@@ -656,10 +690,10 @@ export class ComprasComponent implements OnInit {
   getSubtotalConDescuentoGlobal(index: number): number {
     const detalle = this.detallesFormArray.at(index);
     if (!detalle) return 0;
-    
+
     const subtotal = detalle.get('subtotal')?.value || 0;
     const descuentoProporcional = this.getDescuentoProporcionalPorProducto(index);
-    
+
     return Math.max(0, subtotal - descuentoProporcional);
   }
 
@@ -669,36 +703,36 @@ export class ComprasComponent implements OnInit {
   }
 
   save(): void {
-    
+
     // VALIDAR QUE HAYA UNA CAJA ABIERTA
     if (!this.cajaAbierta) {
       alert('No hay una caja abierta. Por favor, abra una caja antes de realizar compras.');
       return;
     }
-    
+
     // Verificar que la caja sigue abierta (recargar si es necesario)
-    const isCajaOpen = this.cajaAbierta.estado === 1 || 
-                       this.cajaAbierta.estado === '1' || 
-                       this.cajaAbierta.estado === true || 
-                       this.cajaAbierta.estado === 'abierta';
-    
+    const isCajaOpen = this.cajaAbierta.estado === 1 ||
+      this.cajaAbierta.estado === '1' ||
+      this.cajaAbierta.estado === true ||
+      this.cajaAbierta.estado === 'abierta';
+
     if (!isCajaOpen) {
       alert('La caja seleccionada está cerrada. Por favor, abra una caja antes de realizar compras.');
       // Recargar cajas para encontrar la abierta
       this.cajaService.getAll().subscribe({
         next: (res) => {
           this.cajas = Array.isArray(res.data) ? res.data : [];
-          this.cajaAbierta = this.cajas.find(caja => 
-            caja.estado === 1 || 
-            caja.estado === '1' || 
-            caja.estado === true || 
+          this.cajaAbierta = this.cajas.find(caja =>
+            caja.estado === 1 ||
+            caja.estado === '1' ||
+            caja.estado === true ||
             caja.estado === 'abierta'
           ) || null;
         }
       });
       return;
     }
-    
+
     // Validar que el nombre del proveedor esté ingresado
     if (!this.form.get('proveedor_nombre')?.value || this.proveedorBusqueda.trim().length === 0) {
       alert('Por favor ingrese el nombre del proveedor');
@@ -710,15 +744,15 @@ export class ComprasComponent implements OnInit {
     if (tipoCompraValidacion === 'credito') {
       const numeroCuotas = this.form.get('numero_cuotas')?.value;
       const montoPagado = this.form.get('monto_pagado')?.value;
-      
-      
+
+
       if (!numeroCuotas || numeroCuotas < 1) {
         alert('Error: Debe configurar el número de cuotas para la compra a crédito. Por favor, haga clic en "Configurar Crédito" y establezca el número de cuotas.');
         this.openCreditoModal();
         return;
       }
     }
-    
+
     if (this.form.invalid || this.detallesFormArray.length === 0) {
       if (this.detallesFormArray.length === 0) {
         alert('Debe agregar al menos un artículo a la compra');
@@ -737,7 +771,7 @@ export class ComprasComponent implements OnInit {
     }
 
     const formValue = this.form.value;
-    
+
     // VALIDAR DETALLES ANTES DE PROCESAR NADA MÁS
     const detallesInvalidos: any[] = [];
     formValue.detalles.forEach((detalle: any) => {
@@ -751,7 +785,7 @@ export class ComprasComponent implements OnInit {
         detallesInvalidos.push({ detalle, motivo: 'No existe en catálogo', articulo_id: articuloId });
       }
     });
-    
+
     if (detallesInvalidos.length > 0) {
       const articulosInvalidos = detallesInvalidos
         .map(d => d.articulo_id || d.detalle?.articulo_id)
@@ -761,23 +795,23 @@ export class ComprasComponent implements OnInit {
       alert(`ERROR: Los siguien  entes artículos no están disponibles (IDs: ${articulosInvalidos}).\n\nPor favor, ELIMINE estos detalles de la tabla y seleccione artículos válidos del catálogo de productos (columna derecha).`);
       return;
     }
-    
+
     if (formValue.detalles.length === 0) {
       alert('Debe agregar al menos un artículo a la compra');
       return;
     }
-    
+
     // Establecer fecha y hora actual automáticamente antes de guardar
     const fechaHoraActual = new Date();
     const fechaHoraFormateada = fechaHoraActual.toISOString().slice(0, 19).replace('T', ' ');
     this.form.patchValue({ fecha_hora: fechaHoraActual.toISOString().slice(0, 16) });
-    
+
     // Formatear fecha_hora correctamente para Laravel (formato Y-m-d H:i:s)
     let fechaHora = fechaHoraFormateada;
-    
+
     // Reutilizar la variable tipoCompraValidacion que ya se declaró arriba
     // const tipoCompra = (formValue.tipo_compra || 'contado').toLowerCase().trim();
-    
+
     const compraData: any = {
       proveedor_nombre: this.proveedorBusqueda.trim(),
       user_id: Number(formValue.user_id),
@@ -794,7 +828,7 @@ export class ComprasComponent implements OnInit {
         const articuloId = Number(detalle.articulo_id);
         const cantidad = Number(detalle.cantidad) || 1;
         const precioUnitario = Number(detalle.precio_unitario) || 0;
-        
+
         return {
           articulo_id: articuloId,
           cantidad: cantidad,
@@ -812,28 +846,28 @@ export class ComprasComponent implements OnInit {
 
     // Agregar descuento global (siempre enviar, incluso si es 0)
     compraData.descuento_global = Number(formValue.descuento_global || 0);
-    
+
     // Agregar campos de crédito si es compra a crédito
     if (tipoCompraValidacion === 'credito') {
       const numeroCuotas = Number(formValue.numero_cuotas || 1);
       const montoPagado = Number(formValue.monto_pagado || 0);
-      
-      
+
+
       // Validar que numero_cuotas sea válido
       if (!numeroCuotas || numeroCuotas < 1) {
         alert('Error: El número de cuotas debe ser mayor a 0. Por favor, configure el crédito correctamente.');
         return;
       }
-      
+
       compraData.numero_cuotas = numeroCuotas;
       compraData.monto_pagado = montoPagado;
     }
-    
+
     if (formValue.estado && formValue.estado.trim() !== '') {
       compraData.estado = formValue.estado.trim();
     }
 
-    
+
     this.isLoading = true;
     if (this.isEditing && this.currentId) {
       this.compraService.update(this.currentId, compraData)
@@ -851,9 +885,9 @@ export class ComprasComponent implements OnInit {
           },
           error: (error) => {
             console.error('Error updating compra', error);
-            
+
             let errorMessage = 'Error al actualizar la compra';
-            
+
             if (error?.error) {
               if (error.error.errors) {
                 const validationErrors = Object.values(error.error.errors).flat().join('\n');
@@ -864,7 +898,7 @@ export class ComprasComponent implements OnInit {
                 errorMessage = error.error.error;
               }
             }
-            
+
             alert(errorMessage);
           }
         });
@@ -888,7 +922,7 @@ export class ComprasComponent implements OnInit {
             const errorMessage = errorResponse.message || errorResponse.error || 'Error al crear la compra';
             const errorDetails = errorResponse.file ? `Archivo: ${errorResponse.file}\nLínea: ${errorResponse.line}` : '';
             const fullError = errorResponse.message || error?.message || 'Error desconocido';
-            
+
             alert(`Error: ${errorMessage}\n\n${errorDetails}\n\nDetalles: ${fullError}`);
           }
         });
@@ -1169,9 +1203,9 @@ export class ComprasComponent implements OnInit {
   buscarProveedor(event: any): void {
     const valor = event.target.value.toLowerCase();
     this.proveedorBusqueda = event.target.value;
-    
+
     this.form.patchValue({ proveedor_nombre: event.target.value });
-    
+
     if (valor.length === 0) {
       // Si no hay texto, mostrar todos los proveedores
       this.proveedoresFiltrados = this.proveedores;
@@ -1185,10 +1219,10 @@ export class ComprasComponent implements OnInit {
         (proveedor.num_documento && proveedor.num_documento.toLowerCase().includes(valor))
       );
       this.mostrarSugerenciasProveedor = this.proveedoresFiltrados.length > 0;
-      
+
       // Buscar coincidencia exacta
-      const proveedorExacto = this.proveedores.find(p => 
-        p.nombre.toLowerCase() === valor || 
+      const proveedorExacto = this.proveedores.find(p =>
+        p.nombre.toLowerCase() === valor ||
         p.nombre.toLowerCase() === event.target.value.toLowerCase()
       );
       if (proveedorExacto) {
@@ -1239,7 +1273,7 @@ export class ComprasComponent implements OnInit {
   buscarArticulo(event: any): void {
     const valor = event.target.value.toLowerCase();
     this.busquedaArticulo = event.target.value;
-    
+
     if (valor.length === 0) {
       this.articulosFiltrados = this.articulos || [];
       this.mostrarSugerenciasArticulo = false;
@@ -1267,7 +1301,7 @@ export class ComprasComponent implements OnInit {
     }
 
     // Verificar si el artículo ya está agregado
-    const articuloYaAgregado = this.detallesFormArray.controls.some(control => 
+    const articuloYaAgregado = this.detallesFormArray.controls.some(control =>
       control.get('articulo_id')?.value === this.articuloSeleccionado?.id
     );
 
@@ -1294,7 +1328,7 @@ export class ComprasComponent implements OnInit {
 
     this.detallesFormArray.push(detalleGroup);
     this.calculateTotal();
-    
+
     // Limpiar selección
     this.articuloSeleccionado = null;
     this.busquedaArticulo = '';
@@ -1371,7 +1405,7 @@ export class ComprasComponent implements OnInit {
 
     const articuloId = detalle.get('articulo_id')?.value;
     const articulo = this.articulos.find(a => a.id === articuloId);
-    
+
     if (!articulo) {
       alert('No se encontró el artículo');
       return;
@@ -1379,16 +1413,16 @@ export class ComprasComponent implements OnInit {
 
     this.articuloEditando = { ...articulo };
     this.detalleIndexEditando = index;
-    
+
     const precioCosto = articulo.precio_costo_unid || 0;
     const precioVenta = articulo.precio_venta || 0;
-    
+
     // Calcular porcentaje de ganancia actual si hay precio de venta
     let porcentajeGanancia = 30; // Por defecto 30%
     if (precioCosto > 0 && precioVenta > 0) {
       porcentajeGanancia = ((precioVenta - precioCosto) / precioCosto) * 100;
     }
-    
+
     this.precioEditForm.patchValue({
       precio_costo_unid: precioCosto,
       precio_costo_paq: articulo.precio_costo_paq || 0,
@@ -1405,7 +1439,7 @@ export class ComprasComponent implements OnInit {
   calculatePrecioVenta(): void {
     const precioCosto = parseFloat(this.precioEditForm.get('precio_costo_unid')?.value) || 0;
     const porcentajeGanancia = parseFloat(this.precioEditForm.get('porcentaje_ganancia')?.value) || 0;
-    
+
     if (precioCosto > 0 && porcentajeGanancia >= 0) {
       const precioVenta = precioCosto * (1 + (porcentajeGanancia / 100));
       this.precioEditForm.patchValue({
@@ -1434,7 +1468,7 @@ export class ComprasComponent implements OnInit {
     }
 
     const formValue = this.precioEditForm.value;
-    
+
     // Actualizar el artículo en el catálogo
     const articuloIndex = this.articulos.findIndex(a => a.id === this.articuloEditando!.id);
     if (articuloIndex !== -1) {
@@ -1458,7 +1492,7 @@ export class ComprasComponent implements OnInit {
 
     // Guardar en el backend - Enviar todos los campos del artículo actualizados
     this.isLoading = true;
-    
+
     // Preparar datos con todos los campos del artículo, actualizando solo los precios
     const articuloData: any = {
       categoria_id: this.articuloEditando.categoria_id,

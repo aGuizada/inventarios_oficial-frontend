@@ -26,9 +26,11 @@
     </div>
 
     <!-- Filters Component -->
+    <!-- Filters Component -->
     <app-inventario-filters [almacenes]="almacenes" [almacenSeleccionado]="almacenSeleccionado" [busqueda]="busqueda"
+        [sucursales]="sucursales" [sucursalSeleccionada]="sucursalSeleccionada" [isAdmin]="isAdmin"
         (almacenChange)="onAlmacenChange($event)" (busquedaChange)="onBusquedaChange($event)"
-        (clearFilters)="onClearFilters()">
+        (sucursalChange)="sucursalSeleccionada = $event; onSucursalChange()" (clearFilters)="onClearFilters()">
     </app-inventario-filters>
 
 

@@ -14,6 +14,9 @@ import { VentaFormComponent } from './venta-form/venta-form.component';
 import { VentaDetailModalComponent } from './venta-detail-modal/venta-detail-modal.component';
 import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { AuthService } from '../../../services/auth.service';
+import { SucursalService } from '../../../services/sucursal.service';
+import { Sucursal } from '../../../interfaces';
 
 @Component({
   selector: 'app-ventas',
@@ -38,14 +41,27 @@ export class VentasComponent implements OnInit {
 
   filterEstado: string = '';
   filterDevoluciones: boolean = false;
+  filterSucursalId: string = '';
+
+  sucursales: Sucursal[] = [];
+  isAdmin: boolean = false;
 
   constructor(
     private ventaService: VentaService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private authService: AuthService,
+    private sucursalService: SucursalService
   ) { }
 
   ngOnInit(): void {
+    const user = this.authService.getCurrentUser();
+    this.isAdmin = user?.rol_id === 1;
+
+    if (this.isAdmin) {
+      this.loadSucursales();
+    }
+
     this.route.url.subscribe(url => {
       const path = url[0]?.path;
       this.isHistorialView = path === 'historial';
@@ -56,10 +72,19 @@ export class VentasComponent implements OnInit {
     });
   }
 
+  loadSucursales(): void {
+    this.sucursalService.getAll().subscribe({
+      next: (response: any) => {
+        this.sucursales = Array.isArray(response) ? response : (response.data || []);
+      },
+      error: (error) => console.error('Error al cargar sucursales:', error)
+    });
+  }
+
   loadVentas(): void {
     this.isLoading = true;
 
-    const params: PaginationParams & { estado?: string; has_devoluciones?: string } = {
+    const params: PaginationParams & { estado?: string; has_devoluciones?: string; sucursal_id?: string } = {
       page: this.currentPage,
       per_page: this.perPage,
       sort_by: 'id',
@@ -76,6 +101,10 @@ export class VentasComponent implements OnInit {
 
     if (this.filterDevoluciones) {
       params.has_devoluciones = 'true';
+    }
+
+    if (this.filterSucursalId) {
+      params.sucursal_id = this.filterSucursalId;
     }
 
     this.ventaService.getPaginated(params)
