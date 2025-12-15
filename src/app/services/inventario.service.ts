@@ -42,8 +42,17 @@ export class InventarioService {
     /**
      * Obtiene inventario agrupado por ítem (artículo)
      */
-    getPorItem(): Observable<any> {
-        return this.http.get(`${this.apiUrl}/por-item`);
+    getPorItem(params?: any): Observable<any> {
+        let httpParams = new HttpParams();
+        if (params) {
+            Object.keys(params).forEach(key => {
+                const value = (params as any)[key];
+                if (value !== undefined && value !== null) {
+                    httpParams = httpParams.set(key, value.toString());
+                }
+            });
+        }
+        return this.http.get(`${this.apiUrl}/por-item`, { params: httpParams });
     }
 
     /**

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { shareReplay } from 'rxjs/operators';
 import { Venta, ApiResponse, PaginatedResponse, PaginationParams } from '../interfaces';
 import { environment } from '../../environments/environment';
 
@@ -47,12 +48,25 @@ export class VentaService {
         return this.http.post<Venta>(this.apiUrl, venta);
     }
 
+    private productosCache: Map<string, Observable<ProductoInventario[]>> = new Map();
+
     getProductosInventario(almacenId?: number): Observable<ProductoInventario[]> {
-        let params = new HttpParams();
-        if (almacenId) {
-            params = params.set('almacen_id', almacenId.toString());
+        const cacheKey = almacenId?.toString() || 'all';
+        
+        // Si ya existe una petición en curso para este almacén, reutilizarla
+        if (!this.productosCache.has(cacheKey)) {
+            let params = new HttpParams();
+            if (almacenId) {
+                params = params.set('almacen_id', almacenId.toString());
+            }
+            const request = this.http.get<ProductoInventario[]>(`${this.apiUrl}/productos-inventario`, { params })
+                .pipe(
+                    shareReplay(1) // Cachear la respuesta y compartirla entre suscriptores
+                );
+            this.productosCache.set(cacheKey, request);
         }
-        return this.http.get<ProductoInventario[]>(`${this.apiUrl}/productos-inventario`, { params });
+        
+        return this.productosCache.get(cacheKey)!;
     }
 
     anular(id: number): Observable<any> {

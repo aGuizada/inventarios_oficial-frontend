@@ -20,7 +20,7 @@ import jsPDF from 'jspdf';
 @Component({
   selector: 'app-compras',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgClass, DatePipe, MonedaPipe, SearchBarComponent, PaginationComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, DatePipe, MonedaPipe, SearchBarComponent, PaginationComponent],
   templateUrl: './compras.component.html',
 })
 export class ComprasComponent implements OnInit {
@@ -1309,6 +1309,8 @@ export class ComprasComponent implements OnInit {
     this.articuloSeleccionado = articulo;
     this.busquedaArticulo = `${articulo.nombre} - ${articulo.codigo}`;
     this.mostrarSugerenciasArticulo = false;
+    // Agregar automáticamente a la compra
+    this.agregarArticuloACompra();
   }
 
   agregarArticuloACompra(): void {
@@ -1317,34 +1319,38 @@ export class ComprasComponent implements OnInit {
       return;
     }
 
-    // Verificar si el artículo ya está agregado
-    const articuloYaAgregado = this.detallesFormArray.controls.some(control =>
+    // Buscar si el artículo ya está agregado
+    const detalleExistenteIndex = this.detallesFormArray.controls.findIndex(control =>
       control.get('articulo_id')?.value === this.articuloSeleccionado?.id
     );
 
-    if (articuloYaAgregado) {
-      if (confirm('Este producto ya está en la compra. ¿Desea agregarlo de nuevo?')) {
-        // Si confirma, agregar de todas formas
-      } else {
-        return;
-      }
+    if (detalleExistenteIndex !== -1) {
+      // Si el artículo ya existe, incrementar la cantidad en 1
+      const detalleExistente = this.detallesFormArray.at(detalleExistenteIndex);
+      const cantidadActual = detalleExistente.get('cantidad')?.value || 0;
+      detalleExistente.patchValue({
+        cantidad: cantidadActual + 1
+      });
+      // El calculateSubtotal se ejecutará automáticamente por el valueChanges
+      this.calculateTotal();
+    } else {
+      // Si el artículo no existe, agregarlo como nuevo detalle
+      const precioInicial = this.articuloSeleccionado.precio_costo_unid || this.articuloSeleccionado.precio_costo_paq || 0;
+      const detalleGroup = this.fb.group({
+        articulo_id: [this.articuloSeleccionado.id, Validators.required],
+        cantidad: [1, [Validators.required, Validators.min(1)]],
+        precio_unitario: [precioInicial, [Validators.required, Validators.min(0)]],
+        descuento: [0, [Validators.min(0)]],
+        subtotal: [precioInicial, Validators.required]
+      });
+
+      detalleGroup.get('cantidad')?.valueChanges.subscribe(() => this.calculateSubtotal(detalleGroup));
+      detalleGroup.get('precio_unitario')?.valueChanges.subscribe(() => this.calculateSubtotal(detalleGroup));
+      detalleGroup.get('descuento')?.valueChanges.subscribe(() => this.calculateSubtotal(detalleGroup));
+
+      this.detallesFormArray.push(detalleGroup);
+      this.calculateTotal();
     }
-
-    const precioInicial = this.articuloSeleccionado.precio_costo_unid || this.articuloSeleccionado.precio_costo_paq || 0;
-    const detalleGroup = this.fb.group({
-      articulo_id: [this.articuloSeleccionado.id, Validators.required],
-      cantidad: [1, [Validators.required, Validators.min(1)]],
-      precio_unitario: [precioInicial, [Validators.required, Validators.min(0)]],
-      descuento: [0, [Validators.min(0)]],
-      subtotal: [precioInicial, Validators.required]
-    });
-
-    detalleGroup.get('cantidad')?.valueChanges.subscribe(() => this.calculateSubtotal(detalleGroup));
-    detalleGroup.get('precio_unitario')?.valueChanges.subscribe(() => this.calculateSubtotal(detalleGroup));
-    detalleGroup.get('descuento')?.valueChanges.subscribe(() => this.calculateSubtotal(detalleGroup));
-
-    this.detallesFormArray.push(detalleGroup);
-    this.calculateTotal();
 
     // Limpiar selección
     this.articuloSeleccionado = null;
@@ -1375,7 +1381,9 @@ export class ComprasComponent implements OnInit {
   seleccionarAlmacenPorDefecto(): void {
     if (this.form.get('almacen_id')?.value) return;
 
-    if (this.currentUserSucursalId) {
+    // Si es admin, puede seleccionar cualquier almacén
+    // Si no es admin, solo almacenes de su sucursal
+    if (!this.isAdmin && this.currentUserSucursalId) {
       const almacenPorDefecto = this.almacenes.find(almacen =>
         almacen.sucursal_id === this.currentUserSucursalId && almacen.estado !== false
       );
@@ -1384,11 +1392,12 @@ export class ComprasComponent implements OnInit {
         this.form.patchValue({ almacen_id: almacenPorDefecto.id });
         return;
       }
-    }
-
-    const primerAlmacen = this.almacenes.find(almacen => almacen.estado !== false);
-    if (primerAlmacen) {
-      this.form.patchValue({ almacen_id: primerAlmacen.id });
+    } else {
+      // Para admin, seleccionar el primer almacén activo disponible
+      const primerAlmacen = this.almacenes.find(almacen => almacen.estado !== false);
+      if (primerAlmacen) {
+        this.form.patchValue({ almacen_id: primerAlmacen.id });
+      }
     }
   }
 
@@ -1405,6 +1414,15 @@ export class ComprasComponent implements OnInit {
   }
 
   cambiarAlmacen(almacenId: number): void {
+    // Si no es admin, validar que el almacén pertenezca a su sucursal
+    if (!this.isAdmin && this.currentUserSucursalId) {
+      const almacen = this.almacenes.find(a => a.id === almacenId);
+      if (!almacen || almacen.sucursal_id !== this.currentUserSucursalId) {
+        this.showAlertMessage('No puede seleccionar un almacén de otra sucursal', 'error');
+        return;
+      }
+    }
+    
     this.form.patchValue({ almacen_id: almacenId });
     this.mostrarMenuAlmacenes = false;
   }

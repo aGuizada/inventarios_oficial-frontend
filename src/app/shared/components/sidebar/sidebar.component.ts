@@ -123,7 +123,15 @@ export class SidebarComponent implements OnInit {
       this.menuItems = this.allMenuItems.filter(item => {
         if (item.label === 'Ventas') return true;
 
+        if (item.label === 'Inventario') {
+          return true;
+        }
+
         if (item.label === 'Finanzas') {
+          return true;
+        }
+
+        if (item.label === 'Operaciones') {
           return true;
         }
 
@@ -135,8 +143,16 @@ export class SidebarComponent implements OnInit {
       }).map(item => {
         const newItem = { ...item };
 
+        if (newItem.label === 'Inventario' && newItem.children) {
+          newItem.children = newItem.children.filter(child => child.label === 'Stock');
+        }
+
         if (newItem.label === 'Finanzas' && newItem.children) {
           newItem.children = newItem.children.filter(child => child.label === 'Cajas');
+        }
+
+        if (newItem.label === 'Operaciones' && newItem.children) {
+          newItem.children = newItem.children.filter(child => child.label === 'Traspasos');
         }
 
         if (newItem.label === 'Configuración' && newItem.children) {

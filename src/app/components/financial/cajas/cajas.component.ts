@@ -95,12 +95,17 @@ export class CajasComponent implements OnInit {
       params.search = this.searchTerm;
     }
     
+    // Si es vendedor, agregar filtro para solo sus cajas
+    if (this.authService.isVendedor() && this.currentUser) {
+      params.user_id = this.currentUser.id;
+    }
+    
     this.cajaService.getPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response) => {
           if (response.data) {
-            this.cajas = (response.data.data || []).map((caja: any) => ({
+            let cajasData = (response.data.data || []).map((caja: any) => ({
               ...caja,
               compras_contado: Number(caja.compras_contado) || 0,
               compras_credito: Number(caja.compras_credito) || 0,
@@ -113,6 +118,15 @@ export class CajasComponent implements OnInit {
               salidas: Number(caja.salidas) || 0,
               saldo_caja: caja.saldo_caja ? Number(caja.saldo_caja) : null
             }));
+            
+            // Filtrar por sucursal del usuario si es vendedor
+            if (this.authService.isVendedor() && this.currentUser?.sucursal_id) {
+              cajasData = cajasData.filter((caja: any) => 
+                caja.sucursal_id === this.currentUser?.sucursal_id
+              );
+            }
+            
+            this.cajas = cajasData;
             
             this.currentPage = response.data.current_page;
             this.lastPage = response.data.last_page;
@@ -128,7 +142,7 @@ export class CajasComponent implements OnInit {
             .pipe(finalize(() => this.isLoading = false))
             .subscribe({
               next: (response) => {
-                this.cajas = (response.data || []).map((caja: any) => ({
+                let cajasData = (response.data || []).map((caja: any) => ({
                   ...caja,
                   compras_contado: Number(caja.compras_contado) || 0,
                   compras_credito: Number(caja.compras_credito) || 0,
@@ -141,6 +155,16 @@ export class CajasComponent implements OnInit {
                   salidas: Number(caja.salidas) || 0,
                   saldo_caja: caja.saldo_caja ? Number(caja.saldo_caja) : null
                 }));
+                
+                // Filtrar por usuario y sucursal si es vendedor
+                if (this.authService.isVendedor() && this.currentUser) {
+                  cajasData = cajasData.filter((caja: any) => 
+                    caja.user_id === this.currentUser?.id && 
+                    caja.sucursal_id === this.currentUser?.sucursal_id
+                  );
+                }
+                
+                this.cajas = cajasData;
                 this.updateCajasWithTransacciones();
               }
             });
