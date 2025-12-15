@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule, DatePipe, CurrencyPipe, NgClass } from '@angular/common';
+import { CommonModule, DatePipe, NgClass } from '@angular/common';
+import { MonedaPipe } from '../../../../pipes/moneda.pipe';
 import { Caja } from '../../../../interfaces';
 
 @Component({
   selector: 'app-cajas-list',
   standalone: true,
-  imports: [CommonModule, DatePipe, CurrencyPipe, NgClass],
+  imports: [CommonModule, DatePipe, MonedaPipe, NgClass],
   templateUrl: './cajas-list.component.html',
 })
 export class CajasListComponent {
@@ -58,7 +59,8 @@ export class CajasListComponent {
   }
 
   getSaldoTotal(caja: Caja): number {
-    // Si existe saldo_caja y no es null, usarlo
+    // Usar el valor calculado del backend (saldo_caja)
+    // Si no existe, calcular como fallback (aunque debería venir del backend)
     if (caja.saldo_caja !== undefined && caja.saldo_caja !== null) {
       const valor = Number(caja.saldo_caja);
       if (!isNaN(valor)) {
@@ -66,24 +68,14 @@ export class CajasListComponent {
       }
     }
     
-    // Calcular: Saldo Inicial + Ventas Totales + Entradas - Compras Totales - Salidas
+    // Fallback: calcular si no viene del backend (no debería pasar)
     const saldoInicial = Number(caja.saldo_inicial) || 0;
-    
-    // Calcular ventas totales
-    let ventasTotales = 0;
-    if (caja.ventas !== undefined && caja.ventas !== null) {
-      const ventas = Number(caja.ventas);
-      ventasTotales = isNaN(ventas) ? 0 : ventas;
-    } else {
-      ventasTotales = (Number(caja.ventas_contado) || 0) + (Number(caja.ventas_credito) || 0) + (Number(caja.pagos_qr) || 0);
-    }
-    
+    const ventasTotales = Number(caja.ventas) || 0;
     const entradas = this.getDepositos(caja);
     const comprasTotales = this.getComprasContado(caja) + this.getComprasCredito(caja);
     const salidas = this.getSalidas(caja);
     
-    const total = saldoInicial + ventasTotales + entradas - comprasTotales - salidas;
-    return total;
+    return saldoInicial + ventasTotales + entradas - comprasTotales - salidas;
   }
 }
 

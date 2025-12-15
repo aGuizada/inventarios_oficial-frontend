@@ -1,5 +1,6 @@
 import { Component, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MonedaPipe } from '../../../../pipes/moneda.pipe';
 import { ArticuloService } from '../../../../services/articulo.service';
 import * as XLSX from 'xlsx';
 
@@ -23,7 +24,7 @@ interface PreviewData {
 @Component({
   selector: 'app-articulo-import',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MonedaPipe],
   templateUrl: './articulo-import.component.html'
 })
 export class ArticuloImportComponent {

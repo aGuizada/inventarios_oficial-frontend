@@ -1,11 +1,12 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MonedaPipe } from '../../../../pipes/moneda.pipe';
 import { Venta } from '../../../../interfaces';
 
 @Component({
     selector: 'app-ventas-history',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, MonedaPipe],
     templateUrl: './ventas-history.component.html',
 })
 export class VentasHistoryComponent {

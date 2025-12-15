@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule, DatePipe, CurrencyPipe, NgClass } from '@angular/common';
+import { CommonModule, DatePipe, NgClass } from '@angular/common';
+import { MonedaPipe } from '../../../../pipes/moneda.pipe';
 import { Cotizacion } from '../../../../interfaces';
 
 @Component({
   selector: 'app-cotizaciones-list',
   standalone: true,
-  imports: [CommonModule, DatePipe, CurrencyPipe, NgClass],
+  imports: [CommonModule, DatePipe, MonedaPipe, NgClass],
   templateUrl: './cotizaciones-list.component.html',
 })
 export class CotizacionesListComponent {

@@ -1,10 +1,11 @@
 import { Component, Input } from '@angular/core';
-import { CommonModule, CurrencyPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { MonedaPipe } from '../../../pipes/moneda.pipe';
 
 @Component({
   selector: 'app-stats-cards',
   standalone: true,
-  imports: [CommonModule, CurrencyPipe],
+  imports: [CommonModule, MonedaPipe],
   templateUrl: './stats-cards.component.html',
 })
 export class StatsCardsComponent {

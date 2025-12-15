@@ -1,11 +1,12 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MonedaPipe } from '../../../../../../pipes/moneda.pipe';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
     selector: 'app-credito-modal',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule],
+    imports: [CommonModule, ReactiveFormsModule, MonedaPipe],
     templateUrl: './credito-modal.component.html',
 })
 export class CreditoModalComponent {

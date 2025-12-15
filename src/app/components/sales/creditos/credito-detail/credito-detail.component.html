@@ -21,7 +21,7 @@
             </div>
             <div>
                 <span class="font-semibold text-gray-700">Total:</span>
-                <p class="text-gray-900">{{ credito.total | currency }}</p>
+                <p class="text-gray-900">{{ credito.total | moneda }}</p>
             </div>
             <div>
                 <span class="font-semibold text-gray-700">Estado:</span>
@@ -58,7 +58,7 @@
                     <span class="font-semibold text-gray-700">Monto por Cuota:</span>
                     <p class="text-gray-900 text-lg font-bold">
                         @if (credito.total && credito.numero_cuotas) {
-                        {{ (credito.total / credito.numero_cuotas) | currency }}
+                        {{ (credito.total / credito.numero_cuotas) | moneda }}
                         } @else {
                         N/A
                         }
@@ -94,13 +94,13 @@
                                 {{ detalle.cantidad }}
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                                {{ detalle.precio | currency }}
+                                {{ detalle.precio | moneda }}
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                                {{ detalle.descuento || 0 | currency }}
+                                {{ detalle.descuento || 0 | moneda }}
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                {{ ((detalle.precio * detalle.cantidad) - (detalle.descuento || 0)) | currency }}
+                                {{ ((detalle.precio * detalle.cantidad) - (detalle.descuento || 0)) | moneda }}
                             </td>
                         </tr>
                         }
@@ -119,7 +119,7 @@
                                 Total:
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900">
-                                {{ credito.total | currency }}
+                                {{ credito.total | moneda }}
                             </td>
                         </tr>
                     </tfoot>

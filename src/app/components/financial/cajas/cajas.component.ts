@@ -168,27 +168,40 @@ export class CajasComponent implements OnInit {
   updateCajasWithTransacciones(): void {
     if (!this.cajas.length) return;
 
-    // Calcular depositos y salidas desde transacciones para cada caja
-    this.cajas = this.cajas.map(caja => {
-      const transaccionesCaja = this.transacciones.filter((t: any) => t.caja_id === caja.id);
-      
-      // Calcular depositos (ingresos)
-      const depositos = transaccionesCaja
-        .filter((t: any) => t.transaccion === 'ingreso')
-        .reduce((sum: number, t: any) => sum + (Number(t.importe) || 0), 0);
-      
-      // Calcular salidas (egresos)
-      const salidas = transaccionesCaja
-        .filter((t: any) => t.transaccion === 'egreso')
-        .reduce((sum: number, t: any) => sum + (Number(t.importe) || 0), 0);
+    // Obtener los totales calculados del backend para todas las cajas
+    this.cajaService.calcularTotalesCajas().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const totalesMap = new Map();
+          response.data.forEach((item: any) => {
+            totalesMap.set(item.id, item);
+          });
 
-      // Siempre usar los valores calculados desde transacciones si existen
-      // Si no hay transacciones, usar los valores de la BD
-      return {
-        ...caja,
-        depositos: this.transacciones.length > 0 ? depositos : (Number(caja.depositos) || 0),
-        salidas: this.transacciones.length > 0 ? salidas : (Number(caja.salidas) || 0)
-      };
+          // Actualizar las cajas con los valores calculados del backend
+          this.cajas = this.cajas.map(caja => {
+            const totales = totalesMap.get(caja.id);
+            if (totales) {
+              return {
+                ...caja,
+                depositos: totales.depositos || 0,
+                salidas: totales.salidas || 0,
+                ventas: totales.ventas || 0, // Este es el total_ventas calculado (suma de todas las ventas)
+                saldo_caja: totales.saldo_caja || 0,
+                ventas_contado: totales.ventas_contado || 0,
+                ventas_credito: totales.ventas_credito || 0,
+                pagos_qr: totales.ventas_qr || 0, // Agregar ventas QR
+                compras_contado: totales.compras_contado || 0,
+                compras_credito: totales.compras_credito || 0
+              };
+            }
+            return caja;
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Error al calcular totales de cajas:', error);
+        // Si falla, mantener los valores originales
+      }
     });
   }
 
@@ -229,7 +242,19 @@ export class CajasComponent implements OnInit {
           this.loadCajas();
         },
         error: (error) => {
-          const errorMessage = error.error?.message || error.error?.error || 'Error al abrir la caja';
+          let errorMessage = error.error?.message || error.error?.error || 'Error al abrir la caja';
+          
+          // Si hay errores de validación, mostrar el mensaje específico
+          if (error.error?.errors) {
+            const errors = error.error.errors;
+            const firstError = Object.values(errors)[0];
+            if (Array.isArray(firstError) && firstError.length > 0) {
+              errorMessage = firstError[0];
+            } else if (typeof firstError === 'string') {
+              errorMessage = firstError;
+            }
+          }
+          
           alert(`Error: ${errorMessage}`);
         }
       });

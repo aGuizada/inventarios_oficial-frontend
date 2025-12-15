@@ -70,22 +70,22 @@
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Costo Unidad</label>
-                    <p class="text-sm font-semibold text-gray-900 dark:text-slate-100 mt-1">{{ articulo.precio_costo_unid | currency }}</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-slate-100 mt-1">{{ articulo.precio_costo_unid | moneda }}</p>
                 </div>
                 <div>
                     <label class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Costo Paquete</label>
-                    <p class="text-sm font-semibold text-gray-900 dark:text-slate-100 mt-1">{{ articulo.precio_costo_paq | currency }}</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-slate-100 mt-1">{{ articulo.precio_costo_paq | moneda }}</p>
                 </div>
             </div>
 
             <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded-md">
                 <label class="text-xs font-medium text-green-700 dark:text-green-300 uppercase">Precio de Venta</label>
-                <p class="text-xl font-bold text-green-900 dark:text-green-200 mt-1">{{ articulo.precio_venta | currency }}</p>
+                <p class="text-xl font-bold text-green-900 dark:text-green-200 mt-1">{{ articulo.precio_venta | moneda }}</p>
             </div>
 
             <div>
                 <label class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Costo de Compra</label>
-                <p class="text-sm font-semibold text-gray-900 dark:text-slate-100 mt-1">{{ articulo.costo_compra | currency }}</p>
+                <p class="text-sm font-semibold text-gray-900 dark:text-slate-100 mt-1">{{ articulo.costo_compra | moneda }}</p>
             </div>
 
             @if (articulo.vencimiento) {
@@ -103,19 +103,19 @@
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Precio Uno</label>
-                    <p class="text-sm text-gray-900 dark:text-slate-100 mt-1">{{ articulo.precio_uno | currency }}</p>
+                    <p class="text-sm text-gray-900 dark:text-slate-100 mt-1">{{ articulo.precio_uno | moneda }}</p>
                 </div>
                 <div>
                     <label class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Precio Dos</label>
-                    <p class="text-sm text-gray-900 dark:text-slate-100 mt-1">{{ articulo.precio_dos | currency }}</p>
+                    <p class="text-sm text-gray-900 dark:text-slate-100 mt-1">{{ articulo.precio_dos | moneda }}</p>
                 </div>
                 <div>
                     <label class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Precio Tres</label>
-                    <p class="text-sm text-gray-900 dark:text-slate-100 mt-1">{{ articulo.precio_tres | currency }}</p>
+                    <p class="text-sm text-gray-900 dark:text-slate-100 mt-1">{{ articulo.precio_tres | moneda }}</p>
                 </div>
                 <div>
                     <label class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Precio Cuatro</label>
-                    <p class="text-sm text-gray-900 dark:text-slate-100 mt-1">{{ articulo.precio_cuatro | currency }}</p>
+                    <p class="text-sm text-gray-900 dark:text-slate-100 mt-1">{{ articulo.precio_cuatro | moneda }}</p>
                 </div>
             </div>
 

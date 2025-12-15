@@ -1,12 +1,13 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
-import { CommonModule, CurrencyPipe, DatePipe, NgClass } from '@angular/common';
+import { CommonModule, DatePipe, NgClass } from '@angular/common';
+import { MonedaPipe } from '../../../../pipes/moneda.pipe';
 import { Caja } from '../../../../interfaces';
 import { CajaService } from '../../../../services/caja.service';
 
 @Component({
   selector: 'app-caja-detail',
   standalone: true,
-  imports: [CommonModule, CurrencyPipe, DatePipe, NgClass],
+  imports: [CommonModule, MonedaPipe, DatePipe, NgClass],
   templateUrl: './caja-detail.component.html',
 })
 export class CajaDetailComponent implements OnInit {
@@ -106,8 +107,8 @@ export class CajaDetailComponent implements OnInit {
   }
 
   getTotalCompras(): number {
-    // Calcular desde compras si no está en caja
-    return this.compras.reduce((sum: number, c: any) => sum + (Number(c.total) || 0), 0);
+    // Usar el valor calculado del backend
+    return Number(this.caja?.compras_contado || 0) + Number(this.caja?.compras_credito || 0);
   }
 
   getSaldoFinal(): number {

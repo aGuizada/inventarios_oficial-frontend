@@ -1,12 +1,13 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
-import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
+import { MonedaPipe } from '../../../../pipes/moneda.pipe';
 import { FormsModule } from '@angular/forms';
 import { CreditoVenta, CuotaCredito } from '../../../../interfaces';
 
 @Component({
   selector: 'app-credito-pago',
   standalone: true,
-  imports: [CommonModule, DatePipe, CurrencyPipe, FormsModule],
+  imports: [CommonModule, DatePipe, MonedaPipe, FormsModule],
   templateUrl: './credito-pago.component.html',
 })
 export class CreditoPagoComponent implements OnInit {

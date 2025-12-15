@@ -122,12 +122,44 @@ export class ReporteService {
         return this.http.get<{ success: boolean; data: any }>(`${this.apiUrl}/utilidad`, { params: httpParams });
     }
 
+    // Reporte de Utilidades por Sucursal
+    getUtilidadesPorSucursal(params: any): Observable<{ success: boolean; data: any[] }> {
+        const httpParams = this.buildParams(params);
+        return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/utilidades-sucursal`, { params: httpParams });
+    }
+
+    exportUtilidadesSucursalExcel(params: any): void {
+        const url = `${this.apiUrl}/utilidades-sucursal/export-excel?${this.buildParamsString(params)}`;
+        window.open(url, '_blank');
+    }
+
+    exportUtilidadesSucursalPDF(params: any): void {
+        const url = `${this.apiUrl}/utilidades-sucursal/export-pdf?${this.buildParamsString(params)}`;
+        window.open(url, '_blank');
+    }
+
+    // Reporte de Cajas por Sucursal
+    getCajasPorSucursal(params: any): Observable<{ success: boolean; data: any[] }> {
+        const httpParams = this.buildParams(params);
+        return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/cajas-sucursal`, { params: httpParams });
+    }
+
+    exportCajasSucursalExcel(params: any): void {
+        const url = `${this.apiUrl}/cajas-sucursal/export-excel?${this.buildParamsString(params)}`;
+        window.open(url, '_blank');
+    }
+
+    exportCajasSucursalPDF(params: any): void {
+        const url = `${this.apiUrl}/cajas-sucursal/export-pdf?${this.buildParamsString(params)}`;
+        window.open(url, '_blank');
+    }
+
     // Helpers
     private buildParams(params: any): HttpParams {
         let httpParams = new HttpParams();
         Object.keys(params).forEach(key => {
-            if (params[key] !== null && params[key] !== undefined) {
-                httpParams = httpParams.set(key, params[key]);
+            if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+                httpParams = httpParams.set(key, params[key].toString());
             }
         });
         return httpParams;

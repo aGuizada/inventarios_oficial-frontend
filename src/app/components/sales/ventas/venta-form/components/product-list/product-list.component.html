@@ -77,7 +77,7 @@
                 </h5>
                 <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">Código: {{ producto.articulo?.codigo }}</p>
                 <p class="text-lg font-bold text-blue-600 dark:text-blue-400 mb-1">
-                    {{ producto.articulo?.precio_venta || producto.articulo?.precio_uno | currency }}
+                    {{ producto.articulo?.precio_venta || producto.articulo?.precio_uno | moneda }}
                 </p>
                 <p class="text-sm text-gray-600 dark:text-slate-400">
                     Stock: <span [ngClass]="{
