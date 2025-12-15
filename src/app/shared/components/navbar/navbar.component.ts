@@ -27,7 +27,7 @@ export class NavbarComponent implements OnInit {
   ngOnInit(): void {
     // Verificar estado inicial del modo oscuro
     this.isDarkMode = this.document.documentElement.classList.contains('dark');
-    
+
     // Escuchar cambios en el modo oscuro
     const observer = new MutationObserver(() => {
       this.isDarkMode = this.document.documentElement.classList.contains('dark');
@@ -39,7 +39,7 @@ export class NavbarComponent implements OnInit {
 
     // Verificar estado inicial de pantalla completa
     this.checkFullscreen();
-    
+
     // Escuchar cambios en pantalla completa
     this.document.addEventListener('fullscreenchange', () => this.checkFullscreen());
     this.document.addEventListener('webkitfullscreenchange', () => this.checkFullscreen());
@@ -52,8 +52,9 @@ export class NavbarComponent implements OnInit {
   }
 
   logout(): void {
-    this.authService.logout().subscribe(() => {
-      this.router.navigate(['/login']);
+    this.authService.logout().subscribe({
+      next: () => this.router.navigate(['/login']),
+      error: () => this.router.navigate(['/login'])
     });
   }
 
