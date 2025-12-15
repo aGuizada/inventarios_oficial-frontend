@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
+import { MonedaPipe } from '../../../pipes/moneda.pipe';
 import { CotizacionService } from '../../../services/cotizacion.service';
 import { ClienteService } from '../../../services/cliente.service';
 import { AlmacenService } from '../../../services/almacen.service';
@@ -18,7 +19,7 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 @Component({
   selector: 'app-cotizaciones',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, CotizacionesListComponent, SearchBarComponent, PaginationComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, MonedaPipe, CotizacionesListComponent, SearchBarComponent, PaginationComponent],
   templateUrl: './cotizaciones.component.html',
 })
 export class CotizacionesComponent implements OnInit {
@@ -430,7 +431,7 @@ export class CotizacionesComponent implements OnInit {
       user_id: Number(formValue.user_id),
       almacen_id: Number(formValue.almacen_id),
       fecha_hora: fechaHora,
-      total: Number(formValue.total),
+      // El backend calculará el total basándose en los detalles
       estado: estadoValue,
       detalles: formValue.detalles.map((detalle: any) => {
         const articuloId = Number(detalle.articulo_id);
@@ -441,8 +442,8 @@ export class CotizacionesComponent implements OnInit {
           articulo_id: articuloId,
           cantidad: cantidad,
           precio_unitario: precioUnitario,
-          descuento: Number(detalle.descuento || 0),
-          subtotal: Number(detalle.subtotal || 0)
+          descuento: Number(detalle.descuento || 0)
+          // No enviar subtotal, el backend lo calculará
         };
       })
     };

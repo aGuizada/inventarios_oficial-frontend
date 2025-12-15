@@ -44,19 +44,19 @@
                     <!-- Saldo Inicial -->
                     <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                         <div class="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">Saldo Inicial</div>
-                        <div class="text-2xl font-bold text-blue-900 dark:text-blue-200">{{ caja.saldo_inicial | currency }}</div>
+                        <div class="text-2xl font-bold text-blue-900 dark:text-blue-200">{{ caja.saldo_inicial | moneda }}</div>
                     </div>
 
                     <!-- Total Ventas -->
                     <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
                         <div class="text-sm font-medium text-green-700 dark:text-green-300 mb-1">Total Ventas</div>
-                        <div class="text-2xl font-bold text-green-900 dark:text-green-200">{{ getTotalVentas() | currency }}</div>
+                        <div class="text-2xl font-bold text-green-900 dark:text-green-200">{{ getTotalVentas() | moneda }}</div>
                     </div>
 
                     <!-- Saldo Final -->
                     <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
                         <div class="text-sm font-medium text-purple-700 dark:text-purple-300 mb-1">Saldo Final</div>
-                        <div class="text-2xl font-bold text-purple-900 dark:text-purple-200">{{ getSaldoFinal() | currency }}</div>
+                        <div class="text-2xl font-bold text-purple-900 dark:text-purple-200">{{ getSaldoFinal() | moneda }}</div>
                     </div>
                 </div>
 
@@ -66,15 +66,15 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="bg-white dark:bg-slate-700 p-4 rounded-lg border border-gray-200 dark:border-slate-600">
                             <div class="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Ventas al Contado</div>
-                            <div class="text-xl font-bold text-gray-900 dark:text-slate-100">{{ getVentasContado() | currency }}</div>
+                            <div class="text-xl font-bold text-gray-900 dark:text-slate-100">{{ getVentasContado() | moneda }}</div>
                         </div>
                         <div class="bg-white dark:bg-slate-700 p-4 rounded-lg border border-gray-200 dark:border-slate-600">
                             <div class="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Ventas a Crédito</div>
-                            <div class="text-xl font-bold text-gray-900 dark:text-slate-100">{{ getVentasCredito() | currency }}</div>
+                            <div class="text-xl font-bold text-gray-900 dark:text-slate-100">{{ getVentasCredito() | moneda }}</div>
                         </div>
                         <div class="bg-white dark:bg-slate-700 p-4 rounded-lg border border-gray-200 dark:border-slate-600">
                             <div class="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Ventas por QR</div>
-                            <div class="text-xl font-bold text-gray-900 dark:text-slate-100">{{ getVentasQR() | currency }}</div>
+                            <div class="text-xl font-bold text-gray-900 dark:text-slate-100">{{ getVentasQR() | moneda }}</div>
                         </div>
                     </div>
                 </div>
@@ -85,11 +85,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-white dark:bg-slate-700 p-4 rounded-lg border border-gray-200 dark:border-slate-600">
                             <div class="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Compras al Contado</div>
-                            <div class="text-xl font-bold text-red-600 dark:text-red-400">{{ getComprasContado() | currency }}</div>
+                            <div class="text-xl font-bold text-red-600 dark:text-red-400">{{ getComprasContado() | moneda }}</div>
                         </div>
                         <div class="bg-white dark:bg-slate-700 p-4 rounded-lg border border-gray-200 dark:border-slate-600">
                             <div class="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Compras a Crédito</div>
-                            <div class="text-xl font-bold text-orange-600 dark:text-orange-400">{{ getComprasCredito() | currency }}</div>
+                            <div class="text-xl font-bold text-orange-600 dark:text-orange-400">{{ getComprasCredito() | moneda }}</div>
                         </div>
                     </div>
                 </div>
@@ -100,11 +100,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-white dark:bg-slate-700 p-4 rounded-lg border border-gray-200 dark:border-slate-600">
                             <div class="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Entradas (Depósitos)</div>
-                            <div class="text-xl font-bold text-green-600 dark:text-green-400">{{ getEntradas() | currency }}</div>
+                            <div class="text-xl font-bold text-green-600 dark:text-green-400">{{ getEntradas() | moneda }}</div>
                         </div>
                         <div class="bg-white dark:bg-slate-700 p-4 rounded-lg border border-gray-200 dark:border-slate-600">
                             <div class="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Salidas (Retiros)</div>
-                            <div class="text-xl font-bold text-red-600 dark:text-red-400">{{ getSalidas() | currency }}</div>
+                            <div class="text-xl font-bold text-red-600 dark:text-red-400">{{ getSalidas() | moneda }}</div>
                         </div>
                     </div>
                 </div>
@@ -142,7 +142,7 @@
                                             'text-green-600 dark:text-green-400': transaccion.transaccion === 'ingreso',
                                             'text-red-600 dark:text-red-400': transaccion.transaccion === 'egreso'
                                         }">
-                                        {{ transaccion.transaccion === 'ingreso' ? '+' : '-' }}{{ transaccion.importe | currency }}
+                                        {{ transaccion.transaccion === 'ingreso' ? '+' : '-' }}{{ transaccion.importe | moneda }}
                                     </td>
                                 </tr>
                                 }
@@ -158,27 +158,27 @@
                     <div class="space-y-2 text-sm">
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-slate-400">Saldo Inicial:</span>
-                            <span class="font-semibold text-gray-900 dark:text-slate-100">{{ caja.saldo_inicial | currency }}</span>
+                            <span class="font-semibold text-gray-900 dark:text-slate-100">{{ caja.saldo_inicial | moneda }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-slate-400">+ Total Ventas:</span>
-                            <span class="font-semibold text-green-600 dark:text-green-400">{{ getTotalVentas() | currency }}</span>
+                            <span class="font-semibold text-green-600 dark:text-green-400">{{ getTotalVentas() | moneda }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-slate-400">+ Entradas:</span>
-                            <span class="font-semibold text-green-600 dark:text-green-400">{{ getEntradas() | currency }}</span>
+                            <span class="font-semibold text-green-600 dark:text-green-400">{{ getEntradas() | moneda }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-slate-400">- Total Compras:</span>
-                            <span class="font-semibold text-red-600 dark:text-red-400">{{ getTotalCompras() | currency }}</span>
+                            <span class="font-semibold text-red-600 dark:text-red-400">{{ getTotalCompras() | moneda }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-slate-400">- Salidas:</span>
-                            <span class="font-semibold text-red-600 dark:text-red-400">{{ getSalidas() | currency }}</span>
+                            <span class="font-semibold text-red-600 dark:text-red-400">{{ getSalidas() | moneda }}</span>
                         </div>
                         <div class="border-t dark:border-slate-600 pt-2 mt-2 flex justify-between">
                             <span class="text-lg font-bold text-gray-900 dark:text-slate-100">Saldo Final:</span>
-                            <span class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ getSaldoFinal() | currency }}</span>
+                            <span class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ getSaldoFinal() | moneda }}</span>
                         </div>
                     </div>
                 </div>

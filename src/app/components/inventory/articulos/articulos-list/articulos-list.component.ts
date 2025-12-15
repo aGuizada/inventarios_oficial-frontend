@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule, NgClass } from '@angular/common';
+import { MonedaPipe } from '../../../../pipes/moneda.pipe';
 import { Articulo } from '../../../../interfaces';
 
 @Component({
   selector: 'app-articulos-list',
   standalone: true,
-  imports: [CommonModule, NgClass],
+  imports: [CommonModule, NgClass, MonedaPipe],
   templateUrl: './articulos-list.component.html',
 })
 export class ArticulosListComponent {

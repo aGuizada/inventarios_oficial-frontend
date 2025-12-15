@@ -78,7 +78,11 @@ export class SidebarComponent implements OnInit {
     {
       label: 'Reportes',
       icon: 'fas fa-chart-bar',
-      route: '/reportes'
+      isOpen: false,
+      children: [
+        { label: 'Reportes Generales', icon: 'fas fa-chart-bar', route: '/reportes' },
+        { label: 'Utilidades por Sucursal', icon: 'fas fa-chart-line', route: '/reportes/utilidades-sucursal' }
+      ]
     },
     {
       label: 'Configuración',

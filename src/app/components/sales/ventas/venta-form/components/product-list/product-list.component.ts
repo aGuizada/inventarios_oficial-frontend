@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MonedaPipe } from '../../../../../../pipes/moneda.pipe';
 import { FormsModule } from '@angular/forms';
 import { Categoria } from '../../../../../../interfaces';
 import { ProductoInventario } from '../../../../../../services/venta.service';
@@ -9,7 +10,7 @@ import { ArticuloDetailComponent } from '../../../../../inventory/articulos/arti
 @Component({
     selector: 'app-product-list',
     standalone: true,
-    imports: [CommonModule, FormsModule, ArticuloDetailComponent],
+    imports: [CommonModule, FormsModule, MonedaPipe, ArticuloDetailComponent],
     templateUrl: './product-list.component.html',
 })
 export class ProductListComponent implements OnChanges {

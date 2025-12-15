@@ -54,6 +54,10 @@ export class CajaService {
         return this.http.get<any>(`${this.apiUrl}/${id}/details`);
     }
 
+    calcularTotalesCajas(): Observable<ApiResponse<any>> {
+        return this.http.get<ApiResponse<any>>(`${this.apiUrl}/calcular-totales`);
+    }
+
     abrir(id: number, saldoInicial: number): Observable<ApiResponse<any>> {
         return this.http.post<ApiResponse<any>>(`${this.apiUrl}/${id}/abrir`, { saldo_inicial: saldoInicial });
     }

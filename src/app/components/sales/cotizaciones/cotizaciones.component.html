@@ -220,7 +220,7 @@
                                                             class="w-20 py-1 px-2 border border-gray-300 rounded text-sm">
                                                     </td>
                                                     <td class="px-3 py-2 text-sm font-medium">
-                                                        {{ detalle.get('subtotal')?.value | currency }}
+                                                        {{ detalle.get('subtotal')?.value | moneda }}
                                                     </td>
                                                     <td class="px-3 py-2 text-center">
                                                         <button type="button" (click)="removeDetalle(i)"
@@ -248,7 +248,7 @@
                                         <div class="flex justify-between items-center">
                                             <span class="text-lg font-semibold text-gray-800">Total:</span>
                                             <span class="text-xl font-bold text-blue-600">
-                                                {{ form.get('total')?.value | currency }}
+                                                {{ form.get('total')?.value | moneda }}
                                             </span>
                                         </div>
                                     </div>
@@ -295,7 +295,7 @@
                                         <div class="text-xs text-gray-500">
                                             Código: {{ articulo.codigo }}
                                             <span *ngIf="articulo.precio_venta" class="ml-2 font-semibold">
-                                                | {{ articulo.precio_venta | currency }}
+                                                | {{ articulo.precio_venta | moneda }}
                                             </span>
                                         </div>
                                     </li>
@@ -328,37 +328,37 @@
                                 <div class="bg-blue-50 p-3 rounded">
                                     <div class="text-xs text-gray-600 mb-1">Precio Venta</div>
                                     <div class="text-lg font-bold text-blue-600">
-                                        {{ articuloSeleccionado.precio_venta | currency }}
+                                        {{ articuloSeleccionado.precio_venta | moneda }}
                                     </div>
                                 </div>
                                 <div class="bg-green-50 p-3 rounded">
                                     <div class="text-xs text-gray-600 mb-1">Costo Unit.</div>
                                     <div class="text-lg font-bold text-green-600">
-                                        {{ articuloSeleccionado.precio_costo_unid | currency }}
+                                        {{ articuloSeleccionado.precio_costo_unid | moneda }}
                                     </div>
                                 </div>
                                 <div *ngIf="articuloSeleccionado.precio_uno" class="bg-gray-50 p-3 rounded">
                                     <div class="text-xs text-gray-600 mb-1">Precio 1</div>
                                     <div class="text-sm font-semibold text-gray-700">
-                                        {{ articuloSeleccionado.precio_uno | currency }}
+                                        {{ articuloSeleccionado.precio_uno | moneda }}
                                     </div>
                                 </div>
                                 <div *ngIf="articuloSeleccionado.precio_dos" class="bg-gray-50 p-3 rounded">
                                     <div class="text-xs text-gray-600 mb-1">Precio 2</div>
                                     <div class="text-sm font-semibold text-gray-700">
-                                        {{ articuloSeleccionado.precio_dos | currency }}
+                                        {{ articuloSeleccionado.precio_dos | moneda }}
                                     </div>
                                 </div>
                                 <div *ngIf="articuloSeleccionado.precio_tres" class="bg-gray-50 p-3 rounded">
                                     <div class="text-xs text-gray-600 mb-1">Precio 3</div>
                                     <div class="text-sm font-semibold text-gray-700">
-                                        {{ articuloSeleccionado.precio_tres | currency }}
+                                        {{ articuloSeleccionado.precio_tres | moneda }}
                                     </div>
                                 </div>
                                 <div *ngIf="articuloSeleccionado.precio_cuatro" class="bg-gray-50 p-3 rounded">
                                     <div class="text-xs text-gray-600 mb-1">Precio 4</div>
                                     <div class="text-sm font-semibold text-gray-700">
-                                        {{ articuloSeleccionado.precio_cuatro | currency }}
+                                        {{ articuloSeleccionado.precio_cuatro | moneda }}
                                     </div>
                                 </div>
                             </div>
@@ -402,7 +402,7 @@
                                             <div class="text-sm text-gray-500">Código: {{ articulo.codigo }}</div>
                                         </div>
                                         <div class="text-right">
-                                            <div class="font-semibold text-blue-600">{{ articulo.precio_venta | currency
+                                            <div class="font-semibold text-blue-600">{{ articulo.precio_venta | moneda
                                                 }}</div>
                                             <div class="text-xs text-gray-500">Stock: {{ articulo.stock }}</div>
                                         </div>

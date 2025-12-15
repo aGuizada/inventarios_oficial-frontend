@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MonedaPipe } from '../../pipes/moneda.pipe';
 import { Router } from '@angular/router';
 import { DashboardService } from '../../services/dashboard.service';
 import { finalize } from 'rxjs/operators';
@@ -20,6 +21,7 @@ import { ArticleProfitComponent } from './article-profit/article-profit.componen
   standalone: true,
   imports: [
     CommonModule,
+    MonedaPipe,
     StatsCardsComponent,
     RecentSalesComponent,
     LowStockComponent,

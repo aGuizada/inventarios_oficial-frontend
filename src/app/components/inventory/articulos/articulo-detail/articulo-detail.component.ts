@@ -1,12 +1,13 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule, NgClass } from '@angular/common';
+import { MonedaPipe } from '../../../../pipes/moneda.pipe';
 import { Articulo } from '../../../../interfaces';
 import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-articulo-detail',
   standalone: true,
-  imports: [CommonModule, NgClass],
+  imports: [CommonModule, NgClass, MonedaPipe],
   templateUrl: './articulo-detail.component.html',
 })
 export class ArticuloDetailComponent {

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MonedaPipe } from '../../../../pipes/moneda.pipe';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { DevolucionService } from '../../../../services/devolucion.service';
@@ -11,12 +12,13 @@ import { finalize } from 'rxjs/operators';
 @Component({
     selector: 'app-devolucion-form',
     standalone: true,
-    imports: [
-        CommonModule,
-        FormsModule,
-        ReactiveFormsModule,
-        RouterModule
-    ],
+  imports: [
+    CommonModule,
+    MonedaPipe,
+    FormsModule,
+    ReactiveFormsModule,
+    RouterModule
+  ],
     templateUrl: './devolucion-form.component.html'
 })
 export class DevolucionFormComponent implements OnInit {

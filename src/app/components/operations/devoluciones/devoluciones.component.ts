@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MonedaPipe } from '../../../pipes/moneda.pipe';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { DevolucionService } from '../../../services/devolucion.service';
@@ -11,12 +12,13 @@ import { finalize } from 'rxjs/operators';
 @Component({
     selector: 'app-devoluciones',
     standalone: true,
-    imports: [
-        CommonModule,
-        RouterModule,
-        FormsModule,
-        PaginationComponent
-    ],
+  imports: [
+    CommonModule,
+    MonedaPipe,
+    RouterModule,
+    FormsModule,
+    PaginationComponent
+  ],
     templateUrl: './devoluciones.component.html'
 })
 export class DevolucionesComponent implements OnInit {

@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
+import { MonedaPipe } from '../../../pipes/moneda.pipe';
 import { Venta, Cliente, Articulo } from '../../../interfaces';
 
 @Component({
   selector: 'app-recent-sales',
   standalone: true,
-  imports: [CommonModule, DatePipe, CurrencyPipe],
+  imports: [CommonModule, DatePipe, MonedaPipe],
   templateUrl: './recent-sales.component.html',
 })
 export class RecentSalesComponent {

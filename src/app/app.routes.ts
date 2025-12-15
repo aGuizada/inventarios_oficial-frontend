@@ -88,6 +88,14 @@ export const routes: Routes = [
                 path: 'reportes',
                 loadComponent: () => import('./components/reports/reportes/reportes.component').then(m => m.ReportesComponent)
             },
+            {
+                path: 'reportes/cajas-sucursal',
+                loadComponent: () => import('./components/reports/cajas-sucursal/cajas-sucursal.component').then(m => m.CajasSucursalComponent)
+            },
+            {
+                path: 'reportes/utilidades-sucursal',
+                loadComponent: () => import('./components/reports/utilidades-sucursal/utilidades-sucursal.component').then(m => m.UtilidadesSucursalComponent)
+            },
             // Config
             {
                 path: 'config',

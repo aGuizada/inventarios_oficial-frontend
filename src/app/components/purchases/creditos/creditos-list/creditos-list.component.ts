@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule, DatePipe, CurrencyPipe, NgClass } from '@angular/common';
+import { CommonModule, DatePipe, NgClass } from '@angular/common';
 import { Compra } from '../../../../interfaces/compra.interface';
 
 @Component({

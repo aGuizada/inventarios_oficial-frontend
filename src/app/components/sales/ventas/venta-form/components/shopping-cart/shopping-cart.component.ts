@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MonedaPipe } from '../../../../../../pipes/moneda.pipe';
 import { FormGroup, FormArray, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ClienteSelectorComponent } from '../cliente-selector/cliente-selector.component';
 import { Cliente, TipoVenta, TipoPago, Medida } from '../../../../../../interfaces';
@@ -9,7 +10,7 @@ import { MedidaService } from '../../../../../../services/medida.service';
 @Component({
     selector: 'app-shopping-cart',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, ClienteSelectorComponent],
+    imports: [CommonModule, ReactiveFormsModule, MonedaPipe, ClienteSelectorComponent],
     templateUrl: './shopping-cart.component.html',
 })
 export class ShoppingCartComponent implements OnChanges, OnInit {
@@ -31,13 +32,9 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
     }
 
     loadMedidas(): void {
-        this.medidaService.getAll().subscribe({
-            next: (response: any) => {
-                const medidas = Array.isArray(response) ? response : (response.data || []);
-                this.unidadesMedida = medidas.map((m: Medida) => m.nombre_medida);
-            },
-            error: (error) => console.error('Error loading medidas:', error)
-        });
+        // El backend solo acepta estos valores: 'Unidad', 'Paquete', 'Centimetro'
+        // Usar estos valores fijos en lugar de cargar desde la base de datos
+        this.unidadesMedida = ['Unidad', 'Paquete', 'Centimetro'];
     }
 
     ngOnChanges(changes: SimpleChanges): void {

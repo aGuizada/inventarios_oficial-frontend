@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
-import { CommonModule, CurrencyPipe, DatePipe, NgClass } from '@angular/common';
+import { CommonModule, DatePipe, NgClass } from '@angular/common';
+import { MonedaPipe } from '../../../../pipes/moneda.pipe';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Caja } from '../../../../interfaces';
 import { VentaService } from '../../../../services/venta.service';
@@ -11,7 +12,7 @@ import jsPDF from 'jspdf';
 @Component({
   selector: 'app-caja-arqueo',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CurrencyPipe, DatePipe, NgClass],
+  imports: [CommonModule, ReactiveFormsModule, MonedaPipe, DatePipe, NgClass],
   templateUrl: './caja-arqueo.component.html',
 })
 export class CajaArqueoComponent implements OnInit {
@@ -117,7 +118,8 @@ export class CajaArqueoComponent implements OnInit {
   getSaldoTotal(): number {
     if (!this.caja) return 0;
     
-    // Si existe saldo_caja, usarlo
+    // Usar el valor calculado del backend (saldo_caja)
+    // El backend ya calcula: Saldo Inicial + Ventas Totales + Entradas - Compras Totales - Salidas
     if (this.caja.saldo_caja !== undefined && this.caja.saldo_caja !== null) {
       const valor = Number(this.caja.saldo_caja);
       if (!isNaN(valor)) {
@@ -125,7 +127,7 @@ export class CajaArqueoComponent implements OnInit {
       }
     }
     
-    // Calcular: Saldo Inicial + Ventas Totales + Entradas - Compras Totales - Salidas
+    // Fallback: calcular si no viene del backend (no debería pasar)
     return this.getSaldoInicial() + 
            this.getVentasTotales() + 
            this.getEntradas() - 

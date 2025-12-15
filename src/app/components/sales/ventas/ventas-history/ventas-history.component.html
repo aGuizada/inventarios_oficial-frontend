@@ -61,7 +61,7 @@
                             {{ venta.tipo_pago?.nombre_tipo_pago || venta.tipo_pago?.nombre || 'N/A' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-slate-100">
-                            {{ venta.total | currency }}
+                            {{ venta.total | moneda }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span [ngClass]="{

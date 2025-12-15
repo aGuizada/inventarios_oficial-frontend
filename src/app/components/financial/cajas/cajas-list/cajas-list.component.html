@@ -49,19 +49,19 @@
                     <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-slate-400">{{ caja.sucursal?.nombre || 'N/A' }}</td>
                     <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-slate-400">{{ caja.fecha_apertura | date:'short' }}</td>
                     <td class="px-2 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-slate-400">{{ caja.fecha_cierre ? (caja.fecha_cierre | date:'short') : '-' }}</td>
-                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-900 dark:text-slate-100">{{ caja.saldo_inicial | currency }}</td>
-                    <td class="px-2 py-2 whitespace-nowrap text-xs font-bold text-indigo-600 dark:text-indigo-400">{{ (caja.ventas || (caja.ventas_contado || 0) + (caja.ventas_credito || 0) + (caja.pagos_qr || 0)) | currency }}</td>
-                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-green-600 dark:text-green-400">{{ (caja.ventas_contado || 0) | currency }}</td>
-                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-blue-600 dark:text-blue-400">{{ (caja.ventas_credito || 0) | currency }}</td>
-                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-purple-600 dark:text-purple-400">{{ (caja.pagos_qr || 0) | currency }}</td>
-                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-orange-600 dark:text-orange-400">{{ getComprasContado(caja) | currency }}</td>
-                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-red-600 dark:text-red-400">{{ getComprasCredito(caja) | currency }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-900 dark:text-slate-100">{{ caja.saldo_inicial | moneda }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-bold text-indigo-600 dark:text-indigo-400">{{ (caja.ventas || 0) | moneda }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-green-600 dark:text-green-400">{{ (caja.ventas_contado || 0) | moneda }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-blue-600 dark:text-blue-400">{{ (caja.ventas_credito || 0) | moneda }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-purple-600 dark:text-purple-400">{{ (caja.pagos_qr || 0) | moneda }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-orange-600 dark:text-orange-400">{{ getComprasContado(caja) | moneda }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-red-600 dark:text-red-400">{{ getComprasCredito(caja) | moneda }}</td>
                     <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-emerald-600 dark:text-emerald-400">
                         <div class="flex items-center gap-1">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
                             </svg>
-                            <span>{{ getDepositos(caja) | currency }}</span>
+                            <span>{{ getDepositos(caja) | moneda }}</span>
                         </div>
                     </td>
                     <td class="px-2 py-2 whitespace-nowrap text-xs font-medium text-rose-600 dark:text-rose-400">
@@ -69,10 +69,10 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd" />
                             </svg>
-                            <span>{{ getSalidas(caja) | currency }}</span>
+                            <span>{{ getSalidas(caja) | moneda }}</span>
                         </div>
                     </td>
-                    <td class="px-2 py-2 whitespace-nowrap text-xs font-bold text-purple-600 dark:text-purple-400">{{ getSaldoTotal(caja) | currency }}</td>
+                    <td class="px-2 py-2 whitespace-nowrap text-xs font-bold text-purple-600 dark:text-purple-400">{{ getSaldoTotal(caja) | moneda }}</td>
                     <td class="px-2 py-2 whitespace-nowrap">
                         <span [ngClass]="{
                             'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300': isCajaOpen(caja),

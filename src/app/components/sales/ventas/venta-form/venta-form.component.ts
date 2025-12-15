@@ -1,4 +1,6 @@
 import { Component, OnInit, HostListener, Output, EventEmitter } from '@angular/core';
+import { CommonModule, NgClass } from '@angular/common';
+import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { VentaService, ProductoInventario } from '../../../../services/venta.service';
@@ -26,6 +28,7 @@ import { CreditoModalComponent } from './components/credito-modal/credito-modal.
         CommonModule,
         ReactiveFormsModule,
         FormsModule,
+        NgClass,
         ProductListComponent,
         ShoppingCartComponent,
         CreditoModalComponent
@@ -56,8 +59,6 @@ export class VentaFormComponent implements OnInit {
 
     currentUserId = 1;
     currentUserSucursalId: number | null = null;
-    isAdmin: boolean = false;
-    selectedSucursalId: number | null = null;
     defaultCliente: Cliente | null = null;
 
     constructor(
@@ -415,7 +416,7 @@ export class VentaFormComponent implements OnInit {
     agregarProductoAVenta(producto: ProductoInventario): void {
         const stockDisponible = producto.stock_disponible;
         if (stockDisponible <= 0) {
-            alert('Este producto no tiene stock disponible');
+            this.showAlertMessage('Este producto no tiene stock disponible', 'warning');
             return;
         }
 
@@ -435,7 +436,7 @@ export class VentaFormComponent implements OnInit {
                     this.calcularSubtotal(detalleExistente as FormGroup);
                     return;
                 } else {
-                    alert(`No hay suficiente stock. Disponible: ${stockDisponible}`);
+                    this.showAlertMessage(`No hay suficiente stock. Disponible: ${stockDisponible}`, 'warning');
                     return;
                 }
             }
@@ -444,7 +445,17 @@ export class VentaFormComponent implements OnInit {
         const precioVenta = producto.articulo?.precio_venta ||
             producto.articulo?.precio_uno || 0;
 
-        const unidadDefecto = producto.articulo?.medida?.nombre_medida || 'Unidad';
+        // Mapear el nombre_medida del artículo a uno de los valores válidos del backend
+        // El backend solo acepta: 'Unidad', 'Paquete', 'Centimetro'
+        const nombreMedidaArticulo = producto.articulo?.medida?.nombre_medida || '';
+        const unidadesValidas = ['Unidad', 'Paquete', 'Centimetro'];
+        let unidadDefecto = 'Unidad'; // Valor por defecto
+
+        // Si el nombre_medida del artículo coincide con uno de los valores válidos, usarlo
+        if (unidadesValidas.includes(nombreMedidaArticulo)) {
+            unidadDefecto = nombreMedidaArticulo;
+        }
+        // Si no coincide, usar 'Unidad' por defecto
 
         const detalle = this.fb.group({
             articulo_id: [producto.articulo_id, Validators.required],
@@ -494,7 +505,7 @@ export class VentaFormComponent implements OnInit {
 
     save(): void {
         if (this.detalles.length === 0) {
-            alert('Debe agregar al menos un producto a la venta');
+            this.showAlertMessage('Debe agregar al menos un producto a la venta', 'warning');
             return;
         }
 
@@ -503,12 +514,12 @@ export class VentaFormComponent implements OnInit {
             const tiempoDiasCuota = this.form.get('tiempo_dias_cuota')?.value;
 
             if (!numeroCuotas || numeroCuotas < 1) {
-                alert('Por favor ingrese el número de cuotas para la venta a crédito');
+                this.showAlertMessage('Por favor ingrese el número de cuotas para la venta a crédito', 'warning');
                 return;
             }
 
             if (!tiempoDiasCuota || tiempoDiasCuota < 1) {
-                alert('Por favor ingrese los días entre cuotas para la venta a crédito');
+                this.showAlertMessage('Por favor ingrese los días entre cuotas para la venta a crédito', 'warning');
                 return;
             }
         }
@@ -529,19 +540,19 @@ export class VentaFormComponent implements OnInit {
         const camposFaltantes = camposRequeridos.filter(campo => !this.form.get(campo)?.value);
 
         if (camposFaltantes.length > 0) {
-            alert(`Por favor complete todos los campos requeridos. Faltan: ${camposFaltantes.join(', ')}`);
+            this.showAlertMessage(`Por favor complete todos los campos requeridos. Faltan: ${camposFaltantes.join(', ')}`, 'warning');
             return;
         }
 
         const cajaId = this.form.get('caja_id')?.value;
         if (!cajaId) {
-            alert('No hay una caja abierta disponible. Por favor abra una caja antes de realizar una venta.');
+            this.showAlertMessage('No hay una caja abierta disponible. Por favor abra una caja antes de realizar una venta.', 'error');
             return;
         }
 
         const caja = this.cajas.find(c => c.id === cajaId);
         if (!caja || !this.isCajaOpen(caja)) {
-            alert('La caja seleccionada está cerrada. Por favor abra una caja antes de realizar una venta.');
+            this.showAlertMessage('La caja seleccionada está cerrada. Por favor abra una caja antes de realizar una venta.', 'error');
             return;
         }
 
@@ -554,7 +565,7 @@ export class VentaFormComponent implements OnInit {
             const stockDisponible = producto?.stock_disponible || 0;
 
             if (cantidad > stockDisponible) {
-                alert(`La cantidad solicitada (${cantidad}) excede el stock disponible (${stockDisponible})`);
+                this.showAlertMessage(`La cantidad solicitada (${cantidad}) excede el stock disponible (${stockDisponible})`, 'warning');
                 return;
             }
         }
@@ -565,7 +576,7 @@ export class VentaFormComponent implements OnInit {
 
         const cajaIdValue = formValue.caja_id ? Number(formValue.caja_id) : null;
         if (!cajaIdValue) {
-            alert('Error: No se pudo obtener la caja. Por favor recargue la página.');
+            this.showAlertMessage('Error: No se pudo obtener la caja. Por favor recargue la página.', 'error');
             return;
         }
 
@@ -584,14 +595,23 @@ export class VentaFormComponent implements OnInit {
             serie_comprobante: serieComprobante,
             num_comprobante: numComprobante,
             fecha_hora: fechaHora,
-            total: parseFloat(formValue.total.toFixed(2)),
-            detalles: formValue.detalles.map((detalle: any) => ({
-                articulo_id: Number(detalle.articulo_id),
-                cantidad: Number(detalle.cantidad),
-                precio: parseFloat(parseFloat(detalle.precio).toFixed(2)),
-                descuento: parseFloat(parseFloat(detalle.descuento || 0).toFixed(2)),
-                unidad_medida: detalle.unidad_medida
-            })),
+            // El backend calculará el total basándose en los detalles
+            detalles: formValue.detalles.map((detalle: any) => {
+                // Asegurar que unidad_medida sea uno de los valores válidos
+                const unidadesValidas = ['Unidad', 'Paquete', 'Centimetro'];
+                const unidadMedida = unidadesValidas.includes(detalle.unidad_medida)
+                    ? detalle.unidad_medida
+                    : 'Unidad'; // Valor por defecto si no es válido
+
+                return {
+                    articulo_id: Number(detalle.articulo_id),
+                    cantidad: Number(detalle.cantidad),
+                    precio: parseFloat(parseFloat(detalle.precio).toFixed(2)),
+                    descuento: parseFloat(parseFloat(detalle.descuento || 0).toFixed(2)),
+                    unidad_medida: unidadMedida
+                    // No enviar subtotal, el backend lo calculará
+                };
+            }),
             pagos: formValue.pagos ? formValue.pagos.map((pago: any) => ({
                 tipo_pago_id: Number(pago.tipo_pago_id),
                 monto: parseFloat(parseFloat(pago.monto).toFixed(2)),
@@ -609,7 +629,7 @@ export class VentaFormComponent implements OnInit {
             .pipe(finalize(() => this.isLoading = false))
             .subscribe({
                 next: (response: any) => {
-                    // alert('Venta registrada con éxito');
+                    this.showAlertMessage('Venta registrada con éxito', 'success');
                     this.saleCompleted.emit();
 
                     const ventaId = response.id;
@@ -633,8 +653,23 @@ export class VentaFormComponent implements OnInit {
                 },
                 error: (error) => {
                     console.error('Error al registrar venta:', error);
-                    Swal.fire('Error', 'Error al registrar la venta. Por favor intente nuevamente.', 'error');
+                    this.showAlertMessage('Error al registrar la venta. Por favor intente nuevamente.', 'error');
                 }
             });
+    }
+
+    showAlertMessage(message: string, type: 'error' | 'success' | 'warning' | 'info' = 'error'): void {
+        this.alertMessage = message;
+        this.alertType = type;
+        this.showAlert = true;
+
+        // Auto-ocultar después de 5 segundos
+        setTimeout(() => {
+            this.showAlert = false;
+        }, 5000);
+    }
+
+    closeAlert(): void {
+        this.showAlert = false;
     }
 }

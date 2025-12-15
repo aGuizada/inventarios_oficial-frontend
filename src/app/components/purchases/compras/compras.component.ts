@@ -1,5 +1,6 @@
 import { Component, OnInit, HostListener } from '@angular/core';
-import { CommonModule, NgClass, DatePipe, CurrencyPipe } from '@angular/common';
+import { CommonModule, NgClass, DatePipe } from '@angular/common';
+import { MonedaPipe } from '../../../pipes/moneda.pipe';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CompraService } from '../../../services/compra.service';
@@ -19,7 +20,7 @@ import jsPDF from 'jspdf';
 @Component({
   selector: 'app-compras',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgClass, DatePipe, CurrencyPipe, SearchBarComponent, PaginationComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgClass, DatePipe, MonedaPipe, SearchBarComponent, PaginationComponent],
   templateUrl: './compras.component.html',
 })
 export class ComprasComponent implements OnInit {
@@ -75,6 +76,11 @@ export class ComprasComponent implements OnInit {
   sucursales: Sucursal[] = [];
   filterSucursalId: number | null = null;
   isAdmin: boolean = false;
+
+  // Para alertas visuales
+  alertMessage: string = '';
+  showAlert: boolean = false;
+  alertType: 'error' | 'success' | 'warning' | 'info' = 'error';
 
   constructor(
     private compraService: CompraService,
@@ -186,7 +192,7 @@ export class ComprasComponent implements OnInit {
 
     // Validar que numero_cuotas sea válido
     if (!numeroCuotas || numeroCuotas < 1) {
-      alert('Error: El número de cuotas debe ser mayor a 0.');
+      this.showAlertMessage('Error: El número de cuotas debe ser mayor a 0.', 'error');
       return;
     }
 
@@ -363,10 +369,9 @@ export class ComprasComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('Error loading cajas', error);
         this.cajas = [];
         this.cajaAbierta = null;
-        alert('Error al cargar las cajas. No se puede realizar compras.');
+        this.showAlertMessage('Error al cargar las cajas. No se puede realizar compras.', 'error');
       }
     });
   }
@@ -474,7 +479,7 @@ export class ComprasComponent implements OnInit {
       this.actualizarFechaHora();
     } catch (error) {
       console.error('Error al abrir modal:', error);
-      alert('Error al abrir el modal. Por favor revise la consola para más detalles.');
+      this.showAlertMessage('Error al abrir el modal. Por favor revise la consola para más detalles.', 'error');
     }
   }
 
@@ -706,7 +711,7 @@ export class ComprasComponent implements OnInit {
 
     // VALIDAR QUE HAYA UNA CAJA ABIERTA
     if (!this.cajaAbierta) {
-      alert('No hay una caja abierta. Por favor, abra una caja antes de realizar compras.');
+      this.showAlertMessage('No hay una caja abierta. Por favor, abra una caja antes de realizar compras.', 'error');
       return;
     }
 
@@ -717,7 +722,7 @@ export class ComprasComponent implements OnInit {
       this.cajaAbierta.estado === 'abierta';
 
     if (!isCajaOpen) {
-      alert('La caja seleccionada está cerrada. Por favor, abra una caja antes de realizar compras.');
+      this.showAlertMessage('La caja seleccionada está cerrada. Por favor, abra una caja antes de realizar compras.', 'error');
       // Recargar cajas para encontrar la abierta
       this.cajaService.getAll().subscribe({
         next: (res) => {
@@ -735,7 +740,7 @@ export class ComprasComponent implements OnInit {
 
     // Validar que el nombre del proveedor esté ingresado
     if (!this.form.get('proveedor_nombre')?.value || this.proveedorBusqueda.trim().length === 0) {
-      alert('Por favor ingrese el nombre del proveedor');
+      this.showAlertMessage('Por favor ingrese el nombre del proveedor', 'warning');
       return;
     }
 
@@ -747,7 +752,7 @@ export class ComprasComponent implements OnInit {
 
 
       if (!numeroCuotas || numeroCuotas < 1) {
-        alert('Error: Debe configurar el número de cuotas para la compra a crédito. Por favor, haga clic en "Configurar Crédito" y establezca el número de cuotas.');
+        this.showAlertMessage('Error: Debe configurar el número de cuotas para la compra a crédito. Por favor, haga clic en "Configurar Crédito" y establezca el número de cuotas.', 'warning');
         this.openCreditoModal();
         return;
       }
@@ -755,7 +760,7 @@ export class ComprasComponent implements OnInit {
 
     if (this.form.invalid || this.detallesFormArray.length === 0) {
       if (this.detallesFormArray.length === 0) {
-        alert('Debe agregar al menos un artículo a la compra');
+        this.showAlertMessage('Debe agregar al menos un artículo a la compra', 'warning');
       } else {
         // Mostrar qué campos están inválidos
         const invalidFields: string[] = [];
@@ -765,7 +770,7 @@ export class ComprasComponent implements OnInit {
             invalidFields.push(key);
           }
         });
-        alert(`Por favor complete los campos requeridos: ${invalidFields.join(', ')}`);
+        this.showAlertMessage(`Por favor complete los campos requeridos: ${invalidFields.join(', ')}`, 'warning');
       }
       return;
     }
@@ -792,7 +797,7 @@ export class ComprasComponent implements OnInit {
         .filter(id => id)
         .join(', ');
       console.error('Detalles inválidos detectados:', detallesInvalidos);
-      alert(`ERROR: Los siguien  entes artículos no están disponibles (IDs: ${articulosInvalidos}).\n\nPor favor, ELIMINE estos detalles de la tabla y seleccione artículos válidos del catálogo de productos (columna derecha).`);
+      this.showAlertMessage(`ERROR: Los siguientes artículos no están disponibles (IDs: ${articulosInvalidos}).\n\nPor favor, ELIMINE estos detalles de la tabla y seleccione artículos válidos del catálogo de productos (columna derecha).`, 'error');
       return;
     }
 
@@ -818,12 +823,13 @@ export class ComprasComponent implements OnInit {
       almacen_id: Number(formValue.almacen_id),
       caja_id: this.cajaAbierta.id, // Usar la caja abierta
       fecha_hora: fechaHora,
-      total: Number(formValue.total),
+      // El backend calculará el total basándose en los detalles y descuento_global
       tipo_compra: tipoCompraValidacion, // Reutilizar la variable ya validada
       // Siempre enviar campos de comprobante (el backend asignará valores por defecto si están vacíos)
       tipo_comprobante: formValue.tipo_comprobante?.trim() || '',
       serie_comprobante: formValue.serie_comprobante?.trim() || null,
       num_comprobante: formValue.num_comprobante?.trim() || '',
+      // Enviar solo los datos básicos, el backend calculará subtotales y totales
       detalles: formValue.detalles.map((detalle: any) => {
         const articuloId = Number(detalle.articulo_id);
         const cantidad = Number(detalle.cantidad) || 1;
@@ -833,8 +839,8 @@ export class ComprasComponent implements OnInit {
           articulo_id: articuloId,
           cantidad: cantidad,
           precio_unitario: precioUnitario,
-          descuento: Number(detalle.descuento || 0),
-          subtotal: Number(detalle.subtotal || 0)
+          descuento: Number(detalle.descuento || 0)
+          // No enviar subtotal, el backend lo calculará
         };
       })
     };
@@ -855,7 +861,7 @@ export class ComprasComponent implements OnInit {
 
       // Validar que numero_cuotas sea válido
       if (!numeroCuotas || numeroCuotas < 1) {
-        alert('Error: El número de cuotas debe ser mayor a 0. Por favor, configure el crédito correctamente.');
+        this.showAlertMessage('Error: El número de cuotas debe ser mayor a 0. Por favor, configure el crédito correctamente.', 'error');
         return;
       }
 
@@ -899,7 +905,12 @@ export class ComprasComponent implements OnInit {
               }
             }
 
-            alert(errorMessage);
+            // Si el error es sobre caja cerrada, mostrar mensaje específico
+            if (errorMessage.includes('caja') || errorMessage.includes('Caja')) {
+              errorMessage = 'No hay una caja abierta. Por favor, abra una caja antes de realizar compras.';
+            }
+
+            this.showAlertMessage(errorMessage, 'error');
           }
         });
     } else {
@@ -917,13 +928,19 @@ export class ComprasComponent implements OnInit {
             }
           },
           error: (error) => {
-            console.error('Error creating compra', error);
             const errorResponse = error?.error || {};
-            const errorMessage = errorResponse.message || errorResponse.error || 'Error al crear la compra';
-            const errorDetails = errorResponse.file ? `Archivo: ${errorResponse.file}\nLínea: ${errorResponse.line}` : '';
-            const fullError = errorResponse.message || error?.message || 'Error desconocido';
+            let errorMessage = errorResponse.message || errorResponse.error || 'Error al crear la compra';
 
-            alert(`Error: ${errorMessage}\n\n${errorDetails}\n\nDetalles: ${fullError}`);
+            // Si el error es sobre caja cerrada, mostrar mensaje específico sin detalles técnicos
+            if (errorMessage.includes('caja') || errorMessage.includes('Caja')) {
+              errorMessage = 'No hay una caja abierta. Por favor, abra una caja antes de realizar compras.';
+              this.showAlertMessage(errorMessage, 'error');
+            } else {
+              // Para otros errores, mostrar detalles completos
+              const errorDetails = errorResponse.file ? `Archivo: ${errorResponse.file}\nLínea: ${errorResponse.line}` : '';
+              const fullError = errorResponse.message || error?.message || 'Error desconocido';
+              this.showAlertMessage(`Error: ${errorMessage}${errorDetails ? '\n\n' + errorDetails : ''}${fullError ? '\n\nDetalles: ' + fullError : ''}`, 'error');
+            }
           }
         });
     }
@@ -940,7 +957,7 @@ export class ComprasComponent implements OnInit {
           },
           error: (error) => {
             console.error('Error deleting compra', error);
-            alert('Error al eliminar la compra');
+            this.showAlertMessage('Error al eliminar la compra', 'error');
           }
         });
     }
@@ -1158,7 +1175,7 @@ export class ComprasComponent implements OnInit {
     }
 
     // Pie de página
-    const totalPages = doc.getNumberOfPages();
+    const totalPages = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
@@ -1296,7 +1313,7 @@ export class ComprasComponent implements OnInit {
 
   agregarArticuloACompra(): void {
     if (!this.articuloSeleccionado) {
-      alert('Por favor seleccione un producto del catálogo');
+      this.showAlertMessage('Por favor seleccione un producto del catálogo', 'warning');
       return;
     }
 
@@ -1407,7 +1424,7 @@ export class ComprasComponent implements OnInit {
     const articulo = this.articulos.find(a => a.id === articuloId);
 
     if (!articulo) {
-      alert('No se encontró el artículo');
+      this.showAlertMessage('No se encontró el artículo', 'error');
       return;
     }
 
@@ -1463,7 +1480,7 @@ export class ComprasComponent implements OnInit {
     if (!this.articuloEditando || this.detalleIndexEditando === null) return;
 
     if (this.precioEditForm.invalid) {
-      alert('Por favor complete todos los campos requeridos');
+      this.showAlertMessage('Por favor complete todos los campos requeridos', 'warning');
       return;
     }
 
@@ -1527,8 +1544,23 @@ export class ComprasComponent implements OnInit {
           console.error('Error al actualizar precio del artículo', error);
           console.error('Datos enviados:', articuloData);
           const errorMessage = error?.error?.message || error?.error?.error || 'Error al actualizar el precio del artículo';
-          alert(errorMessage);
+          this.showAlertMessage(errorMessage, 'error');
         }
       });
+  }
+
+  showAlertMessage(message: string, type: 'error' | 'success' | 'warning' | 'info' = 'error'): void {
+    this.alertMessage = message;
+    this.alertType = type;
+    this.showAlert = true;
+
+    // Auto-ocultar después de 5 segundos
+    setTimeout(() => {
+      this.showAlert = false;
+    }, 5000);
+  }
+
+  closeAlert(): void {
+    this.showAlert = false;
   }
 }

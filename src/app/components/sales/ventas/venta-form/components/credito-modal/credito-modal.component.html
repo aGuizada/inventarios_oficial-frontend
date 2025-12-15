@@ -76,7 +76,7 @@
                     <div class="space-y-1 text-sm text-gray-600 dark:text-slate-400">
                         <div class="flex justify-between">
                             <span>Total de la Venta:</span>
-                            <span class="font-semibold">{{ parentForm.get('total')?.value | currency }}</span>
+                            <span class="font-semibold">{{ parentForm.get('total')?.value | moneda }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span>Número de Cuotas:</span>
@@ -85,7 +85,7 @@
                         <div class="flex justify-between">
                             <span>Monto por Cuota:</span>
                             <span class="font-semibold text-green-600 dark:text-green-400">
-                                {{ (parentForm.get('total')?.value / parentForm.get('numero_cuotas')?.value) | currency
+                                {{ (parentForm.get('total')?.value / parentForm.get('numero_cuotas')?.value) | moneda
                                 }}
                             </span>
                         </div>
