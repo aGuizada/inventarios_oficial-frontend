@@ -19,6 +19,7 @@ body {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -27,4 +28,58 @@ body {
 
 .animate-slide-in-right {
   animation: slide-in-right 0.3s ease-out;
+}
+
+/* Estilos personalizados para SweetAlert2 - Toasts más grandes y visibles */
+.swal2-toast-large {
+  min-width: 400px !important;
+  max-width: 600px !important;
+  font-size: 16px !important;
+  padding: 1.5rem !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+}
+
+.swal2-toast-large .swal2-title {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.swal2-toast-large .swal2-html-container {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+/* Toast con animación más suave */
+.swal2-show {
+  animation: swal2-show 0.3s !important;
+}
+
+@keyframes swal2-show {
+  0% {
+    transform: scale(0.7) translateY(-20px);
+    opacity: 0;
+  }
+
+  45% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+
+  80% {
+    transform: scale(0.95);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Botones en el toast */
+.swal2-toast .swal2-confirm,
+.swal2-toast .swal2-cancel {
+  margin: 0.5rem 0.25rem 0 !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 13px !important;
+  border-radius: 6px !important;
 }

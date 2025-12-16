@@ -30,6 +30,10 @@ export const routes: Routes = [
                 path: 'perfil',
                 loadComponent: () => import('./components/user/perfil/perfil.component').then(m => m.PerfilComponent)
             },
+            {
+                path: 'notificaciones',
+                loadComponent: () => import('./components/notifications/notifications.component').then(m => m.NotificationsComponent)
+            },
             // Inventory
             {
                 path: 'inventario',
