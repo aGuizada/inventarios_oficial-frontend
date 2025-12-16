@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -10,11 +10,18 @@ import { AuthService } from '../../../services/auth.service';
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './login.component.html',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit, OnDestroy {
   loginForm: FormGroup;
   isLoading = false;
   errorMessage = '';
   showPassword = false;
+
+  images = [
+    'assets/images/carousel-1.jpg',
+    'assets/images/carousel-2.jpg'
+  ];
+  currentImageIndex = 0;
+  private intervalId: any;
 
   constructor(
     private fb: FormBuilder,
@@ -26,6 +33,22 @@ export class LoginComponent {
       password: ['', [Validators.required, Validators.minLength(6)]],
       remember: [false]
     });
+  }
+
+  ngOnInit() {
+    this.startCarousel();
+  }
+
+  ngOnDestroy() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+  }
+
+  startCarousel() {
+    this.intervalId = setInterval(() => {
+      this.currentImageIndex = (this.currentImageIndex + 1) % this.images.length;
+    }, 3000);
   }
 
   onSubmit(): void {

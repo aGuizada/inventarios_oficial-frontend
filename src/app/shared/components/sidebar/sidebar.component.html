@@ -2,19 +2,11 @@
     class="h-screen w-64 bg-slate-900 dark:bg-slate-800 text-white flex flex-col transition-all duration-300 shadow-xl border-r border-slate-800 dark:border-slate-700 relative group/sidebar">
 
     <!-- Logo Area -->
+    <!-- Logo Area -->
     <div
-        class="h-16 flex items-center justify-center border-b border-slate-800 dark:border-slate-700 overflow-hidden shrink-0">
-        <div class="flex items-center gap-3 transition-all duration-300" [class.px-6]="!isCollapsed"
-            [class.px-2]="isCollapsed">
-            <div
-                class="w-10 h-10 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
-                <i class="fas fa-cube text-xl"></i>
-            </div>
-            <span class="text-xl font-bold tracking-wide whitespace-nowrap transition-opacity duration-200"
-                [class.opacity-0]="isCollapsed" [class.w-0]="isCollapsed" [class.hidden]="isCollapsed">
-                Inventario
-            </span>
-        </div>
+        class="h-16 flex items-center justify-center border-b border-slate-800 dark:border-slate-700 overflow-hidden shrink-0 relative bg-slate-900">
+        <img [src]="images[currentImageIndex]" class="w-full h-full object-contain transition-all duration-500"
+            alt="Sidebar Logo">
     </div>
 
     <!-- Navigation -->

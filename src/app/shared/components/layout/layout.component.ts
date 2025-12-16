@@ -55,7 +55,8 @@ export class LayoutComponent implements OnInit, AfterViewInit {
       '/compras',
       '/finanzas',
       '/operaciones',
-      '/config'
+      '/config',
+      '/reportes',
     ];
     this.isNoPaddingRoute = noPaddingRoutes.some(route => url.includes(route));
   }

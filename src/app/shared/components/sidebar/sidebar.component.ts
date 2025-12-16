@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AuthService } from '../../../services/auth.service';
 import { SidebarService } from '../../../services/sidebar.service';
 import { CommonModule } from '@angular/common';
@@ -18,8 +18,15 @@ interface MenuItem {
   imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './sidebar.component.html',
 })
-export class SidebarComponent implements OnInit {
+export class SidebarComponent implements OnInit, OnDestroy {
   isCollapsed = false;
+
+  images = [
+    'assets/images/carousel-1.jpg',
+    'assets/images/carousel-2.jpg'
+  ];
+  currentImageIndex = 0;
+  private intervalId: any;
 
   private allMenuItems: MenuItem[] = [
     {
@@ -75,7 +82,6 @@ export class SidebarComponent implements OnInit {
         { label: 'Kardex', icon: 'fas fa-book', route: '/operaciones/kardex' },
         { label: 'Traspasos', icon: 'fas fa-dolly', route: '/operaciones/traspasos' },
         { label: 'Devoluciones', icon: 'fas fa-undo', route: '/operaciones/devoluciones' },
-        { label: 'Precios', icon: 'fas fa-tags', route: '/operaciones/precios' },
       ]
     },
     {
@@ -115,6 +121,20 @@ export class SidebarComponent implements OnInit {
     this.sidebarService.isCollapsed$.subscribe(collapsed => {
       this.isCollapsed = collapsed;
     });
+
+    this.startCarousel();
+  }
+
+  ngOnDestroy() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+  }
+
+  startCarousel() {
+    this.intervalId = setInterval(() => {
+      this.currentImageIndex = (this.currentImageIndex + 1) % this.images.length;
+    }, 3000);
   }
 
   updateMenu() {
