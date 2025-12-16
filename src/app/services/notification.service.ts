@@ -12,15 +12,15 @@ export class NotificationService {
 
     constructor(private http: HttpClient) { }
 
-    getAll(): Observable<ApiResponse<Notification[]>> {
-        return this.http.get<ApiResponse<Notification[]>>(this.apiUrl);
+    getAll(page: number = 1): Observable<ApiResponse<Notification[]>> {
+        return this.http.get<ApiResponse<Notification[]>>(`${this.apiUrl}?page=${page}`);
     }
 
     getNoLeidas(): Observable<ApiResponse<Notification[]>> {
         return this.http.get<ApiResponse<Notification[]>>(`${this.apiUrl}/no-leidas`);
     }
 
-    marcarComoLeida(id: number): Observable<ApiResponse<any>> {
+    marcarComoLeida(id: string): Observable<ApiResponse<any>> {
         return this.http.put<ApiResponse<any>>(`${this.apiUrl}/${id}/leer`, {});
     }
 
@@ -28,7 +28,7 @@ export class NotificationService {
         return this.http.put<ApiResponse<any>>(`${this.apiUrl}/leer-todas`, {});
     }
 
-    delete(id: number): Observable<ApiResponse<any>> {
+    delete(id: string): Observable<ApiResponse<any>> {
         return this.http.delete<ApiResponse<any>>(`${this.apiUrl}/${id}`);
     }
 }

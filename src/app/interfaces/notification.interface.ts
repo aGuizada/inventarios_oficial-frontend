@@ -1,6 +1,5 @@
 export interface Notification {
-    id: number;
-    user_id: number;
+    id: string;
     titulo: string;
     mensaje: string;
     tipo: string;
