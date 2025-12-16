@@ -133,6 +133,10 @@ export class VentaFormComponent implements OnInit {
             this.currentUserSucursalId = currentUser.sucursal_id || null;
             this.isAdmin = currentUser.rol_id === 1;
             this.form.patchValue({ user_id: this.currentUserId });
+            // Establecer la sucursal por defecto si el usuario tiene una asignada
+            if (this.currentUserSucursalId) {
+                this.selectedSucursalId = this.currentUserSucursalId;
+            }
         }
 
         // Cargar sucursales solo si es admin (no bloquea la carga principal)
@@ -150,32 +154,47 @@ export class VentaFormComponent implements OnInit {
         this.sucursalService.getAll().subscribe({
             next: (response: any) => {
                 this.sucursales = Array.isArray(response) ? response : (response.data || []);
+                
+                // Si el usuario tiene una sucursal asignada, establecerla como seleccionada
+                // Usar setTimeout para asegurar que las opciones del select estén renderizadas
+                if (this.currentUserSucursalId) {
+                    // Establecer inmediatamente
+                    this.selectedSucursalId = this.currentUserSucursalId;
+                    
+                    // Establecer nuevamente después de que las opciones estén renderizadas
+                    setTimeout(() => {
+                        this.selectedSucursalId = this.currentUserSucursalId;
+                        this.cdr.detectChanges();
+                    }, 200);
+                }
             },
             error: (error: any) => console.error('Error al cargar sucursales:', error)
         });
     }
 
     filtrarAlmacenes(): void {
-        if (this.selectedSucursalId) {
-            this.almacenesFiltrados = this.almacenes.filter(a => a.sucursal_id == this.selectedSucursalId);
-        } else {
-            this.almacenesFiltrados = [...this.almacenes];
+        // Si el usuario tiene una sucursal asignada, filtrar por esa primero
+        if (this.currentUserSucursalId) {
+            this.almacenesFiltrados = this.almacenes.filter(a => a.sucursal_id === this.currentUserSucursalId);
+            // Asegurar que selectedSucursalId también esté establecido para que el HTML lo muestre
+            this.selectedSucursalId = this.currentUserSucursalId;
         }
-
-        // Si el almacén seleccionado no está en la lista filtrada, deseleccionarlo
-        const currentAlmacenId = this.form.get('almacen_id')?.value;
-        if (currentAlmacenId && !this.almacenesFiltrados.find(a => a.id == currentAlmacenId)) {
-            this.form.patchValue({ almacen_id: '' });
-            this.productosInventario = [];
+        // Si el admin seleccionó manualmente una sucursal diferente (y no tiene sucursal asignada)
+        else if (this.selectedSucursalId) {
+            this.almacenesFiltrados = this.almacenes.filter(a => a.sucursal_id == this.selectedSucursalId);
+        } 
+        // Si es admin sin sucursal asignada ni seleccionada, mostrar todos
+        else {
+            this.almacenesFiltrados = [...this.almacenes];
         }
     }
 
     onSucursalChange(): void {
+        // Filtrar almacenes según la sucursal seleccionada
         this.filtrarAlmacenes();
-        // Opcional: Seleccionar el primer almacén de la sucursal automáticamente
-        if (this.almacenesFiltrados.length > 0) {
-            this.cambiarAlmacen(this.almacenesFiltrados[0].id!);
-        }
+        
+        // Seleccionar almacén por defecto de la sucursal seleccionada
+        this.seleccionarAlmacenPorDefecto();
     }
 
     get detalles() {
@@ -305,25 +324,44 @@ export class VentaFormComponent implements OnInit {
             error: (error: any) => console.error('Error al cargar clientes:', error)
         });
 
-        this.almacenService.getAll().subscribe({
-            next: (response: any) => {
-                this.almacenes = Array.isArray(response) ? response : (response.data || []);
+        // Cargar almacenes según el rol del usuario
+        const almacenRequest = this.isAdmin
+            ? this.almacenService.getPaginated({ per_page: 100 }).pipe(
+                map((response: any) => response.data?.data || response.data || []),
+                catchError(() => this.almacenService.getAll().pipe(
+                    map((response: any) => Array.isArray(response) ? response : (response.data || []))
+                ))
+            )
+            : this.almacenService.getAll().pipe(
+                map((response: any) => Array.isArray(response) ? response : (response.data || []))
+            );
+
+        almacenRequest.subscribe({
+            next: (almacenesData: Almacen[]) => {
+                this.almacenes = almacenesData;
+                
+                // Asegurar que selectedSucursalId esté establecido ANTES de filtrar
+                if (this.currentUserSucursalId) {
+                    this.selectedSucursalId = this.currentUserSucursalId;
+                }
+                
+                // Filtrar almacenes y seleccionar por defecto (igual que en compras)
                 this.filtrarAlmacenes();
                 this.seleccionarAlmacenPorDefecto();
-            },
-            error: (error: any) => console.error('Error al cargar almacenes:', error)
-        });
-
-        // Force load all warehouses if admin by requesting a large page
-        if (this.isAdmin) {
-            this.almacenService.getPaginated({ per_page: 100 }).subscribe({
-                next: (response: any) => {
-                    this.almacenes = response.data.data || [];
-                    this.filtrarAlmacenes();
-                    this.seleccionarAlmacenPorDefecto();
+                
+                // Si las sucursales ya están cargadas, asegurar que el selector muestre la sucursal correcta
+                if (this.currentUserSucursalId && this.sucursales.length > 0) {
+                    setTimeout(() => {
+                        this.selectedSucursalId = this.currentUserSucursalId;
+                        this.cdr.detectChanges();
+                    }, 100);
                 }
-            });
-        }
+            },
+            error: (error: any) => {
+                console.error('Error al cargar almacenes:', error);
+                this.almacenes = [];
+            }
+        });
 
         this.categoriaService.getAll().subscribe({
             next: (response: any) => this.categorias = Array.isArray(response) ? response : (response.data || []),
@@ -425,35 +463,33 @@ export class VentaFormComponent implements OnInit {
         return caja.estado === 'abierta' || caja.estado === '1' || caja.estado === 1 || caja.estado === true;
     }
 
-    seleccionarAlmacenPorDefecto(): number | null {
-        // Si ya hay un almacén seleccionado, retornar su ID
-        const almacenIdActual = this.form.get('almacen_id')?.value;
-        if (almacenIdActual) return almacenIdActual;
+    seleccionarAlmacenPorDefecto(): void {
+        // Si ya hay un almacén seleccionado, no hacer nada (igual que en compras)
+        if (this.form.get('almacen_id')?.value) return;
 
-        // Si no hay almacenes cargados aún, retornar null
-        if (!this.almacenes || this.almacenes.length === 0) return null;
-
-        let almacenPorDefecto: Almacen | undefined;
-
-        // Prioridad 1: Almacén de la sucursal del usuario actual
+        // Si el usuario tiene una sucursal asignada, buscar almacén de esa sucursal
         if (this.currentUserSucursalId) {
-            almacenPorDefecto = this.almacenes.find(almacen =>
+            const almacenPorDefecto = this.almacenes.find(almacen =>
                 almacen.sucursal_id === this.currentUserSucursalId && almacen.estado !== false
             );
+
+            if (almacenPorDefecto && almacenPorDefecto.id) {
+                this.form.patchValue({ almacen_id: almacenPorDefecto.id });
+                // Cargar productos del almacén seleccionado automáticamente
+                this.loadProductosInventario(almacenPorDefecto.id);
+                return;
+            }
         }
 
-        // Prioridad 2: Primer almacén activo disponible
-        if (!almacenPorDefecto) {
-            almacenPorDefecto = this.almacenes.find(almacen => almacen.estado !== false);
+        // Si es admin sin sucursal asignada, seleccionar el primer almacén activo disponible
+        if (this.isAdmin) {
+            const primerAlmacen = this.almacenes.find(almacen => almacen.estado !== false);
+            if (primerAlmacen && primerAlmacen.id) {
+                this.form.patchValue({ almacen_id: primerAlmacen.id });
+                // Cargar productos del almacén seleccionado automáticamente
+                this.loadProductosInventario(primerAlmacen.id);
+            }
         }
-
-        // Si encontramos un almacén, seleccionarlo y retornar su ID
-        if (almacenPorDefecto && almacenPorDefecto.id) {
-            this.form.patchValue({ almacen_id: almacenPorDefecto.id }, { emitEvent: false });
-            return almacenPorDefecto.id;
-        }
-
-        return null;
     }
 
     onAlmacenChange(): void {
@@ -490,16 +526,17 @@ export class VentaFormComponent implements OnInit {
     }
 
     cambiarAlmacen(almacenId: number): void {
-        // Validar que el almacén pertenezca a la sucursal del usuario (si es vendedor)
-        if (this.authService.isVendedor() && this.currentUserSucursalId) {
-            const almacen = this.almacenes.find(a => a.id === almacenId);
-            if (!almacen) {
-                this.showAlertMessage('Almacén no encontrado', 'error');
-                return;
-            }
+        const almacen = this.almacenes.find(a => a.id === almacenId);
+        if (!almacen) {
+            this.showAlertMessage('Almacén no encontrado', 'error');
+            return;
+        }
 
+        // CRÍTICO: Si el usuario tiene una sucursal asignada, el almacén DEBE ser de esa sucursal
+        // Esto aplica tanto para admin como para vendedor
+        if (this.currentUserSucursalId) {
             if (almacen.sucursal_id !== this.currentUserSucursalId) {
-                this.showAlertMessage('No puede seleccionar un almacén de otra sucursal', 'error');
+                this.showAlertMessage('No puede seleccionar un almacén de otra sucursal. Su sucursal asignada es diferente.', 'error');
                 return;
             }
         }

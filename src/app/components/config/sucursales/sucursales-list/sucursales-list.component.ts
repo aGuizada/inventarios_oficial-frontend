@@ -16,10 +16,20 @@ export class SucursalesListComponent {
   @Output() delete = new EventEmitter<number>();
 
   onEdit(sucursal: Sucursal): void {
+    console.log('onEdit llamado con sucursal:', sucursal);
+    if (!sucursal || !sucursal.id) {
+      console.error('Sucursal inválida o sin ID:', sucursal);
+      return;
+    }
     this.edit.emit(sucursal);
   }
 
   onDelete(id: number): void {
+    console.log('onDelete llamado con id:', id);
+    if (!id) {
+      console.error('ID inválido:', id);
+      return;
+    }
     this.delete.emit(id);
   }
 }

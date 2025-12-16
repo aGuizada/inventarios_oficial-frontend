@@ -113,33 +113,108 @@ export class SucursalesComponent implements OnInit {
   }
 
   onEdit(sucursal: Sucursal): void {
-    this.selectedSucursal = sucursal;
+    console.log('onEdit recibido en componente principal:', sucursal);
+    if (!sucursal || !sucursal.id) {
+      console.error('Sucursal inválida o sin ID:', sucursal);
+      alert('Error: No se puede editar esta sucursal. ID inválido.');
+      return;
+    }
+    // Crear una copia del objeto para evitar problemas de referencia
+    this.selectedSucursal = { ...sucursal };
     this.isFormModalOpen = true;
+    console.log('Modal abierto, selectedSucursal:', this.selectedSucursal);
   }
 
   onDelete(id: number): void {
+    console.log('onDelete recibido en componente principal con id:', id);
+    if (!id) {
+      console.error('No se puede eliminar: ID no válido');
+      alert('Error: No se puede eliminar esta sucursal. ID inválido.');
+      return;
+    }
+    
     if (confirm('¿Está seguro de eliminar esta sucursal?')) {
-      this.sucursalService.delete(id).subscribe({
-        next: () => this.loadSucursales(),
-        error: (error) => console.error('Error deleting sucursal', error)
-      });
+      console.log('Confirmado, eliminando sucursal con id:', id);
+      this.isLoading = true;
+      this.sucursalService.delete(id)
+        .pipe(finalize(() => this.isLoading = false))
+        .subscribe({
+          next: (response) => {
+            console.log('Sucursal eliminada exitosamente:', response);
+            this.loadSucursales();
+          },
+          error: (error) => {
+            console.error('Error deleting sucursal', error);
+            console.error('Detalles del error:', error.error);
+            
+            let errorMessage = 'Error al eliminar la sucursal.';
+            if (error.error) {
+              if (error.error.message) {
+                errorMessage = error.error.message;
+              } else if (error.error.error) {
+                errorMessage = error.error.error;
+              }
+            } else if (error.message) {
+              errorMessage = error.message;
+            }
+            
+            alert(errorMessage);
+          }
+        });
     }
   }
 
   onSave(sucursalData: Sucursal): void {
+    console.log('onSave recibido:', sucursalData);
+    console.log('selectedSucursal:', this.selectedSucursal);
+    console.log('Es edición:', this.selectedSucursal && this.selectedSucursal.id);
+    
     this.isLoading = true;
-    const request = this.selectedSucursal && this.selectedSucursal.id
-      ? this.sucursalService.update(this.selectedSucursal.id, sucursalData)
+    const isEdit = this.selectedSucursal && this.selectedSucursal.id;
+    const sucursalId = this.selectedSucursal?.id;
+    
+    if (isEdit && !sucursalId) {
+      console.error('Error: Modo edición pero sin ID válido');
+      this.isLoading = false;
+      alert('Error: No se puede editar la sucursal sin un ID válido.');
+      return;
+    }
+    
+    const request = isEdit && sucursalId
+      ? this.sucursalService.update(sucursalId, sucursalData)
       : this.sucursalService.create(sucursalData);
+
+    console.log('Enviando request:', isEdit ? 'UPDATE' : 'CREATE');
 
     request
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
-        next: () => {
+        next: (response) => {
+          console.log('Respuesta del servidor:', response);
           this.loadSucursales();
           this.closeFormModal();
         },
-        error: (error) => console.error('Error saving sucursal', error)
+        error: (error) => {
+          console.error('Error saving sucursal', error);
+          console.error('Detalles del error:', error.error);
+          
+          let errorMessage = 'Error al guardar la sucursal.';
+          if (error.error) {
+            if (error.error.message) {
+              errorMessage = error.error.message;
+            } else if (error.error.errors) {
+              // Errores de validación
+              const validationErrors = Object.values(error.error.errors).flat().join(', ');
+              errorMessage = 'Errores de validación: ' + validationErrors;
+            } else if (error.error.error) {
+              errorMessage = error.error.error;
+            }
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
+          alert(errorMessage);
+        }
       });
   }
 }
