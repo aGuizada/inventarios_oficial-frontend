@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MonedaService } from '../../../services/moneda.service';
 import { EmpresaService } from '../../../services/empresa.service';
+import { MonedaActivaService } from '../../../services/moneda-activa.service';
 import { Moneda, Empresa, ApiResponse, PaginationParams } from '../../../interfaces';
 import { finalize } from 'rxjs/operators';
 
@@ -45,7 +46,8 @@ export class MonedasComponent implements OnInit {
 
   constructor(
     private monedaService: MonedaService,
-    private empresaService: EmpresaService
+    private empresaService: EmpresaService,
+    private monedaActivaService: MonedaActivaService
   ) { }
 
   ngOnInit(): void {
@@ -186,6 +188,8 @@ export class MonedasComponent implements OnInit {
                   : 'Moneda creada exitosamente'
               );
               this.cargarMonedas();
+              // Recargar la moneda activa para actualizar el símbolo en tiempo real
+              this.monedaActivaService.cargarMonedaActiva();
               this.closeFormModal();
             } else {
               this.mostrarError(response.message || 'Error al guardar la moneda');
@@ -197,6 +201,8 @@ export class MonedasComponent implements OnInit {
                 : 'Moneda creada exitosamente'
             );
             this.cargarMonedas();
+            // Recargar la moneda activa para actualizar el símbolo en tiempo real
+            this.monedaActivaService.cargarMonedaActiva();
             this.closeFormModal();
           }
         },
@@ -254,28 +260,81 @@ export class MonedasComponent implements OnInit {
       return;
     }
 
+    // Validar que los campos requeridos estén presentes
+    if (!moneda.empresa_id || !moneda.nombre) {
+      this.mostrarError('Error: La moneda no tiene todos los datos necesarios. Por favor, recargue la página.');
+      return;
+    }
+
+    // Guardar el tipo de cambio anterior para mostrar información
+    const tipoCambioAnterior = moneda.tipo_cambio;
+    const cambioDetectado = tipoCambioAnterior !== nuevoTipoCambio;
+
     this.isLoading = true;
-    this.monedaService.update(moneda.id, { tipo_cambio: nuevoTipoCambio })
+    // Preparar los datos para actualizar solo el tipo de cambio
+    // Asegurarse de incluir todos los campos requeridos por el backend
+    const datosActualizacion: Partial<Moneda> = {
+      empresa_id: moneda.empresa_id,
+      nombre: moneda.nombre || '',
+      pais: moneda.pais || undefined,
+      simbolo: moneda.simbolo || undefined,
+      tipo_cambio: Number(nuevoTipoCambio), // Asegurar que sea número
+      estado: moneda.estado !== undefined ? (typeof moneda.estado === 'boolean' ? moneda.estado : Boolean(moneda.estado)) : true
+    };
+    
+    console.log('Actualizando tipo de cambio:', {
+      monedaId: moneda.id,
+      tipoCambioAnterior: tipoCambioAnterior,
+      nuevoTipoCambio: nuevoTipoCambio,
+      datos: datosActualizacion
+    });
+    
+    this.monedaService.update(moneda.id, datosActualizacion)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response: ApiResponse<Moneda> | Moneda) => {
-          // El backend puede devolver directamente el objeto o envuelto en ApiResponse
+          // El backend ahora siempre devuelve ApiResponse
           if (response && 'success' in response) {
             if (response.success) {
-              this.mostrarExito('Tipo de cambio actualizado exitosamente');
+              if (cambioDetectado) {
+                this.mostrarExito('Tipo de cambio actualizado exitosamente. Los precios de todos los productos han sido recalculados automáticamente.');
+              } else {
+                this.mostrarExito('Tipo de cambio actualizado exitosamente');
+              }
               this.cargarMonedas();
+              // Recargar la moneda activa para actualizar el símbolo en tiempo real
+              this.monedaActivaService.cargarMonedaActiva();
             } else {
               this.mostrarError(response.message || 'Error al actualizar el tipo de cambio');
             }
           } else {
-            // Respuesta directa del backend
-            this.mostrarExito('Tipo de cambio actualizado exitosamente');
+            // Fallback: si por alguna razón no viene en formato ApiResponse
+            if (cambioDetectado) {
+              this.mostrarExito('Tipo de cambio actualizado exitosamente. Los precios de todos los productos han sido recalculados automáticamente.');
+            } else {
+              this.mostrarExito('Tipo de cambio actualizado exitosamente');
+            }
             this.cargarMonedas();
+            // Recargar la moneda activa para actualizar el símbolo en tiempo real
+            this.monedaActivaService.cargarMonedaActiva();
           }
         },
         error: (error) => {
           console.error('Error al actualizar tipo de cambio:', error);
-          this.mostrarError('Error al actualizar el tipo de cambio. Por favor, intente nuevamente.');
+          let mensaje = 'Error al actualizar el tipo de cambio. Por favor, intente nuevamente.';
+          
+          if (error.error) {
+            if (error.error.errors) {
+              const errores = Object.values(error.error.errors).flat();
+              mensaje = 'Errores de validación: ' + errores.join(', ');
+            } else if (error.error.message) {
+              mensaje = error.error.message;
+            }
+          } else if (error.message) {
+            mensaje = error.message;
+          }
+          
+          this.mostrarError(mensaje);
         }
       });
   }
@@ -315,6 +374,13 @@ export class MonedasComponent implements OnInit {
       return;
     }
 
+    // Validar que la moneda tenga todos los campos necesarios
+    if (!this.monedaSeleccionada.empresa_id || !this.monedaSeleccionada.nombre) {
+      this.mostrarError('Error: La moneda no tiene todos los datos necesarios. Por favor, recargue la página.');
+      return;
+    }
+
+    // Usar directamente la moneda que ya tenemos
     this.actualizarTipoCambio(this.monedaSeleccionada, nuevoTipoCambio);
     this.closeTipoCambioModal();
   }

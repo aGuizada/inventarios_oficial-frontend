@@ -446,22 +446,80 @@ export class ConfiguracionSistemaComponent implements OnInit {
       return;
     }
 
-    this.actualizarTipoCambio(this.monedaSeleccionada, nuevoTipoCambio);
-    this.closeTipoCambioModal();
+    // Obtener la moneda completa desde el backend para asegurar que tenga todos los campos
+    this.isLoading = true;
+    this.monedaService.getById(this.monedaSeleccionada.id)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (response: ApiResponse<Moneda>) => {
+          if (response.success && response.data) {
+            const monedaCompleta = response.data;
+            this.actualizarTipoCambio(monedaCompleta, nuevoTipoCambio);
+            this.closeTipoCambioModal();
+          } else {
+            this.mostrarMonedaError('Error al cargar los datos de la moneda. Por favor, intente nuevamente.');
+          }
+        },
+        error: (error) => {
+          console.error('Error al cargar moneda:', error);
+          // Si falla, intentar con la moneda que ya tenemos (si existe)
+          if (this.monedaSeleccionada) {
+            this.actualizarTipoCambio(this.monedaSeleccionada, nuevoTipoCambio);
+            this.closeTipoCambioModal();
+          } else {
+            this.mostrarMonedaError('Error al cargar los datos de la moneda. Por favor, intente nuevamente.');
+          }
+        }
+      });
   }
 
   actualizarTipoCambio(moneda: Moneda, nuevoTipoCambio: number): void {
+    if (!moneda.empresa_id || !moneda.nombre) {
+      this.mostrarMonedaError('Error: La moneda no tiene todos los datos necesarios. Por favor, recargue la página.');
+      return;
+    }
+
+    // Guardar el tipo de cambio anterior para mostrar información
+    const tipoCambioAnterior = moneda.tipo_cambio;
+    const cambioDetectado = tipoCambioAnterior !== nuevoTipoCambio;
+
     this.isLoading = true;
-    this.monedaService.update(moneda.id, { tipo_cambio: nuevoTipoCambio })
+    // Preparar los datos para actualizar solo el tipo de cambio
+    // Asegurarse de incluir todos los campos requeridos por el backend
+    const datosActualizacion: Partial<Moneda> = {
+      empresa_id: moneda.empresa_id,
+      nombre: moneda.nombre || '',
+      pais: moneda.pais || undefined,
+      simbolo: moneda.simbolo || undefined,
+      tipo_cambio: nuevoTipoCambio,
+      estado: moneda.estado !== undefined ? moneda.estado : true
+    };
+
+    this.monedaService.update(moneda.id, datosActualizacion)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: () => {
-          this.mostrarMonedaExito('Tipo de cambio actualizado exitosamente');
+          if (cambioDetectado) {
+            this.mostrarMonedaExito('Tipo de cambio actualizado exitosamente. Los precios de todos los productos han sido recalculados automáticamente.');
+          } else {
+            this.mostrarMonedaExito('Tipo de cambio actualizado exitosamente');
+          }
           this.loadMonedas();
         },
         error: (error) => {
           console.error('Error al actualizar tipo de cambio:', error);
-          this.mostrarMonedaError('Error al actualizar el tipo de cambio');
+          let mensaje = 'Error al actualizar el tipo de cambio. Por favor, intente nuevamente.';
+          
+          if (error.error) {
+            if (error.error.errors) {
+              const errores = Object.values(error.error.errors).flat();
+              mensaje = errores.join(', ');
+            } else if (error.error.message) {
+              mensaje = error.error.message;
+            }
+          }
+          
+          this.mostrarMonedaError(mensaje);
         }
       });
   }

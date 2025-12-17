@@ -10,6 +10,7 @@ import { ArticuloService } from '../../../services/articulo.service';
 import { CajaService } from '../../../services/caja.service';
 import { CompraCuotaService } from '../../../services/compra-cuota.service';
 import { AuthService } from '../../../services/auth.service';
+import { MonedaActivaService } from '../../../services/moneda-activa.service';
 import { Compra, DetalleCompra, Proveedor, Almacen, Articulo, Caja, PaginationParams, Sucursal } from '../../../interfaces';
 import { SucursalService } from '../../../services/sucursal.service';
 import { finalize } from 'rxjs/operators';
@@ -52,6 +53,10 @@ export class ComprasComponent implements OnInit {
   articuloSeleccionado: Articulo | null = null;
   mostrarSugerenciasArticulo: boolean = false;
 
+  // Para selección múltiple con checkboxes
+  articulosSeleccionados: Set<number> = new Set();
+  seleccionarTodo: boolean = false;
+
   // Paginación
   currentPage: number = 1;
   lastPage: number = 1;
@@ -82,6 +87,14 @@ export class ComprasComponent implements OnInit {
   showAlert: boolean = false;
   alertType: 'error' | 'success' | 'warning' | 'info' = 'error';
 
+  // Símbolo de moneda dinámico
+  simboloMoneda: string = 'Q';
+
+  // Sistema de pasos progresivos
+  currentStep: number = 1;
+  totalSteps: number = 3;
+  steps: string[] = ['Información Básica', 'Selección de Productos', 'Resumen y Confirmación'];
+
   constructor(
     private compraService: CompraService,
     private proveedorService: ProveedorService,
@@ -91,6 +104,7 @@ export class ComprasComponent implements OnInit {
     private compraCuotaService: CompraCuotaService,
     private authService: AuthService,
     private sucursalService: SucursalService,
+    private monedaActivaService: MonedaActivaService,
     private router: Router,
     private route: ActivatedRoute,
     private fb: FormBuilder
@@ -103,7 +117,7 @@ export class ComprasComponent implements OnInit {
       almacen_id: ['', Validators.required],
       fecha_hora: [new Date().toISOString().slice(0, 16), Validators.required],
       total: [0, [Validators.required, Validators.min(0)]],
-      tipo_comprobante: [''],
+      tipo_comprobante: ['RECIBO'],
       serie_comprobante: [''],
       num_comprobante: [''],
       descuento_global: [0, [Validators.min(0)]],
@@ -119,7 +133,11 @@ export class ComprasComponent implements OnInit {
       precio_costo_unid: [0, [Validators.required, Validators.min(0)]],
       precio_costo_paq: [0, [Validators.min(0)]],
       porcentaje_ganancia: [30, [Validators.min(0), Validators.max(1000)]],
-      precio_venta: [0, [Validators.min(0)]]
+      precio_venta: [0, [Validators.min(0)]],
+      precio_uno: [0, [Validators.min(0)]],
+      precio_dos: [0, [Validators.min(0)]],
+      precio_tres: [0, [Validators.min(0)]],
+      precio_cuatro: [0, [Validators.min(0)]]
     });
 
     // Calcular precio de venta cuando cambie el precio costo o el porcentaje
@@ -168,6 +186,10 @@ export class ComprasComponent implements OnInit {
       // Cerrar modal si se cambia a contado
       this.closeCreditoModal();
     }
+  }
+
+  seleccionarTipoComprobante(tipo: 'RECIBO' | 'FACTURA'): void {
+    this.form.patchValue({ tipo_comprobante: tipo });
   }
 
   openCreditoModal(): void {
@@ -270,6 +292,14 @@ export class ComprasComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Obtener el símbolo de moneda activa inicial
+    this.simboloMoneda = this.monedaActivaService.getSimbolo();
+    
+    // Suscribirse al símbolo de moneda activa para actualización dinámica
+    this.monedaActivaService.getSimboloObservable().subscribe(simbolo => {
+      this.simboloMoneda = simbolo;
+    });
+
     // Obtener información del usuario actual
     const currentUser = this.authService.getCurrentUser();
     if (currentUser) {
@@ -447,7 +477,96 @@ export class ComprasComponent implements OnInit {
     this.loadCompras();
   }
 
+  // Métodos para navegación entre pasos
+  nextStep(): void {
+    if (this.currentStep < this.totalSteps) {
+      // Validar el paso actual antes de avanzar
+      if (this.validateCurrentStep()) {
+        this.currentStep++;
+      }
+    }
+  }
+
+  previousStep(): void {
+    if (this.currentStep > 1) {
+      this.currentStep--;
+    }
+  }
+
+  goToStep(step: number): void {
+    if (step >= 1 && step <= this.totalSteps) {
+      // Validar pasos anteriores antes de saltar
+      if (step <= this.currentStep || this.validateStepsBefore(step)) {
+        this.currentStep = step;
+      }
+    }
+  }
+
+  validateCurrentStep(): boolean {
+    switch (this.currentStep) {
+      case 1:
+        // Validar información básica
+        if (!this.form.get('proveedor_id')?.value || !this.form.get('proveedor_nombre')?.value) {
+          this.showAlertMessage('Por favor seleccione un proveedor', 'warning');
+          return false;
+        }
+        if (!this.form.get('almacen_id')?.value) {
+          this.showAlertMessage('Por favor seleccione un almacén', 'warning');
+          return false;
+        }
+        if (!this.form.get('tipo_comprobante')?.value) {
+          this.showAlertMessage('Por favor seleccione un tipo de comprobante', 'warning');
+          return false;
+        }
+        return true;
+      case 2:
+        // Validar que haya productos seleccionados
+        if (this.detallesFormArray.length === 0) {
+          this.showAlertMessage('Por favor agregue al menos un producto', 'warning');
+          return false;
+        }
+        return true;
+      case 3:
+        // Validar información de pago
+        const tipoCompra = this.form.get('tipo_compra')?.value;
+        if (tipoCompra === 'credito') {
+          const numeroCuotas = this.form.get('numero_cuotas')?.value;
+          if (!numeroCuotas || numeroCuotas < 1) {
+            this.showAlertMessage('Por favor configure el crédito correctamente', 'warning');
+            this.openCreditoModal();
+            return false;
+          }
+        }
+        return true;
+      default:
+        return true;
+    }
+  }
+
+  validateStepsBefore(targetStep: number): boolean {
+    // Validar todos los pasos anteriores al paso objetivo
+    for (let i = 1; i < targetStep; i++) {
+      const tempStep = this.currentStep;
+      this.currentStep = i;
+      if (!this.validateCurrentStep()) {
+        this.currentStep = tempStep;
+        return false;
+      }
+      this.currentStep = tempStep;
+    }
+    return true;
+  }
+
+  isStepValid(step: number): boolean {
+    const tempStep = this.currentStep;
+    this.currentStep = step;
+    const isValid = this.validateCurrentStep();
+    this.currentStep = tempStep;
+    return isValid;
+  }
+
   openModal(): void {
+    this.currentStep = 1; // Reiniciar al primer paso
     try {
       this.isModalOpen = true;
       this.isEditing = false;
@@ -462,6 +581,9 @@ export class ComprasComponent implements OnInit {
       this.articulosFiltrados = this.articulos || [];
       this.mostrarSugerenciasArticulo = false;
       this.articuloSeleccionado = null;
+      // Limpiar selección múltiple
+      this.articulosSeleccionados.clear();
+      this.seleccionarTodo = false;
       // Establecer fecha y hora actual automáticamente
       const fechaHoraActual = new Date().toISOString().slice(0, 16);
       this.form.reset({
@@ -472,6 +594,7 @@ export class ComprasComponent implements OnInit {
         fecha_hora: fechaHoraActual,
         total: 0,
         tipo_compra: 'contado',
+        tipo_comprobante: 'RECIBO',
         descuento_global: 0
       });
       this.form.patchValue({ proveedor_nombre: '' });
@@ -492,6 +615,7 @@ export class ComprasComponent implements OnInit {
     // En lugar de cerrar, solo limpiar el formulario para una nueva compra
     this.isEditing = false;
     this.currentId = null;
+    this.currentStep = 1; // Reiniciar al primer paso
     this.form.reset();
     this.detallesFormArray.clear();
     this.proveedorBusqueda = '';
@@ -502,6 +626,9 @@ export class ComprasComponent implements OnInit {
     this.articulosFiltrados = this.articulos || [];
     this.mostrarSugerenciasArticulo = false;
     this.articuloSeleccionado = null;
+    // Limpiar selección múltiple
+    this.articulosSeleccionados.clear();
+    this.seleccionarTodo = false;
     // Resetear valores del formulario
     this.form.patchValue({
       proveedor_id: '',
@@ -511,6 +638,7 @@ export class ComprasComponent implements OnInit {
       fecha_hora: new Date().toISOString().slice(0, 16),
       total: 0,
       tipo_compra: 'contado',
+      tipo_comprobante: 'RECIBO',
       descuento_global: 0
     });
   }
@@ -590,7 +718,7 @@ export class ComprasComponent implements OnInit {
         almacen_id: compra.almacen_id,
         fecha_hora: compra.fecha_hora ? new Date(compra.fecha_hora).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
         total: compra.total,
-        tipo_comprobante: compra.tipo_comprobante || '',
+        tipo_comprobante: compra.tipo_comprobante || 'RECIBO',
         serie_comprobante: compra.serie_comprobante || '',
         num_comprobante: compra.num_comprobante || '',
         descuento_global: compra.descuento_global || 0,
@@ -738,6 +866,76 @@ export class ComprasComponent implements OnInit {
       return;
     }
 
+    // VALIDAR SALDO DE CAJA ANTES DE PERMITIR LA COMPRA
+    // Recargar la caja para obtener el saldo actualizado
+    this.cajaService.getById(this.cajaAbierta.id).subscribe({
+      next: (cajaResponse) => {
+        const cajaActualizada = cajaResponse.data || cajaResponse;
+        // Usar saldo_caja que viene calculado del backend
+        const saldoDisponible = parseFloat(String(cajaActualizada.saldo_caja || 0));
+        
+        // Calcular el total de la compra actual
+        const totalCompra = parseFloat(this.form.get('total')?.value) || 0;
+        
+        // Determinar el monto a descontar según el tipo de compra
+        const tipoCompraValidacion = (this.form.get('tipo_compra')?.value || 'contado').toLowerCase().trim();
+        let montoADescontar = 0;
+        
+        if (tipoCompraValidacion === 'contado') {
+          // Para compras de contado, se descuenta el total completo
+          montoADescontar = totalCompra;
+        } else if (tipoCompraValidacion === 'credito') {
+          // Para compras a crédito, solo se descuenta la cuota inicial
+          const montoPagado = parseFloat(this.form.get('monto_pagado')?.value) || 0;
+          montoADescontar = montoPagado;
+        }
+        
+        // Validar que el saldo sea suficiente
+        if (saldoDisponible <= 0) {
+          this.showAlertMessage('El saldo de la caja no es suficiente para realizar la compra. Saldo disponible: Q' + saldoDisponible.toFixed(2), 'error');
+          return;
+        }
+        
+        if (saldoDisponible < montoADescontar) {
+          this.showAlertMessage('Saldo insuficiente de caja. Saldo disponible: Q' + saldoDisponible.toFixed(2) + '. Monto requerido: Q' + montoADescontar.toFixed(2), 'error');
+          return;
+        }
+        
+        // Si el saldo es suficiente, continuar con el proceso de guardado
+        this.procesarGuardadoCompra();
+      },
+      error: (error) => {
+        console.error('Error al obtener saldo de caja:', error);
+        // Si no se puede obtener el saldo, usar el saldo_caja de la caja actual si está disponible
+        const cajaActual = this.cajaAbierta;
+        if (!cajaActual) {
+          this.showAlertMessage('No se pudo verificar el saldo de la caja. Por favor, verifique que haya una caja abierta.', 'error');
+          return;
+        }
+        
+        const saldoDisponible = parseFloat(String(cajaActual.saldo_caja || 0));
+        const totalCompra = parseFloat(this.form.get('total')?.value) || 0;
+        const tipoCompraValidacion = (this.form.get('tipo_compra')?.value || 'contado').toLowerCase().trim();
+        let montoADescontar = tipoCompraValidacion === 'contado' ? totalCompra : (parseFloat(this.form.get('monto_pagado')?.value) || 0);
+        
+        if (saldoDisponible <= 0 || saldoDisponible < montoADescontar) {
+          this.showAlertMessage('El saldo de la caja no es suficiente para realizar la compra. Saldo disponible: Q' + saldoDisponible.toFixed(2), 'error');
+          return;
+        }
+        
+        // Continuar con el proceso de guardado
+        this.procesarGuardadoCompra();
+      }
+    });
+  }
+
+  procesarGuardadoCompra(): void {
+    // Verificar que la caja esté disponible
+    if (!this.cajaAbierta) {
+      this.showAlertMessage('No hay una caja abierta. Por favor, abra una caja antes de realizar compras.', 'error');
+      return;
+    }
+
     // Validar que el nombre del proveedor esté ingresado
     if (!this.form.get('proveedor_nombre')?.value || this.proveedorBusqueda.trim().length === 0) {
       this.showAlertMessage('Por favor ingrese el nombre del proveedor', 'warning');
@@ -826,7 +1024,7 @@ export class ComprasComponent implements OnInit {
       // El backend calculará el total basándose en los detalles y descuento_global
       tipo_compra: tipoCompraValidacion, // Reutilizar la variable ya validada
       // Siempre enviar campos de comprobante (el backend asignará valores por defecto si están vacíos)
-      tipo_comprobante: formValue.tipo_comprobante?.trim() || '',
+      tipo_comprobante: formValue.tipo_comprobante?.trim() || 'RECIBO',
       serie_comprobante: formValue.serie_comprobante?.trim() || null,
       num_comprobante: formValue.num_comprobante?.trim() || '',
       // Enviar solo los datos básicos, el backend calculará subtotales y totales
@@ -1077,8 +1275,8 @@ export class ComprasComponent implements OnInit {
     const porcentajeDescuento = this.getPorcentajeDescuento();
 
     doc.text(`Descuento Global: ${porcentajeDescuento.toFixed(2)}%`, margin, yPos);
-    doc.text(`Total Original: ${totalNeto.toFixed(2)} BS`, pageWidth / 2, yPos, { align: 'center' });
-    doc.text(`Total Final: ${this.getTotalCompra().toFixed(2)} BS`, pageWidth - margin, yPos, { align: 'right' });
+    doc.text(`Total Original: Q${totalNeto.toFixed(2)}`, pageWidth / 2, yPos, { align: 'center' });
+    doc.text(`Total Final: Q${this.getTotalCompra().toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
     yPos += lineHeight * 2;
 
     // Tabla de artículos
@@ -1120,10 +1318,10 @@ export class ComprasComponent implements OnInit {
         // Truncar nombre si es muy largo
         const nombreTruncado = doc.splitTextToSize(nombre, 50);
         doc.text(nombreTruncado, margin, yPos);
-        doc.text(`${precioUnit} BS`, margin + 60, yPos);
+        doc.text(`Q${precioUnit}`, margin + 60, yPos);
         doc.text(String(cantidad), margin + 85, yPos);
-        doc.text(`${descuento} BS`, margin + 100, yPos);
-        doc.text(`${subtotal} BS`, pageWidth - margin, yPos, { align: 'right' });
+        doc.text(`Q${descuento}`, margin + 100, yPos);
+        doc.text(`Q${subtotal}`, pageWidth - margin, yPos, { align: 'right' });
         yPos += lineHeight * nombreTruncado.length;
       });
 
@@ -1133,21 +1331,21 @@ export class ComprasComponent implements OnInit {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.text('Total Parcial:', margin + 100, yPos);
-      doc.text(`${this.getTotalParcial().toFixed(2)} BS`, pageWidth - margin, yPos, { align: 'right' });
+      doc.text(`Q${this.getTotalParcial().toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
       yPos += lineHeight;
 
       doc.text('Total Neto (Sin Descuento):', margin + 100, yPos);
-      doc.text(`${totalNeto.toFixed(2)} BS`, pageWidth - margin, yPos, { align: 'right' });
+      doc.text(`Q${totalNeto.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
       yPos += lineHeight;
 
       doc.setFont('helvetica', 'normal');
-      doc.text(`Descuento Global: ${porcentajeDescuento.toFixed(2)}% - ${descuentoGlobal.toFixed(2)} BS`, margin + 100, yPos);
+      doc.text(`Descuento Global: ${porcentajeDescuento.toFixed(2)}% - Q${descuentoGlobal.toFixed(2)}`, margin + 100, yPos);
       yPos += lineHeight;
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
       doc.text('Total Final (Con Descuento):', margin + 100, yPos);
-      doc.text(`${this.getTotalCompra().toFixed(2)} BS`, pageWidth - margin, yPos, { align: 'right' });
+      doc.text(`Q${this.getTotalCompra().toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
       yPos += lineHeight * 2;
     }
 
@@ -1167,9 +1365,9 @@ export class ComprasComponent implements OnInit {
       doc.setFontSize(9);
       doc.text(`Número de Cuotas: ${this.compraSeleccionada.compra_credito.num_cuotas}`, margin, yPos);
       yPos += lineHeight;
-      doc.text(`Cuota Inicial: ${parseFloat(String(this.compraSeleccionada.compra_credito.cuota_inicial || 0)).toFixed(2)} BS`, margin, yPos);
+      doc.text(`Cuota Inicial: Q${parseFloat(String(this.compraSeleccionada.compra_credito.cuota_inicial || 0)).toFixed(2)}`, margin, yPos);
       yPos += lineHeight;
-      doc.text(`Saldo Pendiente: ${((this.getTotalCompra() - parseFloat(String(this.compraSeleccionada.compra_credito.cuota_inicial || 0)))).toFixed(2)} BS`, margin, yPos);
+      doc.text(`Saldo Pendiente: Q${((this.getTotalCompra() - parseFloat(String(this.compraSeleccionada.compra_credito.cuota_inicial || 0)))).toFixed(2)}`, margin, yPos);
       yPos += lineHeight;
       doc.text(`Estado: ${this.compraSeleccionada.compra_credito.estado_credito || 'Pendiente'}`, margin, yPos);
     }
@@ -1365,6 +1563,114 @@ export class ComprasComponent implements OnInit {
     this.articulosFiltrados = this.articulos || [];
   }
 
+  // Métodos para selección múltiple con checkboxes
+  toggleSeleccionArticulo(articuloId: number): void {
+    if (this.articulosSeleccionados.has(articuloId)) {
+      this.articulosSeleccionados.delete(articuloId);
+    } else {
+      this.articulosSeleccionados.add(articuloId);
+    }
+    this.actualizarSeleccionarTodo();
+  }
+
+  estaSeleccionado(articuloId: number): boolean {
+    return this.articulosSeleccionados.has(articuloId);
+  }
+
+  toggleSeleccionarTodo(): void {
+    this.seleccionarTodo = !this.seleccionarTodo;
+    const articulosVisibles = this.articulosFiltrados.length > 0 ? this.articulosFiltrados : this.articulos;
+    const articulosLimitados = articulosVisibles.slice(0, 50);
+
+    if (this.seleccionarTodo) {
+      articulosLimitados.forEach(articulo => {
+        if (articulo.id) {
+          this.articulosSeleccionados.add(articulo.id);
+        }
+      });
+    } else {
+      articulosLimitados.forEach(articulo => {
+        if (articulo.id) {
+          this.articulosSeleccionados.delete(articulo.id);
+        }
+      });
+    }
+  }
+
+  actualizarSeleccionarTodo(): void {
+    const articulosVisibles = this.articulosFiltrados.length > 0 ? this.articulosFiltrados : this.articulos;
+    const articulosLimitados = articulosVisibles.slice(0, 50);
+    this.seleccionarTodo = articulosLimitados.length > 0 && 
+      articulosLimitados.every(articulo => articulo.id && this.articulosSeleccionados.has(articulo.id));
+  }
+
+  agregarArticulosSeleccionados(): void {
+    if (this.articulosSeleccionados.size === 0) {
+      this.showAlertMessage('Por favor seleccione al menos un producto', 'warning');
+      return;
+    }
+
+    let agregados = 0;
+    let yaExistentes = 0;
+
+    this.articulosSeleccionados.forEach(articuloId => {
+      const articulo = this.articulos.find(a => a.id === articuloId);
+      if (!articulo) return;
+
+      // Buscar si el artículo ya está agregado
+      const detalleExistenteIndex = this.detallesFormArray.controls.findIndex(control =>
+        control.get('articulo_id')?.value === articuloId
+      );
+
+      if (detalleExistenteIndex !== -1) {
+        // Si el artículo ya existe, incrementar la cantidad en 1
+        const detalleExistente = this.detallesFormArray.at(detalleExistenteIndex);
+        const cantidadActual = detalleExistente.get('cantidad')?.value || 0;
+        detalleExistente.patchValue({
+          cantidad: cantidadActual + 1
+        });
+        this.calculateTotal();
+        yaExistentes++;
+      } else {
+        // Si el artículo no existe, agregarlo como nuevo detalle
+        const precioInicial = articulo.precio_costo_unid || articulo.precio_costo_paq || 0;
+        const detalleGroup = this.fb.group({
+          articulo_id: [articulo.id, Validators.required],
+          cantidad: [1, [Validators.required, Validators.min(1)]],
+          precio_unitario: [precioInicial, [Validators.required, Validators.min(0)]],
+          descuento: [0, [Validators.min(0)]],
+          subtotal: [precioInicial, Validators.required]
+        });
+
+        detalleGroup.get('cantidad')?.valueChanges.subscribe(() => this.calculateSubtotal(detalleGroup));
+        detalleGroup.get('precio_unitario')?.valueChanges.subscribe(() => this.calculateSubtotal(detalleGroup));
+        detalleGroup.get('descuento')?.valueChanges.subscribe(() => this.calculateSubtotal(detalleGroup));
+
+        this.detallesFormArray.push(detalleGroup);
+        this.calculateTotal();
+        agregados++;
+      }
+    });
+
+    // Limpiar selección
+    this.articulosSeleccionados.clear();
+    this.seleccionarTodo = false;
+
+    // Mostrar mensaje de éxito
+    let mensaje = '';
+    if (agregados > 0 && yaExistentes > 0) {
+      mensaje = `${agregados} producto(s) agregado(s) y ${yaExistentes} producto(s) actualizado(s)`;
+    } else if (agregados > 0) {
+      mensaje = `${agregados} producto(s) agregado(s) exitosamente`;
+    } else if (yaExistentes > 0) {
+      mensaje = `${yaExistentes} producto(s) actualizado(s) (cantidad incrementada)`;
+    }
+    
+    if (mensaje) {
+      this.showAlertMessage(mensaje, 'success');
+    }
+  }
+
   onFocusArticulo(): void {
     if (this.busquedaArticulo.length > 0 && this.articulosFiltrados.length > 0) {
       this.mostrarSugerenciasArticulo = true;
@@ -1462,7 +1768,11 @@ export class ComprasComponent implements OnInit {
       precio_costo_unid: precioCosto,
       precio_costo_paq: articulo.precio_costo_paq || 0,
       porcentaje_ganancia: Math.round(porcentajeGanancia * 100) / 100,
-      precio_venta: precioVenta
+      precio_venta: precioVenta,
+      precio_uno: articulo.precio_uno || 0,
+      precio_dos: articulo.precio_dos || 0,
+      precio_tres: articulo.precio_tres || 0,
+      precio_cuatro: articulo.precio_cuatro || 0
     }, { emitEvent: false });
 
     // Calcular precio de venta inicial
@@ -1511,7 +1821,11 @@ export class ComprasComponent implements OnInit {
         ...this.articulos[articuloIndex],
         precio_costo_unid: parseFloat(formValue.precio_costo_unid) || 0,
         precio_costo_paq: parseFloat(formValue.precio_costo_paq) || 0,
-        precio_venta: parseFloat(formValue.precio_venta) || 0
+        precio_venta: parseFloat(formValue.precio_venta) || 0,
+        precio_uno: parseFloat(formValue.precio_uno) || 0,
+        precio_dos: parseFloat(formValue.precio_dos) || 0,
+        precio_tres: parseFloat(formValue.precio_tres) || 0,
+        precio_cuatro: parseFloat(formValue.precio_cuatro) || 0
       };
     }
 
@@ -1541,10 +1855,10 @@ export class ComprasComponent implements OnInit {
       precio_costo_unid: parseFloat(formValue.precio_costo_unid) || 0,
       precio_costo_paq: parseFloat(formValue.precio_costo_paq) || 0,
       precio_venta: parseFloat(formValue.precio_venta) || 0,
-      precio_uno: this.articuloEditando.precio_uno || null,
-      precio_dos: this.articuloEditando.precio_dos || null,
-      precio_tres: this.articuloEditando.precio_tres || null,
-      precio_cuatro: this.articuloEditando.precio_cuatro || null,
+      precio_uno: parseFloat(formValue.precio_uno) || 0,
+      precio_dos: parseFloat(formValue.precio_dos) || 0,
+      precio_tres: parseFloat(formValue.precio_tres) || 0,
+      precio_cuatro: parseFloat(formValue.precio_cuatro) || 0,
       stock: this.articuloEditando.stock || 0,
       descripcion: this.articuloEditando.descripcion || null,
       costo_compra: this.articuloEditando.costo_compra || parseFloat(formValue.precio_costo_unid) || 0,

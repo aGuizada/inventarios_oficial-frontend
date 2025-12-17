@@ -1,10 +1,10 @@
 <div [class.lg:w-64]="!isCollapsed" [class.lg:w-20]="isCollapsed"
-    class="h-screen w-64 bg-slate-900 dark:bg-slate-800 text-white flex flex-col transition-all duration-300 shadow-xl border-r border-slate-800 dark:border-slate-700 relative group/sidebar">
+    class="h-screen w-64 bg-gradient-to-b from-cyan-900 via-slate-900 to-slate-950 dark:from-cyan-900 dark:via-slate-900 dark:to-slate-950 text-white flex flex-col transition-all duration-300 shadow-xl border-r border-cyan-800 dark:border-cyan-800 relative group/sidebar">
 
     <!-- Logo Area -->
     <!-- Logo Area -->
     <div
-        class="h-16 flex items-center justify-center border-b border-slate-800 dark:border-slate-700 overflow-hidden shrink-0 relative bg-slate-900">
+        class="h-16 flex items-center justify-center border-b border-cyan-800 dark:border-cyan-800 overflow-hidden shrink-0 relative bg-gradient-to-b from-cyan-900 via-slate-900 to-slate-950">
         <img [src]="images[currentImageIndex]" class="w-full h-full object-contain transition-all duration-500"
             alt="Sidebar Logo">
     </div>
@@ -15,20 +15,29 @@
             <li *ngFor="let item of menuItems">
                 <!-- Single Item -->
                 <a *ngIf="!item.children" [routerLink]="item.route"
-                    routerLinkActive="bg-blue-600 dark:bg-blue-500 text-white shadow-lg shadow-blue-500/30"
-                    class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 dark:text-slate-300 hover:bg-slate-800 dark:hover:bg-slate-700 hover:text-white transition-all duration-200 group cursor-pointer relative"
+                    routerLinkActive="bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30"
+                    #rla="routerLinkActive"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg text-cyan-300 dark:text-cyan-300 hover:bg-slate-700 dark:hover:bg-slate-700 hover:text-white transition-all duration-200 group cursor-pointer relative"
                     [title]="isCollapsed ? item.label : ''">
                     <i [class]="item.icon + ' w-5 text-center transition-transform group-hover:scale-110 shrink-0'"></i>
-                    <span class="font-medium whitespace-nowrap transition-opacity duration-200"
+                    <span class="font-medium whitespace-nowrap transition-opacity duration-200 flex-1"
                         [class.opacity-0]="isCollapsed" [class.w-0]="isCollapsed" [class.hidden]="isCollapsed">
                         {{ item.label }}
                     </span>
+                    <i class="fas fa-chevron-right text-xs transition-opacity duration-200 shrink-0"
+                        [class.opacity-100]="rla.isActive && !isCollapsed"
+                        [class.opacity-0]="!rla.isActive || isCollapsed"
+                        [class.hidden]="isCollapsed"></i>
                 </a>
 
                 <!-- Parent Item -->
                 <div *ngIf="item.children">
-                    <button (click)="toggleSubmenu(item)" [class.text-white]="item.isOpen"
-                        class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 dark:text-slate-300 hover:bg-slate-800 dark:hover:bg-slate-700 hover:text-white transition-all duration-200 group relative"
+                    <button (click)="toggleSubmenu(item)" 
+                        [class.bg-gradient-to-r]="item.isOpen"
+                        [class.from-cyan-600]="item.isOpen"
+                        [class.to-cyan-700]="item.isOpen"
+                        [class.text-white]="item.isOpen"
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-cyan-300 dark:text-cyan-300 hover:bg-slate-700 dark:hover:bg-slate-700 hover:text-white transition-all duration-200 group relative"
                         [class.justify-center]="isCollapsed" [class.justify-between]="!isCollapsed"
                         [title]="isCollapsed ? item.label : ''">
                         <div class="flex items-center gap-3">
@@ -47,12 +56,12 @@
                     <div class="overflow-hidden transition-all duration-300 ease-in-out"
                         [style.max-height]="item.isOpen ? '500px' : '0'" [style.opacity]="item.isOpen ? '1' : '0'">
                         <ul class="mt-1 space-y-1" [class.ml-4]="!isCollapsed" [class.pl-4]="!isCollapsed"
-                            [class.border-l]="!isCollapsed" [class.border-slate-700]="!isCollapsed"
-                            [class.dark:border-slate-600]="!isCollapsed">
+                            [class.border-l]="!isCollapsed" [class.border-cyan-800]="!isCollapsed"
+                            [class.dark:border-cyan-800]="!isCollapsed">
                             <li *ngFor="let child of item.children">
                                 <a [routerLink]="child.route"
-                                    routerLinkActive="text-blue-400 dark:text-blue-300 font-semibold"
-                                    class="flex items-center gap-2 px-4 py-2 text-sm text-slate-400 dark:text-slate-300 hover:text-white transition-colors rounded-lg hover:bg-slate-800/50 dark:hover:bg-slate-700/50"
+                                    routerLinkActive="bg-gradient-to-r from-cyan-600 to-cyan-700 text-white font-semibold"
+                                    class="flex items-center gap-2 px-4 py-2 text-sm text-cyan-300 dark:text-cyan-300 hover:text-white transition-colors rounded-lg hover:bg-slate-700 dark:hover:bg-slate-700"
                                     [title]="isCollapsed ? child.label : ''">
                                     <i [class]="child.icon + ' text-xs w-4 text-center opacity-70 shrink-0'"></i>
                                     <span class="whitespace-nowrap transition-opacity duration-200"

@@ -21,6 +21,7 @@ export class MonedaActivaService {
 
   /**
    * Carga la moneda activa desde la configuración de trabajo
+   * Método público para poder recargar cuando cambie la configuración
    */
   cargarMonedaActiva(): void {
     this.configuracionService.getAll().subscribe({
