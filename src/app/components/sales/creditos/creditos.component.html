@@ -4,10 +4,8 @@
         <p class="text-sm text-gray-600 mt-1">Gestión de ventas realizadas a crédito y sus cuotas pendientes</p>
     </div>
 
-    <div class="mb-4 max-w-md">
-        <app-search-bar 
-            placeholder="Buscar por cliente, estado, comprobante..."
-            (search)="onSearch($event)">
+    <div class="mb-4 w-full sm:max-w-md">
+        <app-search-bar placeholder="Buscar por cliente, estado, comprobante..." (search)="onSearch($event)">
         </app-search-bar>
     </div>
 
@@ -16,11 +14,7 @@
         (pay)="onPay($event)">
     </app-creditos-list>
 
-    <app-pagination 
-        [currentPage]="currentPage"
-        [lastPage]="lastPage"
-        [total]="total"
-        [perPage]="perPage"
+    <app-pagination [currentPage]="currentPage" [lastPage]="lastPage" [total]="total" [perPage]="perPage"
         (pageChange)="onPageChange($event)">
     </app-pagination>
 </div>
@@ -38,8 +32,7 @@
 
 <!-- Pago Modal -->
 @if (isPagoModalOpen && creditoSeleccionado) {
-<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
-    (click)="closePagoModal()">
+<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" (click)="closePagoModal()">
     <div class="relative top-10 mx-auto p-5 border w-11/12 max-w-3xl shadow-lg rounded-md bg-white"
         (click)="$event.stopPropagation()">
         <app-credito-pago [credito]="creditoSeleccionado" [cuotas]="cuotas" [isLoading]="isLoading"

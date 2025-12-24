@@ -13,25 +13,19 @@
     </div>
 
     <!-- Search Bar -->
-    <div class="mb-4 max-w-md">
-        <app-search-bar 
-            placeholder="Buscar por ID, sucursal, usuario, fecha..."
-            (search)="onSearch($event)"
+    <div class="mb-4 w-full sm:max-w-md">
+        <app-search-bar placeholder="Buscar por ID, sucursal, usuario, fecha..." (search)="onSearch($event)"
             (clear)="onSearchClear()">
         </app-search-bar>
     </div>
 
     <!-- List Component -->
-    <app-cajas-list [cajas]="cajas" [isLoading]="isLoading" (close)="onClose($event)" (view)="onView($event)" 
+    <app-cajas-list [cajas]="cajas" [isLoading]="isLoading" (close)="onClose($event)" (view)="onView($event)"
         (addMoney)="onAddMoney($event)" (withdrawMoney)="onWithdrawMoney($event)">
     </app-cajas-list>
 
     <!-- Pagination -->
-    <app-pagination 
-        [currentPage]="currentPage"
-        [lastPage]="lastPage"
-        [total]="total"
-        [perPage]="perPage"
+    <app-pagination [currentPage]="currentPage" [lastPage]="lastPage" [total]="total" [perPage]="perPage"
         (pageChange)="onPageChange($event)">
     </app-pagination>
 </div>
@@ -41,8 +35,8 @@
 <div class="fixed inset-0 overflow-y-auto z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <!-- Background overlay -->
-        <div class="fixed inset-0 bg-gray-500 dark:bg-slate-900 bg-opacity-75 dark:bg-opacity-75 transition-opacity" aria-hidden="true"
-            (click)="closeFormModal()"></div>
+        <div class="fixed inset-0 bg-gray-500 dark:bg-slate-900 bg-opacity-75 dark:bg-opacity-75 transition-opacity"
+            aria-hidden="true" (click)="closeFormModal()"></div>
 
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
@@ -63,10 +57,12 @@
 
 <!-- Transacción Modal -->
 @if (isTransaccionModalOpen && selectedCaja) {
-<app-caja-transaccion [caja]="selectedCaja" [tipo]="transaccionTipo" (save)="onSaveTransaccion($event)" (cancel)="closeTransaccionModal()"></app-caja-transaccion>
+<app-caja-transaccion [caja]="selectedCaja" [tipo]="transaccionTipo" (save)="onSaveTransaccion($event)"
+    (cancel)="closeTransaccionModal()"></app-caja-transaccion>
 }
 
 <!-- Arqueo Modal -->
 @if (isArqueoModalOpen && selectedCaja) {
-<app-caja-arqueo [caja]="selectedCaja" (close)="onCloseArqueo($event)" (cancel)="closeArqueoModal()" (resumen)="onResumenArqueo()"></app-caja-arqueo>
+<app-caja-arqueo [caja]="selectedCaja" (close)="onCloseArqueo($event)" (cancel)="closeArqueoModal()"
+    (resumen)="onResumenArqueo()"></app-caja-arqueo>
 }

@@ -2,71 +2,75 @@
   <div class="mb-4 flex justify-between items-center">
     <h1 class="text-2xl font-bold text-gray-800">Gestión de Traspasos</h1>
     <div class="flex space-x-2">
-      <button 
-        (click)="navegarANuevoTraspaso()"
+      <button (click)="navegarANuevoTraspaso()"
         class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition duration-300 flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+          <path fill-rule="evenodd"
+            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+            clip-rule="evenodd" />
         </svg>
-        Nuevo Traspaso
+        Nuevo <span class="hidden sm:inline ml-1">Traspaso</span>
       </button>
     </div>
   </div>
 
   <!-- Mensajes de éxito y error -->
-  <div *ngIf="successMessage" class="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md flex items-center justify-between">
+  <div *ngIf="successMessage"
+    class="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md flex items-center justify-between">
     <div class="flex items-center">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        <path fill-rule="evenodd"
+          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+          clip-rule="evenodd" />
       </svg>
       <span>{{ successMessage }}</span>
     </div>
     <button (click)="successMessage = ''" class="text-green-600 hover:text-green-800">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        <path fill-rule="evenodd"
+          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+          clip-rule="evenodd" />
       </svg>
     </button>
   </div>
 
-  <div *ngIf="errorMessage" class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md flex items-center justify-between">
+  <div *ngIf="errorMessage"
+    class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md flex items-center justify-between">
     <div class="flex items-center">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+        <path fill-rule="evenodd"
+          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+          clip-rule="evenodd" />
       </svg>
       <span>{{ errorMessage }}</span>
     </div>
     <button (click)="errorMessage = ''" class="text-red-600 hover:text-red-800">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        <path fill-rule="evenodd"
+          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+          clip-rule="evenodd" />
       </svg>
     </button>
   </div>
 
   <!-- Vista de Historial de Traspasos -->
   <div *ngIf="!isModalOpen" class="mt-6">
-    <div class="mb-4 max-w-md">
-      <app-search-bar 
-        placeholder="Buscar por código, estado, sucursal..."
-        (search)="onSearch($event)">
+    <div class="mb-4 w-full sm:max-w-md">
+      <app-search-bar placeholder="Buscar por código, estado, sucursal..." (search)="onSearch($event)">
       </app-search-bar>
     </div>
-    
+
     <app-traspasos-list [traspasos]="traspasos" [isLoading]="isLoading" [sucursales]="sucursales"
-        (approve)="aprobarTraspaso($event)" (receive)="recibirTraspaso($event)" (reject)="rechazarTraspaso($event)">
+      (approve)="aprobarTraspaso($event)" (receive)="recibirTraspaso($event)" (reject)="rechazarTraspaso($event)">
     </app-traspasos-list>
-    
-    <app-pagination 
-        [currentPage]="currentPage"
-        [lastPage]="lastPage"
-        [total]="total"
-        [perPage]="perPage"
-        (pageChange)="onPageChange($event)">
+
+    <app-pagination [currentPage]="currentPage" [lastPage]="lastPage" [total]="total" [perPage]="perPage"
+      (pageChange)="onPageChange($event)">
     </app-pagination>
   </div>
 
   <!-- Modal de Formulario de Traspaso -->
-  <div *ngIf="isModalOpen" 
-    class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+  <div *ngIf="isModalOpen" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
     (click)="cerrarModal()">
     <div class="relative top-10 mx-auto p-5 border w-full max-w-7xl shadow-lg rounded-md bg-white"
       (click)="$event.stopPropagation()">
@@ -74,16 +78,17 @@
         <!-- Header del Modal -->
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 mr-2" viewBox="0 0 20 20"
+              fill="currentColor">
               <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-              <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
+              <path
+                d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
             </svg>
             Nuevo Traspaso
           </h3>
-          <button type="button" 
-            (click)="cerrarModal()"
-            class="text-gray-400 hover:text-gray-600">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button type="button" (click)="cerrarModal()" class="text-gray-400 hover:text-gray-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -91,316 +96,306 @@
 
         <!-- Formulario de Traspaso -->
         <div class="mt-2">
-    <form [formGroup]="form" (ngSubmit)="guardar()" class="flex flex-col">
-      <!-- Contenido principal - Tres columnas -->
-      <div class="flex flex-row gap-4" style="min-height: 70vh;">
-        <!-- Columna 1 - Formulario -->
-        <div class="w-1/3 overflow-y-auto">
-          <div class="space-y-3">
-            <!-- Código de Traspaso (Generado automáticamente) -->
-            <div>
-              <label for="codigo_traspaso" class="block text-sm font-medium text-gray-700 mb-1">
-                Código de Traspaso <span class="text-red-500">*</span>
-              </label>
-              <input 
-                type="text" 
-                id="codigo_traspaso" 
-                formControlName="codigo_traspaso"
-                readonly
-                class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-600 cursor-not-allowed sm:text-sm">
-              <p class="mt-1 text-xs text-gray-500">
-                Código generado automáticamente
-              </p>
-            </div>
-
-            <!-- Sucursal Origen -->
-            <div>
-              <label for="sucursal_origen_id" class="block text-sm font-medium text-gray-700 mb-1">
-                Sucursal Origen <span class="text-red-500">*</span>
-              </label>
-              <select 
-                id="sucursal_origen_id" 
-                formControlName="sucursal_origen_id"
-                (change)="onSucursalOrigenChange()"
-                class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                [class.border-red-500]="isFieldInvalid('sucursal_origen_id')">
-                <option value="">Seleccione</option>
-                <option *ngFor="let sucursal of sucursales" [value]="sucursal.id">
-                  {{ sucursal.nombre }}
-                </option>
-              </select>
-            </div>
-
-            <!-- Almacén Origen -->
-            <div>
-              <label for="almacen_origen_id" class="block text-sm font-medium text-gray-700 mb-1">
-                Almacén Origen <span class="text-red-500">*</span>
-              </label>
-              <select 
-                id="almacen_origen_id" 
-                formControlName="almacen_origen_id"
-                (change)="onAlmacenOrigenChange()"
-                class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                [class.border-red-500]="isFieldInvalid('almacen_origen_id')">
-                <option value="">Seleccione</option>
-                <option *ngFor="let almacen of almacenesOrigen" [value]="almacen.id">
-                  {{ almacen.nombre_almacen }}
-                </option>
-              </select>
-              <p *ngIf="!form.get('sucursal_origen_id')?.value" class="mt-1 text-xs text-yellow-600">
-                Primero seleccione una sucursal origen
-              </p>
-            </div>
-
-            <!-- Sucursal Destino -->
-            <div>
-              <label for="sucursal_destino_id" class="block text-sm font-medium text-gray-700 mb-1">
-                Sucursal Destino <span class="text-red-500">*</span>
-              </label>
-              <select 
-                id="sucursal_destino_id" 
-                formControlName="sucursal_destino_id"
-                (change)="onSucursalDestinoChange()"
-                class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                [class.border-red-500]="isFieldInvalid('sucursal_destino_id')">
-                <option value="">Seleccione</option>
-                <option *ngFor="let sucursal of sucursales" [value]="sucursal.id">
-                  {{ sucursal.nombre }}
-                </option>
-              </select>
-            </div>
-
-            <!-- Almacén Destino -->
-            <div>
-              <label for="almacen_destino_id" class="block text-sm font-medium text-gray-700 mb-1">
-                Almacén Destino <span class="text-red-500">*</span>
-              </label>
-              <select 
-                id="almacen_destino_id" 
-                formControlName="almacen_destino_id"
-                class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                [class.border-red-500]="isFieldInvalid('almacen_destino_id')">
-                <option value="">Seleccione</option>
-                <option *ngFor="let almacen of almacenesDestino" [value]="almacen.id">
-                  {{ almacen.nombre_almacen }}
-                </option>
-              </select>
-              <p *ngIf="!form.get('sucursal_destino_id')?.value" class="mt-1 text-xs text-yellow-600">
-                Primero seleccione una sucursal destino
-              </p>
-            </div>
-
-            <!-- Tipo Traspaso -->
-            <div>
-              <label for="tipo_traspaso" class="block text-sm font-medium text-gray-700 mb-1">
-                Tipo de Traspaso
-              </label>
-              <select 
-                id="tipo_traspaso" 
-                formControlName="tipo_traspaso"
-                class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                <option value="SUCURSAL">Sucursal</option>
-                <option value="INTERNO">Interno</option>
-                <option value="URGENTE">Urgente</option>
-              </select>
-            </div>
-
-            <!-- Motivo -->
-            <div>
-              <label for="motivo" class="block text-sm font-medium text-gray-700 mb-1">
-                Motivo
-              </label>
-              <input 
-                type="text" 
-                id="motivo" 
-                formControlName="motivo"
-                class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Motivo del traspaso">
-            </div>
-
-            <!-- Observaciones -->
-            <div>
-              <label for="observaciones" class="block text-sm font-medium text-gray-700 mb-1">
-                Observaciones
-              </label>
-              <textarea 
-                id="observaciones" 
-                formControlName="observaciones"
-                rows="3"
-                class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Observaciones adicionales"></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Columna 2 - Catálogo de Productos del Inventario -->
-        <div class="w-1/3 overflow-y-auto">
-          <h4 class="text-md font-semibold text-gray-800 mb-3">Productos Disponibles en Inventario</h4>
-          
-          <div *ngIf="!form.get('almacen_origen_id')?.value" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-            <p class="text-sm text-yellow-800">Por favor seleccione un almacén origen para ver los productos disponibles.</p>
-          </div>
-
-          <!-- Buscador de productos -->
-          <div class="relative mb-4" *ngIf="form.get('almacen_origen_id')?.value">
-            <input 
-              type="text" 
-              [(ngModel)]="busquedaProducto"
-              (input)="buscarProducto($event)"
-              (focus)="onFocusProducto()"
-              (blur)="onBlurProducto()"
-              [ngModelOptions]="{standalone: true}"
-              placeholder="Buscar producto por nombre o código..."
-              class="block w-full py-2 px-3 pl-10 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-            </svg>
-            <button *ngIf="busquedaProducto" type="button" 
-              (click)="limpiarBusquedaProducto()"
-              class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-              </svg>
-            </button>
-            <!-- Dropdown de sugerencias -->
-            <div *ngIf="mostrarSugerenciasProducto && productosFiltrados.length > 0"
-              class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-64 overflow-auto">
-              <ul class="py-1">
-                <li *ngFor="let producto of productosFiltrados"
-                  (mousedown)="seleccionarProductoCatalogo(producto)"
-                  class="px-4 py-2 hover:bg-blue-50 cursor-pointer">
-                  <div class="font-medium text-gray-900">{{ producto.articulo?.nombre }}</div>
-                  <div class="text-xs text-gray-500">
-                    Código: {{ producto.articulo?.codigo }}
-                    <span class="ml-2 font-semibold text-green-600">
-                      | Stock: {{ producto.stock_disponible }}
-                    </span>
+          <form [formGroup]="form" (ngSubmit)="guardar()" class="flex flex-col">
+            <!-- Contenido principal - Tres columnas -->
+            <div class="flex flex-row gap-4" style="min-height: 70vh;">
+              <!-- Columna 1 - Formulario -->
+              <div class="w-1/3 overflow-y-auto">
+                <div class="space-y-3">
+                  <!-- Código de Traspaso (Generado automáticamente) -->
+                  <div>
+                    <label for="codigo_traspaso" class="block text-sm font-medium text-gray-700 mb-1">
+                      Código de Traspaso <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="codigo_traspaso" formControlName="codigo_traspaso" readonly
+                      class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-600 cursor-not-allowed sm:text-sm">
+                    <p class="mt-1 text-xs text-gray-500">
+                      Código generado automáticamente
+                    </p>
                   </div>
-                </li>
-              </ul>
-            </div>
-          </div>
 
-          <!-- Información del producto seleccionado -->
-          <div *ngIf="productoSeleccionado && form.get('almacen_origen_id')?.value" class="bg-white border border-gray-300 rounded-lg p-4 mb-4 shadow-sm">
-            <div class="flex justify-between items-start mb-3">
-              <div>
-                <h5 class="text-lg font-semibold text-gray-900">{{ productoSeleccionado.articulo?.nombre }}</h5>
-                <p class="text-sm text-gray-500">Código: {{ productoSeleccionado.articulo?.codigo }}</p>
-              </div>
-              <button type="button" (click)="limpiarBusquedaProducto()"
-                class="text-gray-400 hover:text-gray-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-              </button>
-            </div>
-            
-            <!-- Stock disponible -->
-            <div class="mb-4">
-              <div class="text-xs text-gray-600 mb-1">Stock Disponible</div>
-              <div class="text-lg font-semibold text-green-600">
-                {{ productoSeleccionado.stock_disponible }} unidades
-              </div>
-            </div>
-
-            <!-- Botón para agregar -->
-            <button type="button" (click)="agregarProductoATraspaso()"
-              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-              </svg>
-              Agregar a Traspaso
-            </button>
-          </div>
-
-          <!-- Lista de productos -->
-          <div *ngIf="!productoSeleccionado && form.get('almacen_origen_id')?.value" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <div class="max-h-96 overflow-y-auto">
-              <div *ngIf="productosInventario.length === 0" class="px-4 py-8 text-center text-sm text-gray-500">
-                No hay productos disponibles en el inventario de este almacén.
-              </div>
-              <div *ngFor="let producto of (productosFiltrados.length > 0 ? productosFiltrados : productosInventario).slice(0, 50)" 
-                (click)="seleccionarProductoCatalogo(producto)"
-                class="px-4 py-3 border-b border-gray-200 hover:bg-blue-50 cursor-pointer transition">
-                <div class="flex justify-between items-center">
-                  <div class="flex-1">
-                    <div class="font-medium text-gray-900">{{ producto.articulo?.nombre }}</div>
-                    <div class="text-sm text-gray-500">Código: {{ producto.articulo?.codigo }}</div>
+                  <!-- Sucursal Origen -->
+                  <div>
+                    <label for="sucursal_origen_id" class="block text-sm font-medium text-gray-700 mb-1">
+                      Sucursal Origen <span class="text-red-500">*</span>
+                    </label>
+                    <select id="sucursal_origen_id" formControlName="sucursal_origen_id"
+                      (change)="onSucursalOrigenChange()"
+                      class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      [class.border-red-500]="isFieldInvalid('sucursal_origen_id')">
+                      <option value="">Seleccione</option>
+                      <option *ngFor="let sucursal of sucursales" [value]="sucursal.id">
+                        {{ sucursal.nombre }}
+                      </option>
+                    </select>
                   </div>
-                  <div class="text-right">
-                    <div class="font-semibold text-green-600">Stock: {{ producto.stock_disponible }}</div>
+
+                  <!-- Almacén Origen -->
+                  <div>
+                    <label for="almacen_origen_id" class="block text-sm font-medium text-gray-700 mb-1">
+                      Almacén Origen <span class="text-red-500">*</span>
+                    </label>
+                    <select id="almacen_origen_id" formControlName="almacen_origen_id"
+                      (change)="onAlmacenOrigenChange()"
+                      class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      [class.border-red-500]="isFieldInvalid('almacen_origen_id')">
+                      <option value="">Seleccione</option>
+                      <option *ngFor="let almacen of almacenesOrigen" [value]="almacen.id">
+                        {{ almacen.nombre_almacen }}
+                      </option>
+                    </select>
+                    <p *ngIf="!form.get('sucursal_origen_id')?.value" class="mt-1 text-xs text-yellow-600">
+                      Primero seleccione una sucursal origen
+                    </p>
+                  </div>
+
+                  <!-- Sucursal Destino -->
+                  <div>
+                    <label for="sucursal_destino_id" class="block text-sm font-medium text-gray-700 mb-1">
+                      Sucursal Destino <span class="text-red-500">*</span>
+                    </label>
+                    <select id="sucursal_destino_id" formControlName="sucursal_destino_id"
+                      (change)="onSucursalDestinoChange()"
+                      class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      [class.border-red-500]="isFieldInvalid('sucursal_destino_id')">
+                      <option value="">Seleccione</option>
+                      <option *ngFor="let sucursal of sucursales" [value]="sucursal.id">
+                        {{ sucursal.nombre }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <!-- Almacén Destino -->
+                  <div>
+                    <label for="almacen_destino_id" class="block text-sm font-medium text-gray-700 mb-1">
+                      Almacén Destino <span class="text-red-500">*</span>
+                    </label>
+                    <select id="almacen_destino_id" formControlName="almacen_destino_id"
+                      class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      [class.border-red-500]="isFieldInvalid('almacen_destino_id')">
+                      <option value="">Seleccione</option>
+                      <option *ngFor="let almacen of almacenesDestino" [value]="almacen.id">
+                        {{ almacen.nombre_almacen }}
+                      </option>
+                    </select>
+                    <p *ngIf="!form.get('sucursal_destino_id')?.value" class="mt-1 text-xs text-yellow-600">
+                      Primero seleccione una sucursal destino
+                    </p>
+                  </div>
+
+                  <!-- Tipo Traspaso -->
+                  <div>
+                    <label for="tipo_traspaso" class="block text-sm font-medium text-gray-700 mb-1">
+                      Tipo de Traspaso
+                    </label>
+                    <select id="tipo_traspaso" formControlName="tipo_traspaso"
+                      class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                      <option value="SUCURSAL">Sucursal</option>
+                      <option value="INTERNO">Interno</option>
+                      <option value="URGENTE">Urgente</option>
+                    </select>
+                  </div>
+
+                  <!-- Motivo -->
+                  <div>
+                    <label for="motivo" class="block text-sm font-medium text-gray-700 mb-1">
+                      Motivo
+                    </label>
+                    <input type="text" id="motivo" formControlName="motivo"
+                      class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      placeholder="Motivo del traspaso">
+                  </div>
+
+                  <!-- Observaciones -->
+                  <div>
+                    <label for="observaciones" class="block text-sm font-medium text-gray-700 mb-1">
+                      Observaciones
+                    </label>
+                    <textarea id="observaciones" formControlName="observaciones" rows="3"
+                      class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      placeholder="Observaciones adicionales"></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Columna 2 - Catálogo de Productos del Inventario -->
+              <div class="w-1/3 overflow-y-auto">
+                <h4 class="text-md font-semibold text-gray-800 mb-3">Productos Disponibles en Inventario</h4>
+
+                <div *ngIf="!form.get('almacen_origen_id')?.value"
+                  class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                  <p class="text-sm text-yellow-800">Por favor seleccione un almacén origen para ver los productos
+                    disponibles.</p>
+                </div>
+
+                <!-- Buscador de productos -->
+                <div class="relative mb-4" *ngIf="form.get('almacen_origen_id')?.value">
+                  <input type="text" [(ngModel)]="busquedaProducto" (input)="buscarProducto($event)"
+                    (focus)="onFocusProducto()" (blur)="onBlurProducto()" [ngModelOptions]="{standalone: true}"
+                    placeholder="Buscar producto por nombre o código..."
+                    class="block w-full py-2 px-3 pl-10 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path fill-rule="evenodd"
+                      d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                      clip-rule="evenodd" />
+                  </svg>
+                  <button *ngIf="busquedaProducto" type="button" (click)="limpiarBusquedaProducto()"
+                    class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                  <!-- Dropdown de sugerencias -->
+                  <div *ngIf="mostrarSugerenciasProducto && productosFiltrados.length > 0"
+                    class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-64 overflow-auto">
+                    <ul class="py-1">
+                      <li *ngFor="let producto of productosFiltrados"
+                        (mousedown)="seleccionarProductoCatalogo(producto)"
+                        class="px-4 py-2 hover:bg-blue-50 cursor-pointer">
+                        <div class="font-medium text-gray-900">{{ producto.articulo?.nombre }}</div>
+                        <div class="text-xs text-gray-500">
+                          Código: {{ producto.articulo?.codigo }}
+                          <span class="ml-2 font-semibold text-green-600">
+                            | Stock: {{ producto.stock_disponible }}
+                          </span>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Información del producto seleccionado -->
+                <div *ngIf="productoSeleccionado && form.get('almacen_origen_id')?.value"
+                  class="bg-white border border-gray-300 rounded-lg p-4 mb-4 shadow-sm">
+                  <div class="flex justify-between items-start mb-3">
+                    <div>
+                      <h5 class="text-lg font-semibold text-gray-900">{{ productoSeleccionado.articulo?.nombre }}</h5>
+                      <p class="text-sm text-gray-500">Código: {{ productoSeleccionado.articulo?.codigo }}</p>
+                    </div>
+                    <button type="button" (click)="limpiarBusquedaProducto()" class="text-gray-400 hover:text-gray-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                          clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <!-- Stock disponible -->
+                  <div class="mb-4">
+                    <div class="text-xs text-gray-600 mb-1">Stock Disponible</div>
+                    <div class="text-lg font-semibold text-green-600">
+                      {{ productoSeleccionado.stock_disponible }} unidades
+                    </div>
+                  </div>
+
+                  <!-- Botón para agregar -->
+                  <button type="button" (click)="agregarProductoATraspaso()"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                      fill="currentColor">
+                      <path fill-rule="evenodd"
+                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                        clip-rule="evenodd" />
+                    </svg>
+                    Agregar a Traspaso
+                  </button>
+                </div>
+
+                <!-- Lista de productos -->
+                <div *ngIf="!productoSeleccionado && form.get('almacen_origen_id')?.value"
+                  class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <div class="max-h-96 overflow-y-auto">
+                    <div *ngIf="productosInventario.length === 0" class="px-4 py-8 text-center text-sm text-gray-500">
+                      No hay productos disponibles en el inventario de este almacén.
+                    </div>
+                    <div
+                      *ngFor="let producto of (productosFiltrados.length > 0 ? productosFiltrados : productosInventario).slice(0, 50)"
+                      (click)="seleccionarProductoCatalogo(producto)"
+                      class="px-4 py-3 border-b border-gray-200 hover:bg-blue-50 cursor-pointer transition">
+                      <div class="flex justify-between items-center">
+                        <div class="flex-1">
+                          <div class="font-medium text-gray-900">{{ producto.articulo?.nombre }}</div>
+                          <div class="text-sm text-gray-500">Código: {{ producto.articulo?.codigo }}</div>
+                        </div>
+                        <div class="text-right">
+                          <div class="font-semibold text-green-600">Stock: {{ producto.stock_disponible }}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Columna 3 - Productos Agregados -->
+              <div class="w-1/3 overflow-y-auto">
+                <h4 class="text-md font-semibold text-gray-800 mb-3">Productos Agregados</h4>
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                  <div class="overflow-x-auto" style="max-height: calc(70vh - 100px); overflow-y: auto;">
+                    <table class="min-w-full divide-y divide-gray-200">
+                      <thead class="bg-gray-50 sticky top-0">
+                        <tr>
+                          <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
+                          <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cant.</th>
+                          <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody class="bg-white divide-y divide-gray-200" formArrayName="detalles">
+                        <tr *ngFor="let detalle of detalles.controls; let i = index" [formGroupName]="i"
+                          class="hover:bg-gray-50">
+                          <td class="px-3 py-2 text-sm">
+                            {{ getArticuloNombre(detalle.get('articulo_id')?.value) }}
+                            <div class="text-xs text-gray-500">Stock: {{
+                              getStockDisponible(detalle.get('articulo_id')?.value, detalle.get('inventario_id')?.value)
+                              }}</div>
+                          </td>
+                          <td class="px-3 py-2">
+                            <input type="number" formControlName="cantidad_solicitada" min="1"
+                              [max]="getStockDisponible(detalle.get('articulo_id')?.value, detalle.get('inventario_id')?.value)"
+                              class="w-20 py-1 px-2 border border-gray-300 rounded text-sm"
+                              [class.border-red-500]="detalle.get('cantidad_solicitada')?.invalid && detalle.get('cantidad_solicitada')?.touched">
+                          </td>
+                          <td class="px-3 py-2 text-center">
+                            <button type="button" (click)="removeDetalle(i)" class="text-red-600 hover:text-red-900">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path fill-rule="evenodd"
+                                  d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                  clip-rule="evenodd" />
+                              </svg>
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="detalles.length === 0">
+                          <td colspan="3" class="px-3 py-4 text-center text-sm text-gray-500">
+                            No hay productos agregados. Seleccione productos del inventario.
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Columna 3 - Productos Agregados -->
-        <div class="w-1/3 overflow-y-auto">
-          <h4 class="text-md font-semibold text-gray-800 mb-3">Productos Agregados</h4>
-          <div class="border border-gray-200 rounded-lg overflow-hidden">
-            <div class="overflow-x-auto" style="max-height: calc(70vh - 100px); overflow-y: auto;">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cant.</th>
-                    <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Acción</th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200" formArrayName="detalles">
-                  <tr *ngFor="let detalle of detalles.controls; let i = index"
-                    [formGroupName]="i" class="hover:bg-gray-50">
-                    <td class="px-3 py-2 text-sm">
-                      {{ getArticuloNombre(detalle.get('articulo_id')?.value) }}
-                      <div class="text-xs text-gray-500">Stock: {{ getStockDisponible(detalle.get('articulo_id')?.value, detalle.get('inventario_id')?.value) }}</div>
-                    </td>
-                    <td class="px-3 py-2">
-                      <input 
-                        type="number" 
-                        formControlName="cantidad_solicitada" 
-                        min="1"
-                        [max]="getStockDisponible(detalle.get('articulo_id')?.value, detalle.get('inventario_id')?.value)"
-                        class="w-20 py-1 px-2 border border-gray-300 rounded text-sm"
-                        [class.border-red-500]="detalle.get('cantidad_solicitada')?.invalid && detalle.get('cantidad_solicitada')?.touched">
-                    </td>
-                    <td class="px-3 py-2 text-center">
-                      <button type="button" (click)="removeDetalle(i)"
-                        class="text-red-600 hover:text-red-900">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
-                      </button>
-                    </td>
-                  </tr>
-                  <tr *ngIf="detalles.length === 0">
-                    <td colspan="3" class="px-3 py-4 text-center text-sm text-gray-500">
-                      No hay productos agregados. Seleccione productos del inventario.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <!-- Footer con botones -->
+            <div class="mt-3 flex justify-end space-x-3">
+              <button type="button" (click)="cerrarModal()"
+                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button type="submit" [disabled]="detalles.length === 0 || isLoading || form.invalid"
+                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                <span *ngIf="isLoading" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+                {{ isLoading ? 'Registrando...' : 'Registrar Traspaso' }}
+              </button>
             </div>
-          </div>
+          </form>
         </div>
-      </div>
-
-      <!-- Footer con botones -->
-      <div class="mt-3 flex justify-end space-x-3">
-        <button type="button" (click)="cerrarModal()"
-          class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-          Cancelar
-        </button>
-        <button type="submit" [disabled]="detalles.length === 0 || isLoading || form.invalid"
-          class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-          <span *ngIf="isLoading" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
-          {{ isLoading ? 'Registrando...' : 'Registrar Traspaso' }}
-        </button>
-      </div>
-    </form>
       </div>
     </div>
   </div>
-</div>

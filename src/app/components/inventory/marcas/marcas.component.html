@@ -11,7 +11,7 @@
                     d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
                     clip-rule="evenodd" />
             </svg>
-            Nueva Marca
+            Nueva <span class="hidden sm:inline ml-1">Marca</span>
         </button>
     </div>
 
@@ -31,13 +31,12 @@
     </div>
     }
 
-    <div class="flex justify-between items-center mb-4">
-        <app-search-bar (search)="onSearch($event)"></app-search-bar>
+    <div class="mb-4">
+        <app-search-bar class="w-full sm:max-w-md" (search)="onSearch($event)"></app-search-bar>
     </div>
 
     <!-- List Component -->
-    <app-marcas-list [marcas]="marcas" [isLoading]="isLoading" (edit)="onEdit($event)"
-        (delete)="onDelete($event)">
+    <app-marcas-list [marcas]="marcas" [isLoading]="isLoading" (edit)="onEdit($event)" (delete)="onDelete($event)">
     </app-marcas-list>
 
     <app-pagination [currentPage]="currentPage" [lastPage]="lastPage" [total]="total"

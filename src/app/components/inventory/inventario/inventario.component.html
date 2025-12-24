@@ -1,27 +1,27 @@
 <div class="container mx-auto px-4 py-6">
-    <div class="mb-6 flex justify-between items-center">
+    <div class="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
             <h1 class="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-2">Gestión de Inventario</h1>
             <p class="text-gray-600 dark:text-slate-400">Visualiza las cantidades compradas y el stock disponible por
                 almacén</p>
         </div>
         @if (isAdmin) {
-        <div class="flex gap-2">
+        <div class="flex flex-wrap justify-center gap-2">
             <button (click)="exportExcel()"
                 class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl">
                 <i class="fas fa-file-excel"></i>
-                <span>Excel</span>
+                <span class="hidden sm:inline">Excel</span>
             </button>
             <app-inventario-importar (importSuccess)="onImportSuccess()"></app-inventario-importar>
             <button (click)="exportPDF()"
                 class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl">
                 <i class="fas fa-file-pdf"></i>
-                <span>PDF</span>
+                <span class="hidden sm:inline">PDF</span>
             </button>
             <button (click)="navegarAAjustes()"
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl">
                 <i class="fas fa-adjust"></i>
-                <span>Ajustes de Inventario</span>
+                <span class="hidden sm:inline">Ajustes</span>
             </button>
         </div>
         }
@@ -37,16 +37,17 @@
 
 
 
-    <div class="mb-4 flex justify-between items-center">
-        <app-search-bar placeholder="Buscar por artículo, código, almacén..." class="max-w-md"
+    <div class="mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <app-search-bar placeholder="Buscar por artículo, código, almacén..." class="w-full sm:max-w-md"
             (search)="onSearch($event)">
         </app-search-bar>
 
         <!-- Toggle Vistas -->
-        <div class="flex gap-2 bg-gray-100 dark:bg-slate-700 rounded-lg p-1 transition-colors duration-200">
+        <div
+            class="flex gap-2 bg-gray-100 dark:bg-slate-700 rounded-lg p-1 transition-colors duration-200 w-full sm:w-auto justify-center">
             <button (click)="vista = 'item'"
                 [class]="vista === 'item' ? 'bg-white dark:bg-slate-600 shadow-sm' : 'bg-transparent'"
-                class="px-4 py-2 rounded-md font-medium transition-all duration-200"
+                class="px-4 py-2 rounded-md font-medium transition-all duration-200 flex-1 sm:flex-none text-center"
                 [class.text-blue-600]="vista === 'item'" [class.dark:text-blue-400]="vista === 'item'"
                 [class.text-gray-600]="vista !== 'item'" [class.dark:text-slate-300]="vista !== 'item'">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" viewBox="0 0 20 20"
@@ -58,7 +59,7 @@
             </button>
             <button (click)="vista = 'lotes'"
                 [class]="vista === 'lotes' ? 'bg-white dark:bg-slate-600 shadow-sm' : 'bg-transparent'"
-                class="px-4 py-2 rounded-md font-medium transition-all duration-200"
+                class="px-4 py-2 rounded-md font-medium transition-all duration-200 flex-1 sm:flex-none text-center"
                 [class.text-blue-600]="vista === 'lotes'" [class.dark:text-blue-400]="vista === 'lotes'"
                 [class.text-gray-600]="vista !== 'lotes'" [class.dark:text-slate-300]="vista !== 'lotes'">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" viewBox="0 0 20 20"

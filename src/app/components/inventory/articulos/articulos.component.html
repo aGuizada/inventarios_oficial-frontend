@@ -1,18 +1,18 @@
 <div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <h1 class="text-2xl font-bold text-gray-800 dark:text-slate-100">Gestión de Artículos</h1>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap justify-center gap-2">
             <!-- Import/Export Component -->
             <app-articulo-import (importSuccess)="onImportSuccess()"></app-articulo-import>
 
             <!-- Export Buttons -->
             <button (click)="exportExcel()"
                 class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex items-center transition duration-300">
-                <i class="fas fa-file-excel mr-2"></i> Excel
+                <i class="fas fa-file-excel mr-2"></i> <span class="hidden sm:inline">Excel</span>
             </button>
             <button (click)="exportPDF()"
                 class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center transition duration-300">
-                <i class="fas fa-file-pdf mr-2"></i> PDF
+                <i class="fas fa-file-pdf mr-2"></i> <span class="hidden sm:inline">PDF</span>
             </button>
 
             <!-- New Article Button -->
@@ -23,7 +23,7 @@
                         d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
                         clip-rule="evenodd" />
                 </svg>
-                Nuevo Artículo
+                Nuevo <span class="hidden sm:inline ml-1">Artículo</span>
             </button>
         </div>
     </div>
