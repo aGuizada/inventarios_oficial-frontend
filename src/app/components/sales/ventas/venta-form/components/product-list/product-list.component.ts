@@ -31,7 +31,11 @@ export class ProductListComponent implements OnChanges {
     selectedProductForDetail: ProductoInventario | null = null;
     isDetailModalOpen: boolean = false;
 
-    openProductDetail(producto: ProductoInventario): void {
+    openProductDetail(producto: ProductoInventario, event?: Event): void {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         this.selectedProductForDetail = producto;
         this.isDetailModalOpen = true;
     }
@@ -96,18 +100,30 @@ export class ProductListComponent implements OnChanges {
         this.mostrarSugerenciasProducto = this.busquedaProducto.length > 0 && this.productosFiltrados.length > 0;
     }
 
-    seleccionarCategoria(categoriaId: number | null): void {
+    seleccionarCategoria(categoriaId: number | null, event?: Event): void {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         this.categoriaSeleccionada = categoriaId;
         this.aplicarFiltros();
     }
 
-    seleccionarProductoCatalogo(producto: ProductoInventario): void {
+    seleccionarProductoCatalogo(producto: ProductoInventario, event?: Event): void {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         this.productoSeleccionado = producto;
         this.busquedaProducto = producto.articulo?.nombre || '';
         this.mostrarSugerenciasProducto = false;
     }
 
-    limpiarBusquedaProducto(): void {
+    limpiarBusquedaProducto(event?: Event): void {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         this.productoSeleccionado = null;
         this.busquedaProducto = '';
         this.aplicarFiltros();
@@ -125,7 +141,11 @@ export class ProductListComponent implements OnChanges {
         }, 200);
     }
 
-    agregarProductoAVenta(producto?: ProductoInventario | null): void {
+    agregarProductoAVenta(producto?: ProductoInventario | null, event?: Event): void {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         const productoAAgregar = producto || this.productoSeleccionado;
 
         if (!productoAAgregar) {

@@ -48,7 +48,7 @@
                         'text-blue-800 dark:text-blue-200': alertType === 'info'
                     }" class="text-sm font-medium whitespace-pre-line">{{ alertMessage }}</p>
             </div>
-            <button (click)="closeAlert()" [ngClass]="{
+            <button type="button" (click)="closeAlert()" [ngClass]="{
                         'text-red-400 hover:text-red-600 dark:hover:text-red-300': alertType === 'error',
                         'text-green-400 hover:text-green-600 dark:hover:text-green-300': alertType === 'success',
                         'text-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300': alertType === 'warning',
@@ -64,7 +64,7 @@
     </div>
     }
 
-    <form [formGroup]="form" (ngSubmit)="save()" class="flex flex-col">
+    <form [formGroup]="form" (ngSubmit)="save($event)" class="flex flex-col">
         <!-- Header con campos principales -->
         <div
             class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-4 transition-colors duration-200">
@@ -192,7 +192,7 @@
         </div>
 
         <!-- Mobile Cart FAB -->
-        <button *ngIf="detalles.length > 0" (click)="toggleMobileCart()"
+        <button type="button" *ngIf="detalles.length > 0" (click)="toggleMobileCart()"
             class="fixed bottom-6 right-6 lg:hidden z-40 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-transform active:scale-95">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
@@ -225,7 +225,7 @@
                         </svg>
                         Carrito de Compras
                     </h3>
-                    <button (click)="toggleMobileCart()"
+                    <button type="button" (click)="toggleMobileCart()"
                         class="p-2 text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">

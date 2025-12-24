@@ -17,8 +17,8 @@ export class LoginComponent implements OnInit, OnDestroy {
   showPassword = false;
 
   images = [
-    'assets/images/carousel-1.jpg',
-    'assets/images/carousel-2.jpg'
+    '/assets/images/carousel-1.jpg',
+    '/assets/images/carousel-2.jpg'
   ];
   currentImageIndex = 0;
   private intervalId: any;

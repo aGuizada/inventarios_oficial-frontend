@@ -71,7 +71,7 @@
                         </span>
                     </div>
                 </div>
-                <button type="button" (click)="removeDetalle(i)"
+                <button type="button" (click)="removeDetalle(i, $event)"
                     class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-colors duration-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="2">
@@ -124,7 +124,7 @@
                                     Tarifas Disponibles
                                 </div>
                                 <button type="button" *ngFor="let p of getPreciosDisponibles(i)"
-                                    (click)="seleccionarPrecio(i, p.value)"
+                                    (click)="seleccionarPrecio(i, p.value, $event)"
                                     class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 flex justify-between items-center group transition-colors">
                                     <span>{{ p.label }}</span>
                                     <span
@@ -161,7 +161,7 @@
                 <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-2">Tipo Venta</label>
                 <div class="flex gap-2">
                     <button type="button" *ngFor="let tipoVenta of tiposVenta"
-                        (click)="seleccionarTipoVenta(tipoVenta.id)" [ngClass]="{
+                        (click)="seleccionarTipoVenta(tipoVenta.id, $event)" [ngClass]="{
               'bg-green-600 text-white': parentForm.get('tipo_venta_id')?.value == tipoVenta.id,
               'bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-slate-300': parentForm.get('tipo_venta_id')?.value != tipoVenta.id
             }" class="flex flex-col items-center justify-center p-2.5 rounded-md transition-colors hover:opacity-90 flex-1"
@@ -225,7 +225,7 @@
                                 class="w-full py-1 px-2 text-right border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 rounded text-xs"
                                 placeholder="Monto">
                         </div>
-                        <button type="button" (click)="removerPago(i)"
+                        <button type="button" (click)="removerPago(i, $event)"
                             class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20"
                                 fill="currentColor">
@@ -239,7 +239,7 @@
 
                 <!-- Botones para agregar pago -->
                 <div class="grid grid-cols-3 gap-2">
-                    <button type="button" *ngFor="let tipoPago of tiposPago" (click)="agregarPago(tipoPago.id)"
+                    <button type="button" *ngFor="let tipoPago of tiposPago" (click)="agregarPago(tipoPago.id, $event)"
                         [ngClass]="{
                             'bg-green-600 text-white': isPagoAdded(tipoPago.id),
                             'bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-slate-300': !isPagoAdded(tipoPago.id)

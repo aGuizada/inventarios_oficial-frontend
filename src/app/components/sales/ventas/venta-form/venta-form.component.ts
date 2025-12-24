@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, Output, EventEmitter } from '@angular/core';
 import { CommonModule, NgClass } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { VentaService, ProductoInventario } from '../../../../services/venta.service';
@@ -36,7 +36,7 @@ import { CreditoModalComponent } from './components/credito-modal/credito-modal.
     ],
     templateUrl: './venta-form.component.html',
 })
-export class VentaFormComponent implements OnInit {
+export class VentaFormComponent implements OnInit, OnDestroy {
     @Output() saleCompleted = new EventEmitter<void>();
 
     form: FormGroup;
@@ -61,6 +61,9 @@ export class VentaFormComponent implements OnInit {
 
     // Caché de productos por almacén para evitar recargas innecesarias
     productosCache: Map<number, ProductoInventario[]> = new Map();
+    
+    // Intervalo para actualizar stock en tiempo real
+    private stockUpdateInterval: any;
 
     currentUserId = 1;
     currentUserSucursalId: number | null = null;
@@ -148,6 +151,28 @@ export class VentaFormComponent implements OnInit {
         this.loadDependencies();
         this.loadCajas();
         this.actualizarFechaHora();
+        
+        // Iniciar actualización periódica del stock en tiempo real (cada 10 segundos)
+        this.startStockUpdateInterval();
+    }
+
+    ngOnDestroy(): void {
+        // Limpiar el intervalo cuando se destruye el componente
+        if (this.stockUpdateInterval) {
+            clearInterval(this.stockUpdateInterval);
+        }
+    }
+
+    startStockUpdateInterval(): void {
+        // Actualizar el stock cada 10 segundos, forzando la recarga
+        this.stockUpdateInterval = setInterval(() => {
+            const almacenId = this.form.get('almacen_id')?.value;
+            if (almacenId) {
+                // Limpiar caché y forzar recarga para obtener datos actualizados
+                this.ventaService.clearProductosCache(almacenId);
+                this.loadProductosInventario(almacenId, true);
+            }
+        }, 10000); // 10 segundos
     }
 
     loadSucursales(): void {
@@ -168,7 +193,7 @@ export class VentaFormComponent implements OnInit {
                     }, 200);
                 }
             },
-            error: (error: any) => console.error('Error al cargar sucursales:', error)
+            error: (error: any) => {}
         });
     }
 
@@ -269,7 +294,6 @@ export class VentaFormComponent implements OnInit {
                     }));
                 }),
                 catchError(error => {
-                    console.error('Error al cargar tipos de venta:', error);
                     return of([]);
                 })
             ),
@@ -282,7 +306,6 @@ export class VentaFormComponent implements OnInit {
                     }));
                 }),
                 catchError(error => {
-                    console.error('Error al cargar tipos de pago:', error);
                     return of([]);
                 })
             )
@@ -312,7 +335,7 @@ export class VentaFormComponent implements OnInit {
                     }
                 }
             },
-            error: (error) => console.error('Error al cargar dependencias:', error)
+            error: (error) => {}
         });
 
         // Cargar otras dependencias
@@ -321,7 +344,7 @@ export class VentaFormComponent implements OnInit {
                 this.clientes = Array.isArray(response) ? response : (response.data || []);
                 this.buscarClientePorDefecto();
             },
-            error: (error: any) => console.error('Error al cargar clientes:', error)
+            error: (error: any) => {}
         });
 
         // Cargar almacenes según el rol del usuario
@@ -358,14 +381,13 @@ export class VentaFormComponent implements OnInit {
                 }
             },
             error: (error: any) => {
-                console.error('Error al cargar almacenes:', error);
                 this.almacenes = [];
             }
         });
 
         this.categoriaService.getAll().subscribe({
             next: (response: any) => this.categorias = Array.isArray(response) ? response : (response.data || []),
-            error: (error: any) => console.error('Error al cargar categorías:', error)
+            error: (error: any) => {}
         });
     }
 
@@ -403,7 +425,6 @@ export class VentaFormComponent implements OnInit {
                     }
                 },
                 error: (error: any) => {
-                    console.error('Error al crear cliente por defecto:', error);
                     // No bloqueamos, simplemente no habrá default
                 }
             });
@@ -417,7 +438,6 @@ export class VentaFormComponent implements OnInit {
                 this.seleccionarCajaAbierta();
             },
             error: (error: any) => {
-                console.error('Error al cargar cajas:', error);
                 this.cajas = [];
             }
         });
@@ -501,13 +521,18 @@ export class VentaFormComponent implements OnInit {
         }
     }
 
-    loadProductosInventario(almacenId: number): void {
-        this.ventaService.getProductosInventario(almacenId).subscribe({
+    loadProductosInventario(almacenId: number, forceRefresh: boolean = false): void {
+        this.ventaService.getProductosInventario(almacenId, forceRefresh).subscribe({
             next: (productos) => {
-                this.productosInventario = productos;
+                // Guardar el stock original y actualizar el stock disponible
+                this.productosInventario = productos.map(p => ({
+                    ...p,
+                    stock_disponible_original: p.stock_disponible
+                } as ProductoInventario));
+                // Actualizar el stock local después de cargar
+                this.actualizarStockLocal();
             },
             error: (error: any) => {
-                console.error('Error al cargar productos del inventario:', error);
                 this.productosInventario = [];
             }
         });
@@ -614,12 +639,16 @@ export class VentaFormComponent implements OnInit {
             subtotal: [precioVenta]
         });
 
-        detalle.get('cantidad')?.valueChanges.subscribe(() => this.calcularSubtotal(detalle));
+        detalle.get('cantidad')?.valueChanges.subscribe(() => {
+            this.calcularSubtotal(detalle);
+            this.actualizarStockLocal();
+        });
         detalle.get('precio')?.valueChanges.subscribe(() => this.calcularSubtotal(detalle));
         detalle.get('descuento')?.valueChanges.subscribe(() => this.calcularSubtotal(detalle));
 
         this.detalles.push(detalle);
         this.calcularTotal();
+        this.actualizarStockLocal();
     }
 
     calcularSubtotal(detalle: FormGroup): void {
@@ -641,6 +670,52 @@ export class VentaFormComponent implements OnInit {
     removeDetalle(index: number): void {
         this.detalles.removeAt(index);
         this.calcularTotal();
+        this.actualizarStockLocal();
+    }
+
+    /**
+     * Actualiza el stock localmente basándose en los productos en el carrito
+     * Esto permite mostrar el stock disponible en tiempo real mientras se construye la venta
+     */
+    actualizarStockLocal(): void {
+        // Crear un mapa de cantidades en el carrito por artículo
+        const cantidadesEnCarrito = new Map<number, number>();
+        
+        this.detalles.controls.forEach(control => {
+            const articuloId = control.get('articulo_id')?.value;
+            const cantidad = Number(control.get('cantidad')?.value || 0);
+            const unidadMedida = control.get('unidad_medida')?.value || 'Unidad';
+            
+            if (articuloId && cantidad > 0) {
+                const producto = this.productosInventario.find(p => p.articulo_id === articuloId);
+                if (producto) {
+                    let cantidadDeducir = cantidad;
+                    
+                    // Calcular cantidad a deducir según unidad de medida
+                    if (unidadMedida === 'Paquete' && producto.articulo?.unidad_envase) {
+                        cantidadDeducir = cantidad * (producto.articulo.unidad_envase > 0 ? producto.articulo.unidad_envase : 1);
+                    } else if (unidadMedida === 'Centimetro') {
+                        cantidadDeducir = cantidad / 100;
+                    }
+                    
+                    const cantidadActual = cantidadesEnCarrito.get(articuloId) || 0;
+                    cantidadesEnCarrito.set(articuloId, cantidadActual + cantidadDeducir);
+                }
+            }
+        });
+        
+        // Actualizar el stock disponible mostrado restando las cantidades en el carrito
+        this.productosInventario = this.productosInventario.map(producto => {
+            const cantidadEnCarrito = cantidadesEnCarrito.get(producto.articulo_id) || 0;
+            // El stock disponible mostrado es el stock real menos lo que está en el carrito
+            // Pero mantenemos el stock original para cuando se quite del carrito
+            const stockOriginal = (producto as any).stock_disponible_original ?? producto.stock_disponible;
+            return {
+                ...producto,
+                stock_disponible_original: stockOriginal,
+                stock_disponible: Math.max(0, stockOriginal - cantidadEnCarrito)
+            } as ProductoInventario;
+        });
     }
 
     puedeRegistrarVenta(): boolean {
@@ -651,7 +726,13 @@ export class VentaFormComponent implements OnInit {
         return Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
     }
 
-    save(): void {
+    save(event?: Event): void {
+        // Prevenir submit accidental - siempre prevenir el comportamiento por defecto
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
         if (this.detalles.length === 0) {
             this.showAlertMessage('Debe agregar al menos un producto a la venta', 'warning');
             return;
@@ -681,6 +762,8 @@ export class VentaFormComponent implements OnInit {
             if (this.defaultCliente) {
                 // Si hay un cliente por defecto, asignarlo
                 this.form.patchValue({ cliente_id: this.defaultCliente.id });
+                // Actualizar la validez del formulario después de asignar el cliente
+                this.form.get('cliente_id')?.updateValueAndValidity();
             } else {
                 // Si no hay cliente seleccionado ni por defecto, mostrar error
                 this.showAlertMessage('Por favor seleccione un cliente para la venta', 'warning');
@@ -688,8 +771,18 @@ export class VentaFormComponent implements OnInit {
             }
         }
 
+        // Verificar nuevamente después de asignar el cliente por defecto
+        const clienteIdFinal = this.form.get('cliente_id')?.value;
+        if (!clienteIdFinal) {
+            this.showAlertMessage('Por favor seleccione un cliente para la venta', 'warning');
+            return;
+        }
+
         const camposRequeridos = ['cliente_id', 'tipo_venta_id', 'tipo_pago_id', 'almacen_id', 'caja_id'];
-        const camposFaltantes = camposRequeridos.filter(campo => !this.form.get(campo)?.value);
+        const camposFaltantes = camposRequeridos.filter(campo => {
+            const value = this.form.get(campo)?.value;
+            return value === null || value === undefined || value === '';
+        });
 
         if (camposFaltantes.length > 0) {
             this.showAlertMessage(`Por favor complete todos los campos requeridos. Faltan: ${camposFaltantes.join(', ')}`, 'warning');
@@ -810,6 +903,23 @@ export class VentaFormComponent implements OnInit {
             .subscribe({
                 next: (response: any) => {
                     this.showAlertMessage('Venta registrada con éxito', 'success');
+                    
+                    // Limpiar el formulario y los detalles
+                    this.detalles.clear();
+                    this.pagos.clear();
+                    this.calcularTotal();
+                    
+                    // Limpiar el caché y recargar el inventario para reflejar el stock actualizado
+                    const almacenId = this.form.get('almacen_id')?.value;
+                    if (almacenId) {
+                        // Limpiar el caché primero
+                        this.ventaService.clearProductosCache(almacenId);
+                        // Esperar un momento para asegurar que el backend haya terminado de actualizar
+                        setTimeout(() => {
+                            this.loadProductosInventario(almacenId, true);
+                        }, 500); // 500ms de delay para asegurar que el backend haya terminado
+                    }
+                    
                     this.saleCompleted.emit();
 
                     const ventaId = response.id;
@@ -823,16 +933,17 @@ export class VentaFormComponent implements OnInit {
                         confirmButtonText: 'Imprimir Carta',
                         denyButtonText: 'Imprimir Rollo',
                         cancelButtonText: 'Cerrar'
-                    }).then((result: any) => {
+                    }).then((result) => {
                         if (result.isConfirmed) {
                             this.ventaService.imprimirComprobante(ventaId, 'carta');
                         } else if (result.isDenied) {
                             this.ventaService.imprimirComprobante(ventaId, 'rollo');
                         }
+                    }).catch(() => {
+                        // Manejar error silenciosamente si ocurre
                     });
                 },
                 error: (error: any) => {
-                    console.error('Error al registrar venta:', error);
                     this.showAlertMessage('Error al registrar la venta. Por favor intente nuevamente.', 'error');
                 }
             });

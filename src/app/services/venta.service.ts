@@ -13,6 +13,7 @@ export interface ProductoInventario {
     cantidad: number;
     articulo?: any;
     almacen?: any;
+    stock_disponible_original?: number; // Stock original antes de descontar el carrito
 }
 
 @Injectable({
@@ -50,14 +51,23 @@ export class VentaService {
 
     private productosCache: Map<string, Observable<ProductoInventario[]>> = new Map();
 
-    getProductosInventario(almacenId?: number): Observable<ProductoInventario[]> {
+    getProductosInventario(almacenId?: number, forceRefresh: boolean = false): Observable<ProductoInventario[]> {
         const cacheKey = almacenId?.toString() || 'all';
+        
+        // Si se fuerza la recarga, limpiar el caché para este almacén
+        if (forceRefresh && this.productosCache.has(cacheKey)) {
+            this.productosCache.delete(cacheKey);
+        }
         
         // Si ya existe una petición en curso para este almacén, reutilizarla
         if (!this.productosCache.has(cacheKey)) {
             let params = new HttpParams();
             if (almacenId) {
                 params = params.set('almacen_id', almacenId.toString());
+            }
+            // Agregar timestamp para evitar caché del navegador cuando se fuerza la recarga
+            if (forceRefresh) {
+                params = params.set('_t', Date.now().toString());
             }
             const request = this.http.get<ProductoInventario[]>(`${this.apiUrl}/productos-inventario`, { params })
                 .pipe(
@@ -67,6 +77,19 @@ export class VentaService {
         }
         
         return this.productosCache.get(cacheKey)!;
+    }
+
+    /**
+     * Limpia el caché de productos del inventario
+     */
+    clearProductosCache(almacenId?: number): void {
+        if (almacenId) {
+            const cacheKey = almacenId.toString();
+            this.productosCache.delete(cacheKey);
+        } else {
+            // Limpiar todo el caché
+            this.productosCache.clear();
+        }
     }
 
     anular(id: number): Observable<any> {

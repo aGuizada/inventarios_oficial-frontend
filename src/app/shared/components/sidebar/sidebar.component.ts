@@ -22,8 +22,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   isCollapsed = false;
 
   images = [
-    'assets/images/carousel-1.jpg',
-    'assets/images/carousel-2.jpg'
+    '/assets/images/carousel-1.jpg',
+    '/assets/images/carousel-2 (2).jpg'
   ];
   currentImageIndex = 0;
   private intervalId: any;
@@ -138,7 +138,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   updateMenu() {
-    console.log('Updating menu. Is Vendedor?', this.authService.isVendedor());
     if (this.authService.isVendedor()) {
       this.menuItems = this.allMenuItems.filter(item => {
         if (item.label === 'Ventas') return true;

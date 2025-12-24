@@ -84,6 +84,78 @@ export class ArticuloService {
     }
 
     exportPDF(): void {
-        window.open(`${this.apiUrl}/export-pdf`, '_blank');
+        // Get the token from localStorage
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            alert('No hay token de autenticación. Por favor, inicie sesión nuevamente.');
+            window.location.href = '/login';
+            return;
+        }
+        
+        // Create a GET request with the Authorization header
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${this.apiUrl}/export-pdf`, true);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.setRequestHeader('Accept', 'application/pdf');
+        xhr.responseType = 'blob'; // Important for PDF download
+        
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                // Check if response is actually a PDF
+                const contentType = xhr.getResponseHeader('Content-Type');
+                if (contentType && contentType.includes('application/pdf')) {
+                    // Success: download the PDF
+                    const blob = xhr.response;
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'articulos.pdf';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    // Response is not a PDF, might be an error JSON
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        try {
+                            const errorData = JSON.parse(reader.result as string);
+                            alert('Error al generar el PDF: ' + (errorData.message || 'Error desconocido'));
+                        } catch (e) {
+                            alert('Error al generar el PDF. Por favor, intente nuevamente.');
+                        }
+                    };
+                    reader.readAsText(xhr.response);
+                }
+            } else if (xhr.status === 401) {
+                // Unauthorized: redirect to login
+                alert('Su sesión ha expirado. Por favor, inicie sesión nuevamente.');
+                window.location.href = '/login';
+            } else if (xhr.status === 500) {
+                // Server error
+                const reader = new FileReader();
+                reader.onload = function() {
+                    try {
+                        const errorData = JSON.parse(reader.result as string);
+                        alert('Error del servidor: ' + (errorData.message || errorData.error || 'Error desconocido'));
+                    } catch (e) {
+                        alert('Error del servidor al generar el PDF. Por favor, intente nuevamente.');
+                    }
+                };
+                reader.readAsText(xhr.response);
+            } else {
+                // Other error
+                alert('Error al descargar el PDF. Código de error: ' + xhr.status);
+                console.error('Error downloading PDF:', xhr.status, xhr.statusText);
+            }
+        };
+        
+        xhr.onerror = function() {
+            alert('Error de conexión al descargar el PDF. Por favor, verifique su conexión a internet.');
+            console.error('Network error downloading PDF');
+        };
+        
+        xhr.send();
     }
 }
