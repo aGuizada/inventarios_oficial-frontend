@@ -169,6 +169,13 @@ export class ComprasComponent implements OnInit {
         this.closeCreditoModal();
       }
     });
+    
+    // Listener para actualizar la caja cuando cambie el almacén
+    this.form.get('almacen_id')?.valueChanges.subscribe((almacenId) => {
+      if (almacenId) {
+        this.actualizarCajaPorAlmacen(Number(almacenId));
+      }
+    });
   }
 
   seleccionarTipoCompra(tipo: 'contado' | 'credito'): void {
@@ -292,6 +299,8 @@ export class ComprasComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    console.log('Iniciando componente de compras');
+    
     // Obtener el símbolo de moneda activa inicial
     this.simboloMoneda = this.monedaActivaService.getSimbolo();
     
@@ -302,6 +311,8 @@ export class ComprasComponent implements OnInit {
 
     // Obtener información del usuario actual
     const currentUser = this.authService.getCurrentUser();
+    console.log('Usuario actual:', currentUser);
+    
     if (currentUser) {
       this.currentUserId = currentUser.id;
       this.currentUserSucursalId = currentUser.sucursal_id || null;
@@ -309,6 +320,9 @@ export class ComprasComponent implements OnInit {
 
       // Verificar si es admin
       this.isAdmin = currentUser.rol_id === 1;
+      console.log('Usuario ID:', this.currentUserId);
+      console.log('Sucursal ID del usuario:', this.currentUserSucursalId);
+      console.log('Es admin:', this.isAdmin);
 
       if (this.isAdmin) {
         this.loadSucursales();
@@ -322,6 +336,9 @@ export class ComprasComponent implements OnInit {
     this.route.url.subscribe(url => {
       const path = url[0]?.path;
       this.isHistorialView = path === 'historial';
+      console.log('Path actual:', path);
+      console.log('Es vista de historial:', this.isHistorialView);
+      console.log('URL completa:', url);
 
       if (this.isHistorialView) {
         // En historial, solo cargar las compras
@@ -330,6 +347,7 @@ export class ComprasComponent implements OnInit {
       } else {
         // En nueva compra, cargar todo para el formulario
         this.isModalOpen = true;
+        console.log('Cargando dependencias para nueva compra');
         this.loadDependencies();
         this.loadCompras(); // También cargar compras para referencia
         // Actualizar fecha y hora cuando se navega a nueva compra
@@ -343,10 +361,13 @@ export class ComprasComponent implements OnInit {
   }
 
   loadDependencies(): void {
+    console.log('Cargando dependencias');
+    
     this.proveedorService.getAll().subscribe({
       next: (res) => {
         this.proveedores = Array.isArray(res.data) ? res.data : [];
         this.proveedoresFiltrados = this.proveedores;
+        console.log('Proveedores cargados:', this.proveedores.length);
       },
       error: (error) => {
         console.error('Error loading proveedores', error);
@@ -354,16 +375,27 @@ export class ComprasComponent implements OnInit {
         this.proveedoresFiltrados = [];
       }
     });
+    
     this.almacenService.getAll().subscribe({
       next: (res) => {
         this.almacenes = Array.isArray(res.data) ? res.data : [];
+        console.log('Almacenes cargados:', this.almacenes);
         this.seleccionarAlmacenPorDefecto();
+        
+        // Log para debug
+        console.log('Almacenes cargados:', this.almacenes);
+        console.log('Almacen seleccionado:', this.form.get('almacen_id')?.value);
+        
+        // Cargar cajas y encontrar la caja abierta
+        // Ahora que ya tenemos un almacén seleccionado, podemos buscar la caja correcta
+        this.cargarCajasYBuscarCajaAbierta();
       },
       error: (error) => {
         console.error('Error loading almacenes', error);
         this.almacenes = [];
       }
     });
+    
     this.articuloService.getAll(1, 1000).subscribe({
       next: (res) => {
         const paginated = res?.data as any;
@@ -375,33 +407,12 @@ export class ComprasComponent implements OnInit {
           this.articulos = [];
         }
         this.articulosFiltrados = this.articulos;
+        console.log('Articulos cargados:', this.articulos.length);
       },
       error: (error) => {
         console.error('Error loading articulos', error);
         this.articulos = [];
         this.articulosFiltrados = [];
-      }
-    });
-    // Cargar cajas y encontrar la caja abierta
-    this.cajaService.getAll().subscribe({
-      next: (res) => {
-        this.cajas = Array.isArray(res.data) ? res.data : [];
-        // Buscar la caja abierta (estado = 1 o 'abierta')
-        this.cajaAbierta = this.cajas.find(caja =>
-          caja.estado === 1 ||
-          caja.estado === '1' ||
-          caja.estado === true ||
-          caja.estado === 'abierta'
-        ) || null;
-
-        if (!this.cajaAbierta) {
-          alert('No hay una caja abierta. Por favor, abra una caja antes de realizar compras.');
-        }
-      },
-      error: (error) => {
-        this.cajas = [];
-        this.cajaAbierta = null;
-        this.showAlertMessage('Error al cargar las cajas. No se puede realizar compras.', 'error');
       }
     });
   }
@@ -835,34 +846,49 @@ export class ComprasComponent implements OnInit {
     return tipoCompra.toLowerCase() === 'contado';
   }
 
+  // Función para calcular el saldo disponible de una caja
+  calcularSaldoDisponible(caja: any): number {
+    if (!caja) return 0;
+    
+    // Convertir todos los valores a números
+    const saldoInicial = parseFloat(String(caja.saldo_inicial || 0));
+    const depositos = parseFloat(String(caja.depositos || 0));
+    const ventas = parseFloat(String(caja.ventas || 0));
+    const pagosEfectivo = parseFloat(String(caja.pagos_efectivo || 0));
+    const pagosQr = parseFloat(String(caja.pagos_qr || 0));
+    const pagosTransferencia = parseFloat(String(caja.pagos_transferencia || 0));
+    const cuotasVentasCredito = parseFloat(String(caja.cuotas_ventas_credito || 0));
+    const salidas = parseFloat(String(caja.salidas || 0));
+    const comprasContado = parseFloat(String(caja.compras_contado || 0));
+    const comprasCredito = parseFloat(String(caja.compras_credito || 0));
+    const saldoFaltante = parseFloat(String(caja.saldo_faltante || 0));
+    
+    // Calcular saldo disponible
+    const saldoDisponible = saldoInicial + depositos + ventas + pagosEfectivo + pagosQr + 
+                           pagosTransferencia + cuotasVentasCredito - salidas - 
+                           comprasContado - comprasCredito - saldoFaltante;
+    
+    return saldoDisponible;
+  }
+
   save(): void {
 
     // VALIDAR QUE HAYA UNA CAJA ABIERTA
     if (!this.cajaAbierta) {
-      this.showAlertMessage('No hay una caja abierta. Por favor, abra una caja antes de realizar compras.', 'error');
+      this.showAlertMessage('No hay una caja abierta para la sucursal seleccionada. Por favor, abra una caja antes de realizar compras.', 'error');
       return;
     }
 
     // Verificar que la caja sigue abierta (recargar si es necesario)
-    const isCajaOpen = this.cajaAbierta.estado === 1 ||
+    const isCajaOpen = (this.cajaAbierta.estado === 1 ||
       this.cajaAbierta.estado === '1' ||
       this.cajaAbierta.estado === true ||
-      this.cajaAbierta.estado === 'abierta';
+      this.cajaAbierta.estado === 'abierta');
 
     if (!isCajaOpen) {
       this.showAlertMessage('La caja seleccionada está cerrada. Por favor, abra una caja antes de realizar compras.', 'error');
-      // Recargar cajas para encontrar la abierta
-      this.cajaService.getAll().subscribe({
-        next: (res) => {
-          this.cajas = Array.isArray(res.data) ? res.data : [];
-          this.cajaAbierta = this.cajas.find(caja =>
-            caja.estado === 1 ||
-            caja.estado === '1' ||
-            caja.estado === true ||
-            caja.estado === 'abierta'
-          ) || null;
-        }
-      });
+      // Recargar cajas para encontrar la abierta de la sucursal correcta
+      this.cargarCajasYBuscarCajaAbierta();
       return;
     }
 
@@ -871,11 +897,12 @@ export class ComprasComponent implements OnInit {
     this.cajaService.getById(this.cajaAbierta.id).subscribe({
       next: (cajaResponse) => {
         const cajaActualizada = cajaResponse.data || cajaResponse;
-        // Usar saldo_caja que viene calculado del backend
-        const saldoDisponible = parseFloat(String(cajaActualizada.saldo_caja || 0));
+        // Calcular saldo disponible en lugar de usar saldo_caja directamente
+        const saldoDisponible = this.calcularSaldoDisponible(cajaActualizada);
         
         // Calcular el total de la compra actual
         const totalCompra = parseFloat(this.form.get('total')?.value) || 0;
+        
         
         // Determinar el monto a descontar según el tipo de compra
         const tipoCompraValidacion = (this.form.get('tipo_compra')?.value || 'contado').toLowerCase().trim();
@@ -890,12 +917,7 @@ export class ComprasComponent implements OnInit {
           montoADescontar = montoPagado;
         }
         
-        // Validar que el saldo sea suficiente
-        if (saldoDisponible <= 0) {
-          this.showAlertMessage('El saldo de la caja no es suficiente para realizar la compra. Saldo disponible: Q' + saldoDisponible.toFixed(2), 'error');
-          return;
-        }
-        
+        // Validar que el saldo sea suficiente para la compra
         if (saldoDisponible < montoADescontar) {
           this.showAlertMessage('Saldo insuficiente de caja. Saldo disponible: Q' + saldoDisponible.toFixed(2) + '. Monto requerido: Q' + montoADescontar.toFixed(2), 'error');
           return;
@@ -906,20 +928,20 @@ export class ComprasComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al obtener saldo de caja:', error);
-        // Si no se puede obtener el saldo, usar el saldo_caja de la caja actual si está disponible
+        // Si no se puede obtener el saldo, calcular el saldo de la caja actual
         const cajaActual = this.cajaAbierta;
         if (!cajaActual) {
           this.showAlertMessage('No se pudo verificar el saldo de la caja. Por favor, verifique que haya una caja abierta.', 'error');
           return;
         }
         
-        const saldoDisponible = parseFloat(String(cajaActual.saldo_caja || 0));
+        const saldoDisponible = this.calcularSaldoDisponible(cajaActual);
         const totalCompra = parseFloat(this.form.get('total')?.value) || 0;
         const tipoCompraValidacion = (this.form.get('tipo_compra')?.value || 'contado').toLowerCase().trim();
         let montoADescontar = tipoCompraValidacion === 'contado' ? totalCompra : (parseFloat(this.form.get('monto_pagado')?.value) || 0);
         
-        if (saldoDisponible <= 0 || saldoDisponible < montoADescontar) {
-          this.showAlertMessage('El saldo de la caja no es suficiente para realizar la compra. Saldo disponible: Q' + saldoDisponible.toFixed(2), 'error');
+        if (saldoDisponible < montoADescontar) {
+          this.showAlertMessage('Saldo insuficiente de caja. Saldo disponible: Q' + saldoDisponible.toFixed(2) + '. Monto requerido: Q' + montoADescontar.toFixed(2), 'error');
           return;
         }
         
@@ -932,7 +954,7 @@ export class ComprasComponent implements OnInit {
   procesarGuardadoCompra(): void {
     // Verificar que la caja esté disponible
     if (!this.cajaAbierta) {
-      this.showAlertMessage('No hay una caja abierta. Por favor, abra una caja antes de realizar compras.', 'error');
+      this.showAlertMessage('No hay una caja abierta para la sucursal seleccionada. Por favor, abra una caja antes de realizar compras.', 'error');
       return;
     }
 
@@ -1103,11 +1125,7 @@ export class ComprasComponent implements OnInit {
               }
             }
 
-            // Si el error es sobre caja cerrada, mostrar mensaje específico
-            if (errorMessage.includes('caja') || errorMessage.includes('Caja')) {
-              errorMessage = 'No hay una caja abierta. Por favor, abra una caja antes de realizar compras.';
-            }
-
+            // Mostrar el mensaje de error específico del backend
             this.showAlertMessage(errorMessage, 'error');
           }
         });
@@ -1129,16 +1147,8 @@ export class ComprasComponent implements OnInit {
             const errorResponse = error?.error || {};
             let errorMessage = errorResponse.message || errorResponse.error || 'Error al crear la compra';
 
-            // Si el error es sobre caja cerrada, mostrar mensaje específico sin detalles técnicos
-            if (errorMessage.includes('caja') || errorMessage.includes('Caja')) {
-              errorMessage = 'No hay una caja abierta. Por favor, abra una caja antes de realizar compras.';
-              this.showAlertMessage(errorMessage, 'error');
-            } else {
-              // Para otros errores, mostrar detalles completos
-              const errorDetails = errorResponse.file ? `Archivo: ${errorResponse.file}\nLínea: ${errorResponse.line}` : '';
-              const fullError = errorResponse.message || error?.message || 'Error desconocido';
-              this.showAlertMessage(`Error: ${errorMessage}${errorDetails ? '\n\n' + errorDetails : ''}${fullError ? '\n\nDetalles: ' + fullError : ''}`, 'error');
-            }
+            // Mostrar el mensaje de error específico del backend
+            this.showAlertMessage(errorMessage, 'error');
           }
         });
     }
@@ -1685,26 +1695,58 @@ export class ComprasComponent implements OnInit {
 
   // Métodos para manejar el dropdown de almacenes
   seleccionarAlmacenPorDefecto(): void {
-    if (this.form.get('almacen_id')?.value) return;
+    console.log('Seleccionando almacen por defecto');
+    console.log('Form almacen_id:', this.form.get('almacen_id')?.value);
+    console.log('isAdmin:', this.isAdmin);
+    console.log('currentUserSucursalId:', this.currentUserSucursalId);
+    console.log('Almacenes disponibles:', this.almacenes);
+    
+    if (this.form.get('almacen_id')?.value) {
+      console.log('Ya hay un almacen seleccionado, no se selecciona por defecto');
+      // Asegurarnos de que se carguen las cajas incluso si ya hay un almacén seleccionado
+      this.cargarCajasYBuscarCajaAbierta();
+      return;
+    }
 
     // Si es admin, puede seleccionar cualquier almacén
     // Si no es admin, solo almacenes de su sucursal
     if (!this.isAdmin && this.currentUserSucursalId) {
+      console.log('Usuario no admin, buscando almacen de sucursal:', this.currentUserSucursalId);
       const almacenPorDefecto = this.almacenes.find(almacen =>
         almacen.sucursal_id === this.currentUserSucursalId && almacen.estado !== false
       );
+      
+      console.log('Almacen por defecto encontrado:', almacenPorDefecto);
 
       if (almacenPorDefecto) {
         this.form.patchValue({ almacen_id: almacenPorDefecto.id });
+        console.log('Almacen seleccionado:', almacenPorDefecto.id);
+        // Cargar cajas después de seleccionar el almacén
+        this.cargarCajasYBuscarCajaAbierta();
         return;
+      } else {
+        console.log('No se encontró almacen por defecto para la sucursal:', this.currentUserSucursalId);
+        console.log('Todos los almacenes:', this.almacenes.map(a => ({id: a.id, nombre: a.nombre_almacen, sucursal_id: a.sucursal_id, estado: a.estado})));
       }
     } else {
+      console.log('Usuario admin, buscando primer almacen activo');
       // Para admin, seleccionar el primer almacén activo disponible
       const primerAlmacen = this.almacenes.find(almacen => almacen.estado !== false);
+      console.log('Primer almacen encontrado:', primerAlmacen);
       if (primerAlmacen) {
         this.form.patchValue({ almacen_id: primerAlmacen.id });
+        console.log('Almacen seleccionado:', primerAlmacen.id);
+        // Cargar cajas después de seleccionar el almacén
+        this.cargarCajasYBuscarCajaAbierta();
+        return;
+      } else {
+        console.log('No se encontró ningún almacen activo');
+        console.log('Todos los almacenes:', this.almacenes.map(a => ({id: a.id, nombre: a.nombre_almacen, sucursal_id: a.sucursal_id, estado: a.estado})));
       }
     }
+    
+    // Si no se pudo seleccionar un almacén, cargar cajas de todos modos
+    this.cargarCajasYBuscarCajaAbierta();
   }
 
   toggleMenuAlmacenes(): void {
@@ -1720,9 +1762,14 @@ export class ComprasComponent implements OnInit {
   }
 
   cambiarAlmacen(almacenId: number): void {
+    console.log('Cambiando almacén:', almacenId);
+    console.log('isAdmin:', this.isAdmin);
+    console.log('currentUserSucursalId:', this.currentUserSucursalId);
+    
     // Si no es admin, validar que el almacén pertenezca a su sucursal
     if (!this.isAdmin && this.currentUserSucursalId) {
       const almacen = this.almacenes.find(a => a.id === almacenId);
+      console.log('Almacen a cambiar:', almacen);
       if (!almacen || almacen.sucursal_id !== this.currentUserSucursalId) {
         this.showAlertMessage('No puede seleccionar un almacén de otra sucursal', 'error');
         return;
@@ -1731,6 +1778,9 @@ export class ComprasComponent implements OnInit {
     
     this.form.patchValue({ almacen_id: almacenId });
     this.mostrarMenuAlmacenes = false;
+    
+    // Actualizar la caja abierta según la sucursal del almacén seleccionado
+    this.actualizarCajaPorAlmacen(almacenId);
   }
 
   getAlmacenSeleccionadoNombre(): string {
@@ -1738,6 +1788,113 @@ export class ComprasComponent implements OnInit {
     if (!almacenId) return '';
     const almacen = this.almacenes.find(a => a.id === almacenId);
     return almacen?.nombre_almacen || '';
+  }
+
+  cargarCajasYBuscarCajaAbierta(): void {
+    console.log('Cargando cajas y buscando caja abierta');
+    console.log('Almacenes disponibles:', this.almacenes);
+    console.log('Form almacen_id:', this.form.get('almacen_id')?.value);
+    
+    this.cajaService.getAll().subscribe({
+      next: (res) => {
+        this.cajas = Array.isArray(res.data) ? res.data : [];
+        
+        // Log para debug
+        console.log('Cajas cargadas:', this.cajas);
+        
+        // Buscar la caja abierta de la sucursal del almacén seleccionado
+        const almacenId = this.form.get('almacen_id')?.value;
+        let sucursalId = null;
+        
+        // Obtener la sucursal del almacén seleccionado
+        if (almacenId) {
+          const almacen = this.almacenes.find(a => a.id === almacenId);
+          sucursalId = almacen?.sucursal_id || null;
+          console.log('Almacen encontrado:', almacen);
+          console.log('Sucursal ID:', sucursalId);
+        } else {
+          console.log('No hay almacen seleccionado');
+        }
+        
+        // Buscar la caja abierta de la sucursal correcta
+        this.cajaAbierta = this.cajas.find(caja =>
+          (caja.estado === 1 ||
+          caja.estado === '1' ||
+          caja.estado === true ||
+          caja.estado === 'abierta') &&
+          (sucursalId ? caja.sucursal_id === sucursalId : true)
+        ) || null;
+        
+        console.log('Caja abierta encontrada:', this.cajaAbierta);
+        
+        // Log detallado de todas las cajas
+        if (this.cajas.length > 0) {
+          console.log('Todas las cajas:', this.cajas.map(c => ({
+            id: c.id,
+            sucursal_id: c.sucursal_id,
+            estado: c.estado,
+            saldo_caja: c.saldo_caja,
+            saldo_inicial: c.saldo_inicial
+          })));
+        }
+
+        if (!this.cajaAbierta) {
+          this.showAlertMessage('No hay una caja abierta para la sucursal seleccionada. Por favor, abra una caja antes de realizar compras.', 'error');
+        }
+      },
+      error: (error) => {
+        console.error('Error al cargar las cajas:', error);
+        this.cajas = [];
+        this.cajaAbierta = null;
+        this.showAlertMessage('Error al cargar las cajas. No se puede realizar compras.', 'error');
+      }
+    });
+  }
+
+  actualizarCajaPorAlmacen(almacenId: number): void {
+    console.log('Actualizando caja por almacén:', almacenId);
+    console.log('Almacenes disponibles:', this.almacenes);
+    console.log('Cajas disponibles:', this.cajas);
+    
+    // Obtener la sucursal del almacén seleccionado
+    const almacen = this.almacenes.find(a => a.id === almacenId);
+    const sucursalId = almacen?.sucursal_id || null;
+    
+    console.log('Almacen encontrado:', almacen);
+    console.log('Sucursal ID:', sucursalId);
+    
+    // Si no hay cajas cargadas, cargarlas primero
+    if (!this.cajas || this.cajas.length === 0) {
+      console.log('No hay cajas cargadas, cargando cajas...');
+      this.cargarCajasYBuscarCajaAbierta();
+      return;
+    }
+    
+    // Buscar la caja abierta de la sucursal correcta
+    this.cajaAbierta = this.cajas.find(caja =>
+      (caja.estado === 1 ||
+      caja.estado === '1' ||
+      caja.estado === true ||
+      caja.estado === 'abierta') &&
+      (sucursalId ? caja.sucursal_id === sucursalId : true)
+    ) || null;
+    
+    console.log('Caja abierta encontrada:', this.cajaAbierta);
+    
+    // Log detallado de todas las cajas
+    if (this.cajas.length > 0) {
+      console.log('Todas las cajas:', this.cajas.map(c => ({
+        id: c.id,
+        sucursal_id: c.sucursal_id,
+        estado: c.estado,
+        saldo_caja: c.saldo_caja,
+        saldo_inicial: c.saldo_inicial
+      })));
+    }
+    
+    if (!this.cajaAbierta) {
+      this.showAlertMessage('No hay una caja abierta para la sucursal seleccionada. Por favor, abra una caja antes de realizar compras.', 'error');
+    }
   }
 
   openEditPrecioModal(index: number): void {

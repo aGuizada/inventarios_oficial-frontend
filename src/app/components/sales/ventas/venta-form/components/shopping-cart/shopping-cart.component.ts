@@ -38,12 +38,7 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes['tiposVenta'] && this.tiposVenta) {
-            console.log('ShoppingCart - Tipos Venta received:', this.tiposVenta);
-        }
-        if (changes['tiposPago'] && this.tiposPago) {
-            console.log('ShoppingCart - Tipos Pago received:', this.tiposPago);
-        }
+        // Cambios detectados, no se requiere logging
     }
 
     get detalles() {
@@ -58,7 +53,11 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
         return index;
     }
 
-    removeDetalle(index: number): void {
+    removeDetalle(index: number, event?: Event): void {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         this.remove.emit(index);
     }
 
@@ -72,12 +71,20 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
         return producto?.stock_disponible || 0;
     }
 
-    seleccionarTipoVenta(tipoVentaId: number): void {
+    seleccionarTipoVenta(tipoVentaId: number, event?: Event): void {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         this.parentForm.patchValue({ tipo_venta_id: tipoVentaId });
         this.parentForm.get('tipo_venta_id')?.updateValueAndValidity();
     }
 
-    agregarPago(tipoPagoId: number): void {
+    agregarPago(tipoPagoId: number, event?: Event): void {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         const totalVenta = this.parentForm.get('total')?.value || 0;
         const totalPagado = this.calcularTotalPagado();
         const restante = totalVenta - totalPagado;
@@ -101,7 +108,11 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
         }
     }
 
-    removerPago(index: number): void {
+    removerPago(index: number, event?: Event): void {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         this.pagos.removeAt(index);
         // Si borramos todos, limpiamos el principal
         if (this.pagos.length === 0) {
@@ -199,6 +210,10 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
     dropdownPosition = { top: 0, left: 0 };
 
     togglePriceSelector(index: number, event?: MouseEvent): void {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         if (this.openPriceSelectorIndex === index) {
             this.openPriceSelectorIndex = null;
         } else {
@@ -220,7 +235,11 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
         this.openPriceSelectorIndex = null;
     }
 
-    seleccionarPrecio(index: number, precio: number): void {
+    seleccionarPrecio(index: number, precio: number, event?: Event): void {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         const detalle = this.detalles.at(index);
         detalle.patchValue({ precio: precio });
         this.closePriceSelector();

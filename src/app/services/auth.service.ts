@@ -120,7 +120,6 @@ export class AuthService {
 
     hasRole(roleName: string): boolean {
         const user = this.getCurrentUser();
-        console.log('Checking role:', roleName, 'User:', user, 'User Role:', user?.rol?.nombre);
         return user?.rol?.nombre?.toLowerCase() === roleName.toLowerCase();
     }
 
