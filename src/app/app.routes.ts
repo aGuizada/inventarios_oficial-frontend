@@ -27,6 +27,10 @@ export const routes: Routes = [
                 loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
             },
             {
+                path: 'catalogo',
+                loadComponent: () => import('./components/catalogo/catalogo.component').then(m => m.CatalogoComponent)
+            },
+            {
                 path: 'perfil',
                 loadComponent: () => import('./components/user/perfil/perfil.component').then(m => m.PerfilComponent)
             },

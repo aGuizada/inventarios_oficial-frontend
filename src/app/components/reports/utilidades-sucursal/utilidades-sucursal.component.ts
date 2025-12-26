@@ -63,18 +63,43 @@ export class UtilidadesSucursalComponent implements OnInit {
   cargarSucursales(): void {
     this.sucursalService.getAll().subscribe({
       next: (response: any) => {
-        if (response.success && response.data) {
-          this.sucursales = response.data;
+        try {
+          if (Array.isArray(response)) {
+            this.sucursales = response;
+          } else if (response?.success && response?.data) {
+            if (Array.isArray(response.data)) {
+              this.sucursales = response.data;
+            } else if (response.data?.data && Array.isArray(response.data.data)) {
+              this.sucursales = response.data.data;
+            } else {
+              this.sucursales = [];
+            }
+          } else if (response?.data && Array.isArray(response.data)) {
+            this.sucursales = response.data;
+          } else {
+            this.sucursales = [];
+          }
+        } catch (e) {
+          console.error('Error procesando respuesta de sucursales:', e);
+          this.sucursales = [];
         }
       },
       error: (error) => {
         console.error('Error cargando sucursales:', error);
+        this.sucursales = [];
       }
     });
   }
 
   onSucursalChange(value: any): void {
-    this.sucursalSeleccionada = value === 'null' || value === '' ? null : value;
+    // Manejar diferentes tipos de valores que pueden llegar
+    if (value === null || value === undefined || value === '' || value === 'null' || value === 0) {
+      this.sucursalSeleccionada = null;
+    } else {
+      // Convertir a número si es necesario
+      const numValue = Number(value);
+      this.sucursalSeleccionada = isNaN(numValue) ? null : numValue;
+    }
     this.cargarUtilidades();
   }
 
@@ -89,8 +114,11 @@ export class UtilidadesSucursalComponent implements OnInit {
       fecha_hasta: this.fechaHasta
     };
     
-    // Asegurar que se envíe como número si está seleccionada
-    if (this.sucursalSeleccionada !== null && this.sucursalSeleccionada !== undefined) {
+    // Solo agregar sucursal_id si hay una sucursal seleccionada válida
+    if (this.sucursalSeleccionada !== null && 
+        this.sucursalSeleccionada !== undefined && 
+        this.sucursalSeleccionada !== 0 &&
+        !isNaN(Number(this.sucursalSeleccionada))) {
       params.sucursal_id = Number(this.sucursalSeleccionada);
     }
 
@@ -150,8 +178,11 @@ export class UtilidadesSucursalComponent implements OnInit {
       fecha_hasta: this.fechaHasta
     };
     
-    // Asegurar que se envíe como número si está seleccionada
-    if (this.sucursalSeleccionada && this.sucursalSeleccionada !== null) {
+    // Solo agregar sucursal_id si hay una sucursal seleccionada válida
+    if (this.sucursalSeleccionada !== null && 
+        this.sucursalSeleccionada !== undefined && 
+        this.sucursalSeleccionada !== 0 &&
+        !isNaN(Number(this.sucursalSeleccionada))) {
       params.sucursal_id = Number(this.sucursalSeleccionada);
     }
     
@@ -164,8 +195,11 @@ export class UtilidadesSucursalComponent implements OnInit {
       fecha_hasta: this.fechaHasta
     };
     
-    // Asegurar que se envíe como número si está seleccionada
-    if (this.sucursalSeleccionada && this.sucursalSeleccionada !== null) {
+    // Solo agregar sucursal_id si hay una sucursal seleccionada válida
+    if (this.sucursalSeleccionada !== null && 
+        this.sucursalSeleccionada !== undefined && 
+        this.sucursalSeleccionada !== 0 &&
+        !isNaN(Number(this.sucursalSeleccionada))) {
       params.sucursal_id = Number(this.sucursalSeleccionada);
     }
     

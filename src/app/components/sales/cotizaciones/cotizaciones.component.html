@@ -29,7 +29,7 @@
 
     <!-- List Component -->
     <app-cotizaciones-list [cotizaciones]="cotizaciones" [isLoading]="isLoading" (edit)="edit($event)"
-        (delete)="delete($event)">
+        (delete)="delete($event)" (generarProforma)="generarProforma($event)">
     </app-cotizaciones-list>
 
     <app-pagination [currentPage]="currentPage" [lastPage]="lastPage" [total]="total"

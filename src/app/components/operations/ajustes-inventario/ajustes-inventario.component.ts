@@ -56,20 +56,65 @@ export class AjustesInventarioComponent implements OnInit {
     }
 
     loadArticulos(): void {
-        this.articuloService.getAll().subscribe({
+        // Llamar con parámetros grandes para obtener todos los artículos
+        this.articuloService.getAll(1, 10000).subscribe({
             next: (response: any) => {
-                this.articulos = Array.isArray(response) ? response : (response.data || []);
+                try {
+                    // Manejar diferentes estructuras de respuesta
+                    if (Array.isArray(response)) {
+                        this.articulos = response;
+                    } else if (response?.data) {
+                        // Si es paginado
+                        if (response.data?.data && Array.isArray(response.data.data)) {
+                            this.articulos = response.data.data;
+                        } else if (Array.isArray(response.data)) {
+                            this.articulos = response.data;
+                        } else {
+                            this.articulos = [];
+                        }
+                    } else {
+                        this.articulos = [];
+                    }
+                } catch (e) {
+                    console.error('Error procesando respuesta de artículos:', e);
+                    this.articulos = [];
+                }
             },
-            error: (error) => console.error('Error cargando artículos:', error)
+            error: (error) => {
+                console.error('Error cargando artículos:', error);
+                this.articulos = [];
+            }
         });
     }
 
     loadAlmacenes(): void {
         this.almacenService.getAll().subscribe({
             next: (response: any) => {
-                this.almacenes = Array.isArray(response) ? response : (response.data || []);
+                try {
+                    // Manejar diferentes estructuras de respuesta
+                    if (Array.isArray(response)) {
+                        this.almacenes = response;
+                    } else if (response?.data) {
+                        // Si es paginado
+                        if (response.data?.data && Array.isArray(response.data.data)) {
+                            this.almacenes = response.data.data;
+                        } else if (Array.isArray(response.data)) {
+                            this.almacenes = response.data;
+                        } else {
+                            this.almacenes = [];
+                        }
+                    } else {
+                        this.almacenes = [];
+                    }
+                } catch (e) {
+                    console.error('Error procesando respuesta de almacenes:', e);
+                    this.almacenes = [];
+                }
             },
-            error: (error) => console.error('Error cargando almacenes:', error)
+            error: (error) => {
+                console.error('Error cargando almacenes:', error);
+                this.almacenes = [];
+            }
         });
     }
 

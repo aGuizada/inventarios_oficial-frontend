@@ -80,7 +80,79 @@ export class ArticuloService {
         return this.http.post<any>(`${this.apiUrl}/import`, formData);
     }
     exportExcel(): void {
-        window.open(`${this.apiUrl}/export-excel`, '_blank');
+        // Get the token from localStorage
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            alert('No hay token de autenticación. Por favor, inicie sesión nuevamente.');
+            window.location.href = '/login';
+            return;
+        }
+        
+        // Create a GET request with the Authorization header
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${this.apiUrl}/export-excel`, true);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.setRequestHeader('Accept', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        xhr.responseType = 'blob'; // Important for Excel download
+        
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                // Check if response is actually an Excel file
+                const contentType = xhr.getResponseHeader('Content-Type');
+                if (contentType && (contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') || contentType.includes('application/octet-stream'))) {
+                    // Success: download the Excel file
+                    const blob = xhr.response;
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'articulos.xlsx';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    // Response is not an Excel file, might be an error JSON
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        try {
+                            const errorData = JSON.parse(reader.result as string);
+                            alert('Error al generar el Excel: ' + (errorData.message || 'Error desconocido'));
+                        } catch (e) {
+                            alert('Error al generar el Excel. Por favor, intente nuevamente.');
+                        }
+                    };
+                    reader.readAsText(xhr.response);
+                }
+            } else if (xhr.status === 401) {
+                // Unauthorized: redirect to login
+                alert('Su sesión ha expirado. Por favor, inicie sesión nuevamente.');
+                window.location.href = '/login';
+            } else if (xhr.status === 500) {
+                // Server error
+                const reader = new FileReader();
+                reader.onload = function() {
+                    try {
+                        const errorData = JSON.parse(reader.result as string);
+                        alert('Error del servidor: ' + (errorData.message || errorData.error || 'Error desconocido'));
+                    } catch (e) {
+                        alert('Error del servidor al generar el Excel. Por favor, intente nuevamente.');
+                    }
+                };
+                reader.readAsText(xhr.response);
+            } else {
+                // Other error
+                alert('Error al descargar el Excel. Código de error: ' + xhr.status);
+                console.error('Error downloading Excel:', xhr.status, xhr.statusText);
+            }
+        };
+        
+        xhr.onerror = function() {
+            alert('Error de conexión al descargar el Excel. Por favor, verifique su conexión a internet.');
+            console.error('Network error downloading Excel');
+        };
+        
+        xhr.send();
     }
 
     exportPDF(): void {

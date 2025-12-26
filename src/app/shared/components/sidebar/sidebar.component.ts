@@ -35,6 +35,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
       route: '/dashboard'
     },
     {
+      label: 'Catálogo',
+      icon: 'fas fa-book',
+      route: '/catalogo'
+    },
+    {
       label: 'Inventario',
       icon: 'fas fa-boxes',
       isOpen: false,
@@ -140,6 +145,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   updateMenu() {
     if (this.authService.isVendedor()) {
       this.menuItems = this.allMenuItems.filter(item => {
+        if (item.label === 'Catálogo') return true;
         if (item.label === 'Ventas') return true;
 
         if (item.label === 'Inventario') {

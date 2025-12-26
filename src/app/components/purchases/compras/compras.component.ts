@@ -919,7 +919,7 @@ export class ComprasComponent implements OnInit {
         
         // Validar que el saldo sea suficiente para la compra
         if (saldoDisponible < montoADescontar) {
-          this.showAlertMessage('Saldo insuficiente de caja. Saldo disponible: Q' + saldoDisponible.toFixed(2) + '. Monto requerido: Q' + montoADescontar.toFixed(2), 'error');
+          this.showAlertMessage('Saldo insuficiente de caja. Saldo disponible: Bs' + saldoDisponible.toFixed(2) + '. Monto requerido: Bs' + montoADescontar.toFixed(2), 'error');
           return;
         }
         

@@ -248,33 +248,11 @@ export class KardexComponent implements OnInit {
 
     // Exportar - ahora desde backend
     exportarExcel(): void {
-        const filtros = this.construirFiltros();
-        filtros.tipo = this.vistaActual;
-
-        const params = new URLSearchParams();
-        Object.keys(filtros).forEach(key => {
-            if (filtros[key]) {
-                params.append(key, filtros[key]);
-            }
-        });
-
-        const url = `${this.kardexService['apiUrl']}/export-excel?${params.toString()}`;
-        window.open(url, '_blank');
+        this.kardexService.exportExcel(this.construirFiltros(), this.vistaActual);
     }
 
     exportarPDF(): void {
-        const filtros = this.construirFiltros();
-        filtros.tipo = this.vistaActual;
-
-        const params = new URLSearchParams();
-        Object.keys(filtros).forEach(key => {
-            if (filtros[key]) {
-                params.append(key, filtros[key]);
-            }
-        });
-
-        const url = `${this.kardexService['apiUrl']}/export-pdf?${params.toString()}`;
-        window.open(url, '_blank');
+        this.kardexService.exportPDF(this.construirFiltros(), this.vistaActual);
     }
 
     // Helpers

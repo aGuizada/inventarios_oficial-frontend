@@ -559,6 +559,10 @@ export class CotizacionesComponent implements OnInit {
     }
   }
 
+  generarProforma(id: number): void {
+    this.cotizacionService.generarProformaPDF(id);
+  }
+
   getArticuloNombre(articuloId: number): string {
     const articulo = this.articulos.find(a => a.id === articuloId);
     return articulo ? articulo.nombre : 'N/A';

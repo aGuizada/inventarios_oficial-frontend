@@ -15,6 +15,7 @@ export class CotizacionesListComponent {
 
   @Output() edit = new EventEmitter<Cotizacion>();
   @Output() delete = new EventEmitter<number>();
+  @Output() generarProforma = new EventEmitter<number>();
 
   onEdit(cotizacion: Cotizacion): void {
     this.edit.emit(cotizacion);
@@ -22,6 +23,10 @@ export class CotizacionesListComponent {
 
   onDelete(id: number): void {
     this.delete.emit(id);
+  }
+
+  onGenerarProforma(id: number): void {
+    this.generarProforma.emit(id);
   }
 }
 

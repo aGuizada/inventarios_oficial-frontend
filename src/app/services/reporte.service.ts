@@ -66,13 +66,11 @@ export class ReporteService {
     }
 
     exportVentasExcel(params: any): void {
-        const url = `${this.apiUrl}/ventas/export-excel?${this.buildParamsString(params)}`;
-        window.open(url, '_blank');
+        this.downloadFile(`${this.apiUrl}/ventas/export-excel`, params, 'reporte_ventas.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
     exportVentasPDF(params: any): void {
-        const url = `${this.apiUrl}/ventas/export-pdf?${this.buildParamsString(params)}`;
-        window.open(url, '_blank');
+        this.downloadFile(`${this.apiUrl}/ventas/export-pdf`, params, 'reporte_ventas.pdf', 'application/pdf');
     }
 
     // Reporte de Compras
@@ -82,8 +80,7 @@ export class ReporteService {
     }
 
     exportComprasExcel(params: any): void {
-        const url = `${this.apiUrl}/compras/export-excel?${this.buildParamsString(params)}`;
-        window.open(url, '_blank');
+        this.downloadFile(`${this.apiUrl}/compras/export-excel`, params, 'reporte_compras.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
     // Reporte de Inventario
@@ -93,8 +90,7 @@ export class ReporteService {
     }
 
     exportInventarioExcel(params?: any): void {
-        const url = `${this.apiUrl}/inventario/export-excel?${this.buildParamsString(params || {})}`;
-        window.open(url, '_blank');
+        this.downloadFile(`${this.apiUrl}/inventario/export-excel`, params || {}, 'reporte_inventario.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
     // Reporte de Créditos
@@ -129,13 +125,11 @@ export class ReporteService {
     }
 
     exportUtilidadesSucursalExcel(params: any): void {
-        const url = `${this.apiUrl}/utilidades-sucursal/export-excel?${this.buildParamsString(params)}`;
-        window.open(url, '_blank');
+        this.downloadFile(`${this.apiUrl}/utilidades-sucursal/export-excel`, params, 'reporte_utilidades_sucursal.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
     exportUtilidadesSucursalPDF(params: any): void {
-        const url = `${this.apiUrl}/utilidades-sucursal/export-pdf?${this.buildParamsString(params)}`;
-        window.open(url, '_blank');
+        this.downloadFile(`${this.apiUrl}/utilidades-sucursal/export-pdf`, params, 'reporte_utilidades_sucursal.pdf', 'application/pdf');
     }
 
     // Reporte de Cajas por Sucursal
@@ -145,13 +139,11 @@ export class ReporteService {
     }
 
     exportCajasSucursalExcel(params: any): void {
-        const url = `${this.apiUrl}/cajas-sucursal/export-excel?${this.buildParamsString(params)}`;
-        window.open(url, '_blank');
+        this.downloadFile(`${this.apiUrl}/cajas-sucursal/export-excel`, params, 'reporte_cajas_sucursal.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
     exportCajasSucursalPDF(params: any): void {
-        const url = `${this.apiUrl}/cajas-sucursal/export-pdf?${this.buildParamsString(params)}`;
-        window.open(url, '_blank');
+        this.downloadFile(`${this.apiUrl}/cajas-sucursal/export-pdf`, params, 'reporte_cajas_sucursal.pdf', 'application/pdf');
     }
 
     // Helpers
@@ -173,5 +165,67 @@ export class ReporteService {
             }
         });
         return urlParams.toString();
+    }
+
+    /**
+     * Método genérico para descargar archivos con autenticación
+     */
+    private downloadFile(url: string, params: any, filename: string, expectedContentType: string): void {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('No hay token de autenticación. Por favor, inicie sesión nuevamente.');
+            window.location.href = '/login';
+            return;
+        }
+
+        const queryString = this.buildParamsString(params);
+        const fullUrl = queryString ? `${url}?${queryString}` : url;
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', fullUrl, true);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        if (expectedContentType.includes('pdf')) {
+            xhr.setRequestHeader('Accept', 'application/pdf');
+        }
+        xhr.responseType = 'blob';
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                const contentType = xhr.getResponseHeader('Content-Type');
+                if (contentType && (contentType.includes(expectedContentType) || 
+                    (expectedContentType.includes('spreadsheetml') && (contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') || contentType.includes('application/vnd.ms-excel'))) ||
+                    (expectedContentType.includes('pdf') && contentType.includes('application/pdf')))) {
+                    const blob = xhr.response;
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        try {
+                            const errorData = JSON.parse(reader.result as string);
+                            alert('Error al generar el archivo: ' + (errorData.message || 'Error desconocido'));
+                        } catch (e) {
+                            alert('Error al generar el archivo. Por favor, intente nuevamente.');
+                        }
+                    };
+                    reader.readAsText(xhr.response);
+                }
+            } else if (xhr.status === 401) {
+                alert('Su sesión ha expirado. Por favor, inicie sesión nuevamente.');
+                window.location.href = '/login';
+            } else {
+                alert('Error al descargar el archivo. Código de error: ' + xhr.status);
+            }
+        };
+        xhr.onerror = function() {
+            alert('Error de conexión al descargar el archivo.');
+        };
+        xhr.send();
     }
 }

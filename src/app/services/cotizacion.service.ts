@@ -48,4 +48,56 @@ export class CotizacionService {
     convertirAVenta(id: number): Observable<ApiResponse<Venta>> {
         return this.http.post<ApiResponse<Venta>>(`${this.apiUrl}/${id}/convertir`, {});
     }
+
+    generarProformaPDF(id: number): void {
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            alert('No hay token de autenticación. Por favor, inicie sesión nuevamente.');
+            window.location.href = '/login';
+            return;
+        }
+
+        const url = `${this.apiUrl}/${id}/proforma-pdf`;
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.setRequestHeader('Accept', 'application/pdf');
+        xhr.responseType = 'blob';
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                const blob = xhr.response;
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `proforma_${id}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } else if (xhr.status === 401) {
+                alert('Su sesión ha expirado. Por favor, inicie sesión nuevamente.');
+                window.location.href = '/login';
+            } else {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    try {
+                        const errorData = JSON.parse(reader.result as string);
+                        alert('Error al generar el PDF: ' + (errorData.message || 'Error desconocido'));
+                    } catch (e) {
+                        alert('Error al generar el PDF. Por favor, intente nuevamente.');
+                    }
+                };
+                reader.readAsText(xhr.response);
+            }
+        };
+
+        xhr.onerror = function() {
+            alert('Error de conexión al descargar el PDF. Por favor, verifique su conexión a internet.');
+        };
+
+        xhr.send();
+    }
 }

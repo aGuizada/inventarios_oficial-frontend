@@ -1,0 +1,106 @@
+<div class="container mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-2">Catálogo de Productos</h1>
+        <p class="text-gray-600 dark:text-slate-400">Explora todos nuestros productos disponibles</p>
+    </div>
+
+    <!-- Filtros -->
+    <div class="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+        <div class="flex gap-4">
+            <!-- Búsqueda -->
+            <div class="flex-1">
+                <input type="text" [(ngModel)]="searchTerm" (input)="onSearchChange()"
+                    placeholder="Buscar por nombre o código..."
+                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    @if (isLoading) {
+    <div class="flex justify-center items-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+    }
+
+    <!-- Grid de Productos -->
+    @if (!isLoading) {
+    <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+        Mostrando {{ productosFiltrados.length }} producto(s)
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-6">
+        @for (producto of getProductosPaginados(); track producto.id) {
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow duration-200">
+            <!-- Nombre del Producto -->
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+                {{ producto.nombre }}
+            </h3>
+
+            <!-- Código -->
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                Código: {{ producto.codigo }}
+            </p>
+
+            <!-- Precio -->
+            <p class="text-xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                Bs. {{ producto.precio_venta | number:'1.2-2' }}
+            </p>
+
+            <!-- Stock por Almacén -->
+            <div class="mb-4 flex flex-wrap gap-2">
+                @for (stockAlmacen of producto.stock_por_almacen; track stockAlmacen.almacen) {
+                    @if (stockAlmacen.stock > 0) {
+                    <span class="px-3 py-1 bg-blue-600 dark:bg-blue-700 text-white text-xs font-medium rounded-full">
+                        {{ stockAlmacen.almacen }}: {{ stockAlmacen.stock }}
+                    </span>
+                    }
+                }
+                @if (producto.stock_por_almacen.length === 0 || producto.stock_total === 0) {
+                <span class="px-3 py-1 bg-red-600 dark:bg-red-700 text-white text-xs font-medium rounded-full">
+                    Sin stock
+                </span>
+                }
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="flex gap-2">
+                <button (click)="verDetalles(producto)"
+                    class="flex-1 px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 flex items-center justify-center">
+                    <i class="fas fa-eye mr-2"></i>
+                    Ver
+                </button>
+                <button (click)="agregarAlCarrito(producto)" [disabled]="!producto.tiene_stock"
+                    class="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center">
+                    <i class="fas fa-shopping-cart mr-2"></i>
+                    Agregar
+                </button>
+            </div>
+        </div>
+        } @empty {
+        <div class="col-span-full text-center py-12 text-gray-500 dark:text-gray-400">
+            No se encontraron productos
+        </div>
+        }
+    </div>
+
+    <!-- Paginación -->
+    @if (getTotalPages() > 1) {
+    <div class="flex justify-center items-center gap-2">
+        <button (click)="cambiarPagina(currentPage - 1)" [disabled]="currentPage === 1"
+            class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
+            Anterior
+        </button>
+        <span class="px-4 py-2 text-gray-700 dark:text-gray-300">
+            Página {{ currentPage }} de {{ getTotalPages() }}
+        </span>
+        <button (click)="cambiarPagina(currentPage + 1)" [disabled]="currentPage === getTotalPages()"
+            class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
+            Siguiente
+        </button>
+    </div>
+    }
+    }
+</div>
+

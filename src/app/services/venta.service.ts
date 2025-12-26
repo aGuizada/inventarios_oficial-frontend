@@ -100,4 +100,138 @@ export class VentaService {
         const url = `${this.apiUrl}/${id}/imprimir/${formato}`;
         window.open(url, '_blank');
     }
+
+    exportReporteDetalladoPDF(params?: { fecha_desde?: string; fecha_hasta?: string; sucursal_id?: number }): void {
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            alert('No hay token de autenticación. Por favor, inicie sesión nuevamente.');
+            window.location.href = '/login';
+            return;
+        }
+
+        let url = `${this.apiUrl}/reporte/detallado-pdf`;
+        const queryParams = new URLSearchParams();
+        
+        if (params?.fecha_desde) {
+            queryParams.append('fecha_desde', params.fecha_desde);
+        }
+        if (params?.fecha_hasta) {
+            queryParams.append('fecha_hasta', params.fecha_hasta);
+        }
+        if (params?.sucursal_id) {
+            queryParams.append('sucursal_id', params.sucursal_id.toString());
+        }
+        
+        if (queryParams.toString()) {
+            url += '?' + queryParams.toString();
+        }
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.setRequestHeader('Accept', 'application/pdf');
+        xhr.responseType = 'blob';
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                const blob = xhr.response;
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'reporte_ventas_detallado.pdf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } else if (xhr.status === 401) {
+                alert('Su sesión ha expirado. Por favor, inicie sesión nuevamente.');
+                window.location.href = '/login';
+            } else {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    try {
+                        const errorData = JSON.parse(reader.result as string);
+                        alert('Error al generar el PDF: ' + (errorData.message || 'Error desconocido'));
+                    } catch (e) {
+                        alert('Error al generar el PDF. Por favor, intente nuevamente.');
+                    }
+                };
+                reader.readAsText(xhr.response);
+            }
+        };
+
+        xhr.onerror = function() {
+            alert('Error de conexión al descargar el PDF. Por favor, verifique su conexión a internet.');
+        };
+
+        xhr.send();
+    }
+
+    exportReporteGeneralPDF(params?: { fecha_desde?: string; fecha_hasta?: string; sucursal_id?: number }): void {
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            alert('No hay token de autenticación. Por favor, inicie sesión nuevamente.');
+            window.location.href = '/login';
+            return;
+        }
+
+        let url = `${this.apiUrl}/reporte/general-pdf`;
+        const queryParams = new URLSearchParams();
+        
+        if (params?.fecha_desde) {
+            queryParams.append('fecha_desde', params.fecha_desde);
+        }
+        if (params?.fecha_hasta) {
+            queryParams.append('fecha_hasta', params.fecha_hasta);
+        }
+        if (params?.sucursal_id) {
+            queryParams.append('sucursal_id', params.sucursal_id.toString());
+        }
+        
+        if (queryParams.toString()) {
+            url += '?' + queryParams.toString();
+        }
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.setRequestHeader('Accept', 'application/pdf');
+        xhr.responseType = 'blob';
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                const blob = xhr.response;
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'reporte_ventas_general.pdf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } else if (xhr.status === 401) {
+                alert('Su sesión ha expirado. Por favor, inicie sesión nuevamente.');
+                window.location.href = '/login';
+            } else {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    try {
+                        const errorData = JSON.parse(reader.result as string);
+                        alert('Error al generar el PDF: ' + (errorData.message || 'Error desconocido'));
+                    } catch (e) {
+                        alert('Error al generar el PDF. Por favor, intente nuevamente.');
+                    }
+                };
+                reader.readAsText(xhr.response);
+            }
+        };
+
+        xhr.onerror = function() {
+            alert('Error de conexión al descargar el PDF. Por favor, verifique su conexión a internet.');
+        };
+
+        xhr.send();
+    }
 }

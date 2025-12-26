@@ -615,9 +615,6 @@ export class VentaFormComponent implements OnInit, OnDestroy {
             }
         }
 
-        const precioVenta = producto.articulo?.precio_venta ||
-            producto.articulo?.precio_uno || 0;
-
         // Mapear el nombre_medida del artículo a uno de los valores válidos del backend
         // El backend solo acepta: 'Unidad', 'Paquete', 'Centimetro'
         const nombreMedidaArticulo = producto.articulo?.medida?.nombre_medida || '';
@@ -630,13 +627,40 @@ export class VentaFormComponent implements OnInit, OnDestroy {
         }
         // Si no coincide, usar 'Unidad' por defecto
 
+        // Calcular precio según la unidad de medida
+        // Asegurar que siempre sea un número
+        let precioVenta = Number(producto.articulo?.precio_venta) || Number(producto.articulo?.precio_uno) || 0;
+        
+        if (unidadDefecto === 'Paquete') {
+            // Calcular precio de venta del paquete: precio unitario * unidades por paquete
+            const unidadEnvase = Number(producto.articulo?.unidad_envase) || 1;
+            const precioCostoPaq = Number(producto.articulo?.precio_costo_paq) || 0;
+            const precioCostoUnid = Number(producto.articulo?.precio_costo_unid) || 0;
+            
+            if (precioCostoPaq > 0 && precioCostoUnid > 0) {
+                // Calcular margen de ganancia del precio unitario
+                const margen = (precioVenta - precioCostoUnid) / precioCostoUnid;
+                // Aplicar el mismo margen al precio del paquete
+                precioVenta = precioCostoPaq * (1 + margen);
+            } else {
+                // Si no hay precio_costo_paq, usar precio_venta * unidad_envase
+                precioVenta = precioVenta * unidadEnvase;
+            }
+        } else if (unidadDefecto === 'Centimetro') {
+            precioVenta = precioVenta / 100;
+        }
+
+        // Asegurar que precioVenta sea un número válido
+        precioVenta = Number(precioVenta) || 0;
+        const precioFormateado = parseFloat(precioVenta.toFixed(2));
+
         const detalle = this.fb.group({
             articulo_id: [producto.articulo_id, Validators.required],
             cantidad: [1, [Validators.required, Validators.min(1), Validators.max(stockDisponible)]],
-            precio: [precioVenta, [Validators.required, Validators.min(0)]],
+            precio: [precioFormateado, [Validators.required, Validators.min(0)]],
             descuento: [0, [Validators.min(0)]],
             unidad_medida: [unidadDefecto],
-            subtotal: [precioVenta]
+            subtotal: [precioFormateado]
         });
 
         detalle.get('cantidad')?.valueChanges.subscribe(() => {

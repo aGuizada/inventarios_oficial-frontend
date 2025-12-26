@@ -175,17 +175,37 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
         const producto = this.productosInventario.find(p => p.articulo_id === articuloId);
 
         if (producto && producto.articulo) {
-            let nuevoPrecio = producto.articulo.precio_venta;
+            // Asegurar que siempre sea un número
+            let nuevoPrecio = Number(producto.articulo.precio_venta) || 0;
 
             if (unidad === 'Paquete') {
-                nuevoPrecio = producto.articulo.precio_costo_paq > 0
-                    ? producto.articulo.precio_costo_paq
-                    : (producto.articulo.precio_venta * (producto.articulo.unidad_envase || 1));
+                // Calcular precio de venta del paquete: precio unitario * unidades por paquete
+                // Si hay precio_costo_paq, calcular margen y aplicarlo, sino usar precio_venta * unidad_envase
+                const unidadEnvase = Number(producto.articulo.unidad_envase) || 1;
+                const precioCostoPaq = Number(producto.articulo.precio_costo_paq) || 0;
+                const precioCostoUnid = Number(producto.articulo.precio_costo_unid) || 0;
+                
+                if (precioCostoPaq > 0 && precioCostoUnid > 0) {
+                    // Calcular margen de ganancia del precio unitario
+                    const margen = (nuevoPrecio - precioCostoUnid) / precioCostoUnid;
+                    // Aplicar el mismo margen al precio del paquete
+                    nuevoPrecio = precioCostoPaq * (1 + margen);
+                } else {
+                    // Si no hay precio_costo_paq, usar precio_venta * unidad_envase
+                    nuevoPrecio = nuevoPrecio * unidadEnvase;
+                }
             } else if (unidad === 'Centimetro') {
-                nuevoPrecio = producto.articulo.precio_venta / 100;
+                nuevoPrecio = nuevoPrecio / 100;
             }
 
-            detalle.patchValue({ precio: nuevoPrecio });
+            // Asegurar que nuevoPrecio sea un número válido antes de usar toFixed
+            nuevoPrecio = Number(nuevoPrecio) || 0;
+            const precioFormateado = parseFloat(nuevoPrecio.toFixed(2));
+
+            detalle.patchValue({ 
+                precio: precioFormateado,
+                unidad_medida: unidad
+            });
         }
     }
 

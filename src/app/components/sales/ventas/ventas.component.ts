@@ -373,4 +373,28 @@ export class VentasComponent implements OnInit {
       }
     });
   }
+
+  exportarReporteDetallado(): void {
+    // Obtener fechas de los filtros actuales o usar todas las ventas
+    const params: any = {};
+    
+    // Si hay filtros de fecha en el futuro, se pueden agregar aquí
+    // Por ahora, exporta todas las ventas visibles
+    
+    if (this.filterSucursalId) {
+      params.sucursal_id = parseInt(this.filterSucursalId);
+    }
+
+    this.ventaService.exportReporteDetalladoPDF(params);
+  }
+
+  exportarReporteGeneral(): void {
+    const params: any = {};
+    
+    if (this.filterSucursalId) {
+      params.sucursal_id = parseInt(this.filterSucursalId);
+    }
+
+    this.ventaService.exportReporteGeneralPDF(params);
+  }
 }

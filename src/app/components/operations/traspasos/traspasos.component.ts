@@ -514,11 +514,12 @@ export class TraspasosComponent implements OnInit {
     }
 
     this.isLoading = true;
-    // Agregar fecha de solicitud automáticamente
-    const fechaSolicitud = new Date().toISOString();
+    // Agregar fecha de solicitud automáticamente en formato MySQL (YYYY-MM-DD HH:MM:SS)
+    const fechaSolicitud = new Date();
+    const fechaFormateada = fechaSolicitud.toISOString().slice(0, 19).replace('T', ' ');
     const traspasoData = {
       ...this.form.value,
-      fecha_solicitud: fechaSolicitud,
+      fecha_solicitud: fechaFormateada,
       detalles: this.detalles.value.map((detalle: any) => ({
         articulo_id: detalle.articulo_id,
         inventario_id: detalle.inventario_id,
@@ -558,6 +559,10 @@ export class TraspasosComponent implements OnInit {
             mensaje = errores.join(', ');
           } else if (error.error?.message) {
             mensaje = error.error.message;
+          } else if (error.error?.error) {
+            mensaje = error.error.error;
+          } else if (error.message) {
+            mensaje = error.message;
           }
           this.mostrarError(mensaje);
         }
