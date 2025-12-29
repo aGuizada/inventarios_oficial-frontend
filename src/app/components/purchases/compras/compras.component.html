@@ -745,11 +745,16 @@
                             </button>
                         </div>
                         <div class="max-h-96 overflow-y-auto">
-                            <div *ngIf="articulos.length === 0"
+                            <div *ngIf="isLoadingArticulos"
                                 class="px-4 py-8 text-center text-sm text-gray-500 dark:text-slate-400">
-                                Cargando productos...
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                                <p class="mt-2">Cargando productos...</p>
                             </div>
-                            <div *ngFor="let articulo of (articulosFiltrados.length > 0 ? articulosFiltrados : articulos).slice(0, 50)"
+                            <div *ngIf="!isLoadingArticulos && articulos.length === 0"
+                                class="px-4 py-8 text-center text-sm text-gray-500 dark:text-slate-400">
+                                No hay productos disponibles
+                            </div>
+                            <div *ngFor="let articulo of articulos"
                                 class="px-4 py-3 border-b border-gray-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors duration-200">
                                 <div class="flex items-start gap-3">
                                     <!-- Checkbox -->
@@ -794,9 +799,35 @@
                                     </div>
                                 </div>
                             </div>
-                            <div *ngIf="articulos.length > 0 && articulosFiltrados.length === 0 && busquedaArticulo.length > 0"
+                            <div *ngIf="!isLoadingArticulos && articulos.length === 0 && busquedaArticulo.length > 0"
                                 class="px-4 py-8 text-center text-sm text-gray-500 dark:text-slate-400">
                                 No se encontraron productos con "{{ busquedaArticulo }}"
+                            </div>
+                        </div>
+                        <!-- Paginación del catálogo -->
+                        <div *ngIf="!isLoadingArticulos && articulosLastPage > 1" 
+                            class="px-4 py-3 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
+                            <div class="flex justify-between items-center">
+                                <div class="text-sm text-gray-600 dark:text-slate-400">
+                                    Mostrando {{ articulos.length }} de {{ articulosTotal }} productos
+                                </div>
+                                <div class="flex gap-2">
+                                    <button 
+                                        (click)="cambiarPaginaArticulos(articulosCurrentPage - 1)" 
+                                        [disabled]="articulosCurrentPage === 1"
+                                        class="px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-slate-300">
+                                        Anterior
+                                    </button>
+                                    <span class="px-3 py-1 text-sm text-gray-700 dark:text-slate-300">
+                                        Página {{ articulosCurrentPage }} de {{ articulosLastPage }}
+                                    </span>
+                                    <button 
+                                        (click)="cambiarPaginaArticulos(articulosCurrentPage + 1)" 
+                                        [disabled]="articulosCurrentPage === articulosLastPage"
+                                        class="px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-slate-300">
+                                        Siguiente
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -835,7 +866,8 @@
                                 </thead>
                                 <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700"
                                     formArrayName="detalles">
-                                    <tr *ngFor="let detalle of detalles.controls; let i = index" [formGroupName]="i"
+                                    <tr *ngFor="let detalle of getDetallesPaginados(); let i = index" 
+                                        [formGroupName]="getIndiceRealDetalle(i)"
                                         class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors duration-200">
                                         <td class="px-2 sm:px-5 py-3 sm:py-4">
                                             <div class="font-medium text-base text-gray-900 dark:text-slate-100">
@@ -963,7 +995,7 @@
                                             </div>
                                         </td>
                                     </tr>
-                                    <tr *ngIf="detalles.length === 0">
+                                    <tr *ngIf="detallesFormArray.length === 0">
                                         <td colspan="6"
                                             class="px-4 py-8 text-center text-sm text-gray-500 dark:text-slate-400">
                                             <div class="flex flex-col items-center">
@@ -982,6 +1014,32 @@
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                        <!-- Paginación de artículos agregados -->
+                        <div *ngIf="detallesFormArray.length > 0 && getTotalPaginasDetalles() > 1" 
+                            class="px-4 py-3 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
+                            <div class="flex justify-between items-center">
+                                <div class="text-sm text-gray-600 dark:text-slate-400">
+                                    Mostrando {{ getDetallesPaginados().length }} de {{ detallesFormArray.length }} artículos
+                                </div>
+                                <div class="flex gap-2">
+                                    <button 
+                                        (click)="cambiarPaginaDetalles(detallesCurrentPage - 1)" 
+                                        [disabled]="detallesCurrentPage === 1"
+                                        class="px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-slate-300">
+                                        Anterior
+                                    </button>
+                                    <span class="px-3 py-1 text-sm text-gray-700 dark:text-slate-300">
+                                        Página {{ detallesCurrentPage }} de {{ getTotalPaginasDetalles() }}
+                                    </span>
+                                    <button 
+                                        (click)="cambiarPaginaDetalles(detallesCurrentPage + 1)" 
+                                        [disabled]="detallesCurrentPage === getTotalPaginasDetalles()"
+                                        class="px-3 py-1 text-sm bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-slate-300">
+                                        Siguiente
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         <!-- Resumen de Totales -->
                         <div
@@ -1072,7 +1130,7 @@
                     class="w-full sm:w-auto px-6 py-3 sm:px-4 sm:py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm text-base sm:text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
                     Cancelar
                 </button>
-                <button type="submit" [disabled]="form.invalid || detalles.length === 0 || isLoading"
+                <button type="submit" [disabled]="form.invalid || detallesFormArray.length === 0 || isLoading"
                     class="w-full sm:w-auto px-6 py-3 sm:px-4 sm:py-2 border border-transparent rounded-md shadow-sm text-base sm:text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
                     <span *ngIf="isLoading"
                         class="animate-spin rounded-full h-5 w-5 sm:h-4 sm:w-4 border-b-2 border-white mr-2"></span>

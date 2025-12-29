@@ -14,6 +14,7 @@ import { MonedaActivaService } from '../../../services/moneda-activa.service';
 import { Compra, DetalleCompra, Proveedor, Almacen, Articulo, Caja, PaginationParams, Sucursal } from '../../../interfaces';
 import { SucursalService } from '../../../services/sucursal.service';
 import { finalize } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
 import { SearchBarComponent } from '../../../shared/components/search-bar/search-bar.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import jsPDF from 'jspdf';
@@ -52,6 +53,18 @@ export class ComprasComponent implements OnInit {
   articulosFiltrados: Articulo[] = [];
   articuloSeleccionado: Articulo | null = null;
   mostrarSugerenciasArticulo: boolean = false;
+  
+  // Paginación del catálogo de productos
+  articulosCurrentPage: number = 1;
+  articulosLastPage: number = 1;
+  articulosTotal: number = 0;
+  articulosPerPage: number = 50;
+  isLoadingArticulos: boolean = false;
+
+  // Paginación de artículos agregados
+  detallesCurrentPage: number = 1;
+  detallesPerPage: number = 10;
+  detallesPaginadosCache: any[] = [];
 
   // Para selección múltiple con checkboxes
   articulosSeleccionados: Set<number> = new Set();
@@ -301,6 +314,9 @@ export class ComprasComponent implements OnInit {
   ngOnInit(): void {
     console.log('Iniciando componente de compras');
     
+    // Inicializar cache de paginación
+    this.actualizarDetallesPaginados();
+    
     // Obtener el símbolo de moneda activa inicial
     this.simboloMoneda = this.monedaActivaService.getSimbolo();
     
@@ -373,6 +389,10 @@ export class ComprasComponent implements OnInit {
         console.error('Error loading proveedores', error);
         this.proveedores = [];
         this.proveedoresFiltrados = [];
+        // No mostrar error si es un problema de red temporal
+        if (error.status !== 0 && error.status !== 500) {
+          this.showAlertMessage('Error al cargar proveedores. Por favor, recargue la página.', 'warning');
+        }
       }
     });
     
@@ -393,28 +413,14 @@ export class ComprasComponent implements OnInit {
       error: (error) => {
         console.error('Error loading almacenes', error);
         this.almacenes = [];
+        // No mostrar error si es un problema de red temporal
+        if (error.status !== 0 && error.status !== 500) {
+          this.showAlertMessage('Error al cargar almacenes. Por favor, recargue la página.', 'warning');
+        }
       }
     });
     
-    this.articuloService.getAll(1, 1000).subscribe({
-      next: (res) => {
-        const paginated = res?.data as any;
-        if (paginated && Array.isArray(paginated.data)) {
-          this.articulos = paginated.data;
-        } else if (Array.isArray(res?.data)) {
-          this.articulos = res.data;
-        } else {
-          this.articulos = [];
-        }
-        this.articulosFiltrados = this.articulos;
-        console.log('Articulos cargados:', this.articulos.length);
-      },
-      error: (error) => {
-        console.error('Error loading articulos', error);
-        this.articulos = [];
-        this.articulosFiltrados = [];
-      }
-    });
+    this.loadArticulosCatalogo();
   }
 
   loadSucursales(): void {
@@ -424,7 +430,13 @@ export class ComprasComponent implements OnInit {
           this.sucursales = response.data;
         }
       },
-      error: (error) => console.error('Error loading sucursales', error)
+      error: (error) => {
+        console.error('Error loading sucursales', error);
+        // No mostrar error si es un problema de red temporal
+        if (error.status !== 0 && error.status !== 500) {
+          this.showAlertMessage('Error al cargar sucursales. Por favor, recargue la página.', 'warning');
+        }
+      }
     });
   }
 
@@ -769,10 +781,13 @@ export class ComprasComponent implements OnInit {
 
     this.detallesFormArray.push(detalleGroup);
     this.calculateTotal();
+    this.actualizarDetallesPaginados();
   }
 
   removeDetalle(index: number): void {
     this.detallesFormArray.removeAt(index);
+    // Ajustar paginación si es necesario
+    this.onDetallesChange();
     this.calculateTotal();
   }
 
@@ -998,6 +1013,8 @@ export class ComprasComponent implements OnInit {
     const formValue = this.form.value;
 
     // VALIDAR DETALLES ANTES DE PROCESAR NADA MÁS
+    // Solo validar que los IDs sean válidos, no verificar existencia en catálogo
+    // porque el catálogo solo tiene productos paginados, no todos
     const detallesInvalidos: any[] = [];
     formValue.detalles.forEach((detalle: any) => {
       const articuloId = Number(detalle.articulo_id);
@@ -1005,9 +1022,16 @@ export class ComprasComponent implements OnInit {
         detallesInvalidos.push({ detalle, motivo: 'ID inválido' });
         return;
       }
-      const articuloExists = this.articulos.some(a => a.id === articuloId);
-      if (!articuloExists) {
-        detallesInvalidos.push({ detalle, motivo: 'No existe en catálogo', articulo_id: articuloId });
+      // Validar que tenga cantidad y precio válidos
+      const cantidad = Number(detalle.cantidad) || 0;
+      const precioUnitario = Number(detalle.precio_unitario) || 0;
+      if (cantidad <= 0) {
+        detallesInvalidos.push({ detalle, motivo: 'Cantidad inválida', articulo_id: articuloId });
+        return;
+      }
+      if (precioUnitario < 0) {
+        detallesInvalidos.push({ detalle, motivo: 'Precio inválido', articulo_id: articuloId });
+        return;
       }
     });
 
@@ -1017,7 +1041,7 @@ export class ComprasComponent implements OnInit {
         .filter(id => id)
         .join(', ');
       console.error('Detalles inválidos detectados:', detallesInvalidos);
-      this.showAlertMessage(`ERROR: Los siguientes artículos no están disponibles (IDs: ${articulosInvalidos}).\n\nPor favor, ELIMINE estos detalles de la tabla y seleccione artículos válidos del catálogo de productos (columna derecha).`, 'error');
+      this.showAlertMessage(`ERROR: Los siguientes artículos tienen datos inválidos (IDs: ${articulosInvalidos}).\n\nPor favor, verifique la cantidad y precio de estos artículos.`, 'error');
       return;
     }
 
@@ -1149,6 +1173,8 @@ export class ComprasComponent implements OnInit {
 
             // Mostrar el mensaje de error específico del backend
             this.showAlertMessage(errorMessage, 'error');
+            // Asegurar que isLoading se resetee en caso de error
+            this.isLoading = false;
           }
         });
     }
@@ -1495,21 +1521,80 @@ export class ComprasComponent implements OnInit {
     }, 200);
   }
 
-  buscarArticulo(event: any): void {
-    const valor = event.target.value.toLowerCase();
-    this.busquedaArticulo = event.target.value;
+  loadArticulosCatalogo(page: number = 1, search: string = ''): void {
+    this.isLoadingArticulos = true;
+    
+    const params: any = {
+      page: page,
+      per_page: this.articulosPerPage
+    };
+    
+    if (search && search.trim()) {
+      params.search = search.trim();
+    }
 
+    this.articuloService.getAllPaginated(params).subscribe({
+      next: (res) => {
+        const paginated = res?.data as any;
+        if (paginated && Array.isArray(paginated.data)) {
+          this.articulos = paginated.data;
+          this.articulosCurrentPage = paginated.current_page || 1;
+          this.articulosLastPage = paginated.last_page || 1;
+          this.articulosTotal = paginated.total || 0;
+        } else if (Array.isArray(res?.data)) {
+          this.articulos = res.data;
+          this.articulosCurrentPage = 1;
+          this.articulosLastPage = 1;
+          this.articulosTotal = this.articulos.length;
+        } else {
+          this.articulos = [];
+          this.articulosCurrentPage = 1;
+          this.articulosLastPage = 1;
+          this.articulosTotal = 0;
+        }
+        this.articulosFiltrados = this.articulos;
+        this.isLoadingArticulos = false;
+        console.log('Articulos cargados:', this.articulos.length, 'Total:', this.articulosTotal);
+      },
+      error: (error) => {
+        console.error('Error loading articulos', error);
+        this.articulos = [];
+        this.articulosFiltrados = [];
+        this.isLoadingArticulos = false;
+        // No mostrar error si es un problema de red temporal
+        if (error.status !== 0 && error.status !== 500) {
+          this.showAlertMessage('Error al cargar productos. Por favor, recargue la página.', 'warning');
+        }
+      }
+    });
+  }
+
+  buscarArticulo(event: any): void {
+    const valor = event.target.value;
+    this.busquedaArticulo = valor;
+
+    // Si el campo está vacío, recargar sin búsqueda
     if (valor.length === 0) {
-      this.articulosFiltrados = this.articulos || [];
+      this.loadArticulosCatalogo(1, '');
       this.mostrarSugerenciasArticulo = false;
       this.articuloSeleccionado = null;
     } else {
-      this.articulosFiltrados = (this.articulos || []).filter(articulo =>
-        articulo.nombre?.toLowerCase().includes(valor) ||
-        articulo.codigo?.toLowerCase().includes(valor) ||
-        (articulo.descripcion && articulo.descripcion.toLowerCase().includes(valor))
-      );
-      this.mostrarSugerenciasArticulo = this.articulosFiltrados.length > 0;
+      // Buscar en el backend con debounce
+      setTimeout(() => {
+        if (this.busquedaArticulo === valor) {
+          this.loadArticulosCatalogo(1, valor);
+        }
+      }, 300);
+    }
+  }
+
+  cambiarPaginaArticulos(page: number): void {
+    this.articulosCurrentPage = page;
+    this.loadArticulosCatalogo(page, this.busquedaArticulo);
+    // Scroll al inicio del catálogo
+    const catalogoElement = document.querySelector('.max-h-96');
+    if (catalogoElement) {
+      catalogoElement.scrollTop = 0;
     }
   }
 
@@ -1558,19 +1643,26 @@ export class ComprasComponent implements OnInit {
 
       this.detallesFormArray.push(detalleGroup);
       this.calculateTotal();
+      // Ajustar paginación: ir a la última página donde está el nuevo producto
+      const totalPages = this.getTotalPaginasDetalles();
+      if (totalPages > 0) {
+        this.detallesCurrentPage = totalPages;
+      }
+      this.actualizarDetallesPaginados();
     }
 
     // Limpiar selección
     this.articuloSeleccionado = null;
     this.busquedaArticulo = '';
-    this.articulosFiltrados = this.articulos || [];
+    // No recargar aquí, mantener la página actual
   }
 
   limpiarBusquedaArticulo(): void {
     this.busquedaArticulo = '';
     this.articuloSeleccionado = null;
     this.mostrarSugerenciasArticulo = false;
-    this.articulosFiltrados = this.articulos || [];
+    this.articulosCurrentPage = 1;
+    this.loadArticulosCatalogo(1, '');
   }
 
   // Métodos para selección múltiple con checkboxes
@@ -1589,29 +1681,112 @@ export class ComprasComponent implements OnInit {
 
   toggleSeleccionarTodo(): void {
     this.seleccionarTodo = !this.seleccionarTodo;
-    const articulosVisibles = this.articulosFiltrados.length > 0 ? this.articulosFiltrados : this.articulos;
-    const articulosLimitados = articulosVisibles.slice(0, 50);
 
     if (this.seleccionarTodo) {
-      articulosLimitados.forEach(articulo => {
-        if (articulo.id) {
-          this.articulosSeleccionados.add(articulo.id);
+      // Seleccionar TODOS los productos (sin limitaciones de página)
+      // Cargar todos los productos que coincidan con la búsqueda actual
+      this.isLoadingArticulos = true;
+      const params: any = {
+        page: 1,
+        per_page: 2000 // Cargar muchos productos para seleccionar todos
+      };
+      
+      if (this.busquedaArticulo && this.busquedaArticulo.trim()) {
+        params.search = this.busquedaArticulo.trim();
+      }
+
+      this.articuloService.getAllPaginated(params).subscribe({
+        next: (res) => {
+          let todosLosArticulos: Articulo[] = [];
+          const paginated = res?.data as any;
+          
+          if (paginated && Array.isArray(paginated.data)) {
+            todosLosArticulos = paginated.data;
+            // Si hay más páginas, necesitamos cargar todas
+            const totalPages = paginated.last_page || 1;
+            if (totalPages > 1) {
+              // Cargar todas las páginas restantes
+              const observables = [];
+              for (let page = 2; page <= totalPages; page++) {
+                const pageParams = { ...params, page };
+                observables.push(this.articuloService.getAllPaginated(pageParams));
+              }
+              
+              if (observables.length > 0) {
+                forkJoin(observables).subscribe({
+                  next: (responses: any[]) => {
+                    responses.forEach(response => {
+                      const pageData = response?.data as any;
+                      if (pageData && Array.isArray(pageData.data)) {
+                        todosLosArticulos = [...todosLosArticulos, ...pageData.data];
+                      }
+                    });
+                    // Seleccionar todos los productos cargados
+                    todosLosArticulos.forEach(articulo => {
+                      if (articulo.id) {
+                        this.articulosSeleccionados.add(articulo.id);
+                      }
+                    });
+                    this.isLoadingArticulos = false;
+                    console.log('Total productos seleccionados:', this.articulosSeleccionados.size);
+                  },
+                  error: (error) => {
+                    console.error('Error cargando páginas adicionales', error);
+                    // Aún así, seleccionar los que se cargaron
+                    todosLosArticulos.forEach(articulo => {
+                      if (articulo.id) {
+                        this.articulosSeleccionados.add(articulo.id);
+                      }
+                    });
+                    this.isLoadingArticulos = false;
+                  }
+                });
+              } else {
+                // Solo una página, seleccionar todos
+                todosLosArticulos.forEach(articulo => {
+                  if (articulo.id) {
+                    this.articulosSeleccionados.add(articulo.id);
+                  }
+                });
+                this.isLoadingArticulos = false;
+              }
+            } else {
+              // Solo una página, seleccionar todos
+              todosLosArticulos.forEach(articulo => {
+                if (articulo.id) {
+                  this.articulosSeleccionados.add(articulo.id);
+                }
+              });
+              this.isLoadingArticulos = false;
+            }
+          } else if (Array.isArray(res?.data)) {
+            todosLosArticulos = res.data;
+            todosLosArticulos.forEach(articulo => {
+              if (articulo.id) {
+                this.articulosSeleccionados.add(articulo.id);
+              }
+            });
+            this.isLoadingArticulos = false;
+          } else {
+            this.isLoadingArticulos = false;
+          }
+        },
+        error: (error) => {
+          console.error('Error cargando todos los productos', error);
+          this.isLoadingArticulos = false;
         }
       });
     } else {
-      articulosLimitados.forEach(articulo => {
-        if (articulo.id) {
-          this.articulosSeleccionados.delete(articulo.id);
-        }
-      });
+      // Deseleccionar todos
+      this.articulosSeleccionados.clear();
     }
   }
 
   actualizarSeleccionarTodo(): void {
-    const articulosVisibles = this.articulosFiltrados.length > 0 ? this.articulosFiltrados : this.articulos;
-    const articulosLimitados = articulosVisibles.slice(0, 50);
-    this.seleccionarTodo = articulosLimitados.length > 0 && 
-      articulosLimitados.every(articulo => articulo.id && this.articulosSeleccionados.has(articulo.id));
+    // Verificar si todos los productos de la página actual están seleccionados
+    const articulosVisibles = this.articulos;
+    this.seleccionarTodo = articulosVisibles.length > 0 && 
+      articulosVisibles.every(articulo => articulo.id && this.articulosSeleccionados.has(articulo.id));
   }
 
   agregarArticulosSeleccionados(): void {
@@ -1620,16 +1795,41 @@ export class ComprasComponent implements OnInit {
       return;
     }
 
+    // Usar isLoadingArticulos para no bloquear el botón de guardar
+    this.isLoadingArticulos = true;
     let agregados = 0;
     let yaExistentes = 0;
 
-    this.articulosSeleccionados.forEach(articuloId => {
-      const articulo = this.articulos.find(a => a.id === articuloId);
-      if (!articulo) return;
+    // Convertir Set a Array - TODOS los IDs seleccionados
+    const articulosIds = Array.from(this.articulosSeleccionados);
+    console.log(`Agregando ${articulosIds.length} productos seleccionados...`);
 
+    // Crear un mapa de artículos ya cargados para acceso rápido
+    const articulosMap = new Map<number, Articulo>();
+    this.articulos.forEach(art => {
+      if (art.id) {
+        articulosMap.set(art.id, art);
+      }
+    });
+
+    // Separar los que ya están cargados de los que necesitan cargarse
+    const articulosCargados: Articulo[] = [];
+    const articulosFaltantes: number[] = [];
+
+    articulosIds.forEach(articuloId => {
+      const articulo = articulosMap.get(articuloId);
+      if (articulo) {
+        articulosCargados.push(articulo);
+      } else {
+        articulosFaltantes.push(articuloId);
+      }
+    });
+
+    // Procesar primero los que ya están cargados
+    articulosCargados.forEach(articulo => {
       // Buscar si el artículo ya está agregado
       const detalleExistenteIndex = this.detallesFormArray.controls.findIndex(control =>
-        control.get('articulo_id')?.value === articuloId
+        control.get('articulo_id')?.value === articulo.id
       );
 
       if (detalleExistenteIndex !== -1) {
@@ -1661,12 +1861,116 @@ export class ComprasComponent implements OnInit {
         agregados++;
       }
     });
+    
+    // Actualizar cache de paginación después de agregar todos
+    this.actualizarDetallesPaginados();
 
-    // Limpiar selección
-    this.articulosSeleccionados.clear();
-    this.seleccionarTodo = false;
+    // Si hay artículos faltantes (seleccionados pero no en la página actual), cargarlos en lotes
+    if (articulosFaltantes.length > 0) {
+      console.log(`Cargando ${articulosFaltantes.length} artículos faltantes...`);
+      
+      // Procesar en lotes de 50 para evitar sobrecarga
+      const batchSize = 50;
+      const batches: number[][] = [];
+      
+      for (let i = 0; i < articulosFaltantes.length; i += batchSize) {
+        batches.push(articulosFaltantes.slice(i, i + batchSize));
+      }
 
-    // Mostrar mensaje de éxito
+      // Procesar cada lote
+      let currentBatch = 0;
+      const processBatch = () => {
+        if (currentBatch >= batches.length) {
+          // Todos los lotes procesados
+          this.isLoadingArticulos = false;
+          this.actualizarDetallesPaginados();
+          this.articulosSeleccionados.clear();
+          this.seleccionarTodo = false;
+          this.mostrarMensajeAgregados(agregados, yaExistentes);
+          return;
+        }
+
+        const batch = batches[currentBatch];
+        const observables = batch.map(articuloId => 
+          this.articuloService.getById(articuloId)
+        );
+
+        forkJoin(observables).subscribe({
+        next: (responses: any[]) => {
+          responses.forEach(response => {
+            const articulo = response?.data || response;
+            if (!articulo || !articulo.id) return;
+
+            // Buscar si el artículo ya está agregado
+            const detalleExistenteIndex = this.detallesFormArray.controls.findIndex(control =>
+              control.get('articulo_id')?.value === articulo.id
+            );
+
+            if (detalleExistenteIndex !== -1) {
+              // Si el artículo ya existe, incrementar la cantidad en 1
+              const detalleExistente = this.detallesFormArray.at(detalleExistenteIndex);
+              const cantidadActual = detalleExistente.get('cantidad')?.value || 0;
+              detalleExistente.patchValue({
+                cantidad: cantidadActual + 1
+              });
+              this.calculateTotal();
+              yaExistentes++;
+            } else {
+              // Si el artículo no existe, agregarlo como nuevo detalle
+              const precioInicial = articulo.precio_costo_unid || articulo.precio_costo_paq || 0;
+              const detalleGroup = this.fb.group({
+                articulo_id: [articulo.id, Validators.required],
+                cantidad: [1, [Validators.required, Validators.min(1)]],
+                precio_unitario: [precioInicial, [Validators.required, Validators.min(0)]],
+                descuento: [0, [Validators.min(0)]],
+                subtotal: [precioInicial, Validators.required]
+              });
+
+              detalleGroup.get('cantidad')?.valueChanges.subscribe(() => this.calculateSubtotal(detalleGroup));
+              detalleGroup.get('precio_unitario')?.valueChanges.subscribe(() => this.calculateSubtotal(detalleGroup));
+              detalleGroup.get('descuento')?.valueChanges.subscribe(() => this.calculateSubtotal(detalleGroup));
+
+              this.detallesFormArray.push(detalleGroup);
+              this.calculateTotal();
+              agregados++;
+            }
+          });
+
+          // Procesar siguiente lote
+          currentBatch++;
+          processBatch();
+        },
+        error: (error) => {
+          console.error(`Error cargando lote ${currentBatch + 1}`, error);
+          // Continuar con el siguiente lote aunque haya error
+          currentBatch++;
+          // Si es el último lote, asegurar que isLoadingArticulos se resetee
+          if (currentBatch >= batches.length) {
+            this.isLoadingArticulos = false;
+            this.actualizarDetallesPaginados();
+            this.articulosSeleccionados.clear();
+            this.seleccionarTodo = false;
+            this.mostrarMensajeAgregados(agregados, yaExistentes);
+          } else {
+            processBatch();
+          }
+        }
+      });
+    };
+
+    // Iniciar procesamiento de lotes
+    processBatch();
+    } else {
+      // No hay artículos faltantes, limpiar selección y mostrar mensaje
+      this.isLoadingArticulos = false;
+      this.actualizarDetallesPaginados();
+      this.articulosSeleccionados.clear();
+      this.seleccionarTodo = false;
+      this.mostrarMensajeAgregados(agregados, yaExistentes);
+    }
+  }
+
+  private mostrarMensajeAgregados(agregados: number, yaExistentes: number): void {
     let mensaje = '';
     if (agregados > 0 && yaExistentes > 0) {
       mensaje = `${agregados} producto(s) agregado(s) y ${yaExistentes} producto(s) actualizado(s)`;
@@ -1691,6 +1995,68 @@ export class ComprasComponent implements OnInit {
     setTimeout(() => {
       this.mostrarSugerenciasArticulo = false;
     }, 200);
+  }
+
+  // Métodos para paginación de artículos agregados (optimizado con cache)
+  actualizarDetallesPaginados(): void {
+    if (!this.detallesFormArray || !this.detallesFormArray.controls || this.detallesFormArray.length === 0) {
+      this.detallesPaginadosCache = [];
+      return;
+    }
+    
+    const start = (this.detallesCurrentPage - 1) * this.detallesPerPage;
+    const end = start + this.detallesPerPage;
+    let paginados = this.detallesFormArray.controls.slice(start, end);
+    
+    // Si la página actual no tiene elementos pero hay elementos en total, ajustar a la última página
+    if (paginados.length === 0 && this.detallesFormArray.length > 0) {
+      const totalPages = Math.ceil(this.detallesFormArray.length / this.detallesPerPage);
+      if (totalPages > 0) {
+        this.detallesCurrentPage = totalPages;
+        const newStart = (this.detallesCurrentPage - 1) * this.detallesPerPage;
+        const newEnd = newStart + this.detallesPerPage;
+        paginados = this.detallesFormArray.controls.slice(newStart, newEnd);
+      }
+    }
+    
+    this.detallesPaginadosCache = paginados;
+  }
+
+  getDetallesPaginados(): any[] {
+    return this.detallesPaginadosCache;
+  }
+
+  getTotalPaginasDetalles(): number {
+    if (!this.detallesFormArray || this.detallesFormArray.length === 0) {
+      return 0;
+    }
+    return Math.ceil(this.detallesFormArray.length / this.detallesPerPage);
+  }
+
+  cambiarPaginaDetalles(page: number): void {
+    this.detallesCurrentPage = page;
+    this.actualizarDetallesPaginados();
+    // Scroll al inicio de la tabla
+    const tablaElement = document.querySelector('.overflow-x-auto');
+    if (tablaElement) {
+      tablaElement.scrollTop = 0;
+    }
+  }
+
+  getIndiceRealDetalle(indicePagina: number): number {
+    const start = (this.detallesCurrentPage - 1) * this.detallesPerPage;
+    return start + indicePagina;
+  }
+
+  onDetallesChange(): void {
+    // Resetear a la primera página si se eliminan todos los elementos de la página actual
+    const totalPages = this.getTotalPaginasDetalles();
+    if (this.detallesCurrentPage > totalPages && totalPages > 0) {
+      this.detallesCurrentPage = totalPages;
+    } else if (totalPages === 0) {
+      this.detallesCurrentPage = 1;
+    }
+    this.actualizarDetallesPaginados();
   }
 
   // Métodos para manejar el dropdown de almacenes

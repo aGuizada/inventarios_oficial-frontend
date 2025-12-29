@@ -524,8 +524,11 @@ export class VentaFormComponent implements OnInit, OnDestroy {
     loadProductosInventario(almacenId: number, forceRefresh: boolean = false): void {
         this.ventaService.getProductosInventario(almacenId, forceRefresh).subscribe({
             next: (productos) => {
+                // Filtrar productos con stock > 0 (doble verificación)
+                const productosConStock = productos.filter(p => (p.stock_disponible ?? 0) > 0);
+                
                 // Guardar el stock original y actualizar el stock disponible
-                this.productosInventario = productos.map(p => ({
+                this.productosInventario = productosConStock.map(p => ({
                     ...p,
                     stock_disponible_original: p.stock_disponible
                 } as ProductoInventario));
@@ -729,17 +732,26 @@ export class VentaFormComponent implements OnInit, OnDestroy {
         });
         
         // Actualizar el stock disponible mostrado restando las cantidades en el carrito
-        this.productosInventario = this.productosInventario.map(producto => {
-            const cantidadEnCarrito = cantidadesEnCarrito.get(producto.articulo_id) || 0;
-            // El stock disponible mostrado es el stock real menos lo que está en el carrito
-            // Pero mantenemos el stock original para cuando se quite del carrito
-            const stockOriginal = (producto as any).stock_disponible_original ?? producto.stock_disponible;
-            return {
-                ...producto,
-                stock_disponible_original: stockOriginal,
-                stock_disponible: Math.max(0, stockOriginal - cantidadEnCarrito)
-            } as ProductoInventario;
-        });
+        // Y filtrar productos que llegaron a stock 0 (solo si no están en el carrito)
+        this.productosInventario = this.productosInventario
+            .map(producto => {
+                const cantidadEnCarrito = cantidadesEnCarrito.get(producto.articulo_id) || 0;
+                // El stock disponible mostrado es el stock real menos lo que está en el carrito
+                // Pero mantenemos el stock original para cuando se quite del carrito
+                const stockOriginal = (producto as any).stock_disponible_original ?? producto.stock_disponible;
+                return {
+                    ...producto,
+                    stock_disponible_original: stockOriginal,
+                    stock_disponible: Math.max(0, stockOriginal - cantidadEnCarrito)
+                } as ProductoInventario;
+            })
+            // Filtrar productos con stock 0 que NO están en el carrito
+            .filter(producto => {
+                const cantidadEnCarrito = cantidadesEnCarrito.get(producto.articulo_id) || 0;
+                // Si está en el carrito, mantenerlo aunque el stock disponible sea 0
+                // Si NO está en el carrito y el stock es 0, eliminarlo de la lista
+                return cantidadEnCarrito > 0 || producto.stock_disponible > 0;
+            });
     }
 
     puedeRegistrarVenta(): boolean {
@@ -858,11 +870,22 @@ export class VentaFormComponent implements OnInit, OnDestroy {
             const detalle = this.detalles.at(i);
             const articuloId = detalle.get('articulo_id')?.value;
             const cantidad = detalle.get('cantidad')?.value;
+            const unidadMedida = detalle.get('unidad_medida')?.value || 'Unidad';
             const producto = this.productosInventario.find(p => p.articulo_id === articuloId);
-            const stockDisponible = producto?.stock_disponible || 0;
+            
+            // Usar stock_disponible_original (stock real) en lugar de stock_disponible (que ya fue descontado localmente)
+            const stockOriginal = (producto as any)?.stock_disponible_original ?? producto?.stock_disponible ?? 0;
+            
+            // Calcular cantidad a deducir según unidad de medida
+            let cantidadDeducir = cantidad;
+            if (unidadMedida === 'Paquete' && producto?.articulo?.unidad_envase) {
+                cantidadDeducir = cantidad * (producto.articulo.unidad_envase > 0 ? producto.articulo.unidad_envase : 1);
+            } else if (unidadMedida === 'Centimetro') {
+                cantidadDeducir = cantidad / 100;
+            }
 
-            if (cantidad > stockDisponible) {
-                this.showAlertMessage(`La cantidad solicitada (${cantidad}) excede el stock disponible (${stockDisponible})`, 'warning');
+            if (cantidadDeducir > stockOriginal) {
+                this.showAlertMessage(`La cantidad solicitada (${cantidad} ${unidadMedida}) excede el stock disponible (${stockOriginal} unidades)`, 'warning');
                 return;
             }
         }

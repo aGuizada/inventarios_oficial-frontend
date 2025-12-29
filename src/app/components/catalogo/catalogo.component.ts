@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subject, debounceTime, distinctUntilChanged, switchMap, of, tap } from 'rxjs';
 import { ArticuloService } from '../../services/articulo.service';
 import { VentaService, ProductoInventario } from '../../services/venta.service';
 import { AlmacenService } from '../../services/almacen.service';
@@ -18,6 +18,9 @@ interface ProductoCatalogo {
     stock_total: number;
     stock_por_almacen: Array<{ almacen: string; stock: number; almacen_id?: number }>;
     tiene_stock: boolean;
+    marca?: string;
+    categoria?: string;
+    medida?: string;
     articulo?: Articulo;
 }
 
@@ -34,6 +37,7 @@ export class CatalogoComponent implements OnInit {
     
     // Filtros
     searchTerm: string = '';
+    private searchSubject = new Subject<string>();
     
     // Estados
     isLoading = false;
@@ -50,6 +54,24 @@ export class CatalogoComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadAlmacenes();
+        
+        // Configurar búsqueda con debounce para buscar en el backend
+        this.searchSubject.pipe(
+            debounceTime(300), // Esperar 300ms después de que el usuario deje de escribir
+            distinctUntilChanged(), // Solo buscar si el término cambió
+            switchMap(searchTerm => {
+                this.isLoading = true;
+                return this.loadProductosConBusqueda(searchTerm);
+            })
+        ).subscribe({
+            next: () => {
+                this.isLoading = false;
+            },
+            error: (error: any) => {
+                console.error('Error en búsqueda:', error);
+                this.isLoading = false;
+            }
+        });
     }
 
     loadAlmacenes(): void {
@@ -85,10 +107,32 @@ export class CatalogoComponent implements OnInit {
 
     loadProductos(): void {
         this.isLoading = true;
+        this.loadProductosConBusqueda('').subscribe({
+            next: () => {
+                this.isLoading = false;
+            },
+            error: (error: any) => {
+                console.error('Error cargando artículos:', error);
+                this.isLoading = false;
+            }
+        });
+    }
+
+    loadProductosConBusqueda(searchTerm: string = ''): any {
+        // Usar búsqueda en el backend si hay término de búsqueda
+        // Aumentar el límite para mostrar todos los productos que coincidan
+        const perPage = searchTerm ? 500 : 2000; // Cargar más productos
+        const params: any = {
+            page: 1,
+            per_page: perPage
+        };
         
-        // Obtener todos los artículos
-        this.articuloService.getAll(1, 10000).subscribe({
-            next: (articulosResponse: any) => {
+        if (searchTerm && searchTerm.trim()) {
+            params.search = searchTerm.trim();
+        }
+
+        return this.articuloService.getAllPaginated(params).pipe(
+            switchMap((articulosResponse: any) => {
                 let articulos: Articulo[] = [];
                 
                 // Procesar respuesta de artículos
@@ -115,35 +159,24 @@ export class CatalogoComponent implements OnInit {
                     });
 
                     // Combinar todos los observables
-                    forkJoin(observables).subscribe({
-                        next: (inventariosPorAlmacen: ProductoInventario[][]) => {
+                    return forkJoin(observables).pipe(
+                        tap((inventariosPorAlmacen: ProductoInventario[][]) => {
                             this.procesarProductos(articulos, inventariosPorAlmacen);
-                            this.isLoading = false;
-                        },
-                        error: (error) => {
-                            console.error('Error cargando inventarios:', error);
-                            // Si falla, mostrar productos sin stock
-                            this.procesarProductos(articulos, []);
-                            this.isLoading = false;
-                        }
-                    });
+                        })
+                    );
                 } else {
                     // Si no hay almacenes, mostrar productos sin stock
                     this.procesarProductos(articulos, []);
-                    this.isLoading = false;
+                    return of([]);
                 }
-            },
-            error: (error) => {
-                console.error('Error cargando artículos:', error);
-                this.isLoading = false;
-            }
-        });
+            })
+        );
     }
 
     procesarProductos(articulos: Articulo[], inventariosPorAlmacen: ProductoInventario[][]): void {
         const productosMap = new Map<number, ProductoCatalogo>();
 
-        // Inicializar productos
+        // Inicializar TODOS los productos (sin importar stock)
         articulos.forEach(articulo => {
             productosMap.set(articulo.id, {
                 id: articulo.id,
@@ -153,11 +186,14 @@ export class CatalogoComponent implements OnInit {
                 stock_total: 0,
                 stock_por_almacen: [],
                 tiene_stock: false,
+                marca: articulo.marca?.nombre || 'N/A',
+                categoria: articulo.categoria?.nombre || 'N/A',
+                medida: articulo.medida?.nombre_medida || 'N/A',
                 articulo: articulo
             });
         });
 
-        // Procesar inventarios por almacén
+        // Procesar inventarios por almacén (solo para actualizar stock, no para filtrar)
         inventariosPorAlmacen.forEach((inventarios, indexAlmacen) => {
             const almacen = this.almacenes[indexAlmacen];
             if (!almacen) return;
@@ -179,28 +215,29 @@ export class CatalogoComponent implements OnInit {
             });
         });
 
-        this.productos = Array.from(productosMap.values());
+        // Mostrar TODOS los productos sin excepción (con o sin stock)
+        // Ordenar: primero los que tienen stock, luego los que no tienen
+        this.productos = Array.from(productosMap.values()).sort((a, b) => {
+            // Si ambos tienen stock o ambos no tienen stock, mantener orden original
+            if (a.tiene_stock === b.tiene_stock) {
+                return 0;
+            }
+            // Si a tiene stock y b no, a va primero (retorna negativo)
+            // Si a no tiene stock y b sí, b va primero (retorna positivo)
+            return b.tiene_stock ? 1 : -1;
+        });
         this.aplicarFiltros();
     }
 
     aplicarFiltros(): void {
-        let filtrados = [...this.productos];
-
-        // Solo filtro de búsqueda
-        if (this.searchTerm) {
-            const term = this.searchTerm.toLowerCase();
-            filtrados = filtrados.filter(p => 
-                p.nombre.toLowerCase().includes(term) ||
-                p.codigo.toLowerCase().includes(term)
-            );
-        }
-
-        this.productosFiltrados = filtrados;
+        // Ya no filtramos en el frontend, la búsqueda se hace en el backend
+        this.productosFiltrados = [...this.productos];
         this.currentPage = 1;
     }
 
     onSearchChange(): void {
-        this.aplicarFiltros();
+        // Disparar búsqueda en el backend con debounce
+        this.searchSubject.next(this.searchTerm);
     }
 
     verDetalles(producto: ProductoCatalogo): void {

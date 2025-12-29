@@ -141,23 +141,36 @@ export class SucursalesComponent implements OnInit {
         .subscribe({
           next: (response) => {
             console.log('Sucursal eliminada exitosamente:', response);
-            this.loadSucursales();
+            if (response.success) {
+              alert('Sucursal eliminada exitosamente');
+              this.loadSucursales();
+            } else {
+              // Si el backend devuelve success: false pero no es un error HTTP
+              const errorMessage = response.message || 'Error al eliminar la sucursal';
+              alert(errorMessage);
+            }
           },
           error: (error) => {
             console.error('Error deleting sucursal', error);
             console.error('Detalles del error:', error.error);
             
             let errorMessage = 'Error al eliminar la sucursal.';
+            
+            // Manejar diferentes formatos de respuesta de error
             if (error.error) {
+              // Priorizar el mensaje detallado
               if (error.error.message) {
                 errorMessage = error.error.message;
               } else if (error.error.error) {
                 errorMessage = error.error.error;
+              } else if (typeof error.error === 'string') {
+                errorMessage = error.error;
               }
             } else if (error.message) {
               errorMessage = error.message;
             }
             
+            // Mostrar mensaje de error al usuario
             alert(errorMessage);
           }
         });

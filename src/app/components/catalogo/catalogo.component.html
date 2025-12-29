@@ -39,9 +39,22 @@
             </h3>
 
             <!-- Código -->
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">
                 Código: {{ producto.codigo }}
             </p>
+
+            <!-- Marca, Categoría y Medida -->
+            <div class="mb-2 space-y-1">
+                <p class="text-xs text-gray-600 dark:text-gray-500">
+                    <span class="font-semibold">Marca:</span> {{ producto.marca }}
+                </p>
+                <p class="text-xs text-gray-600 dark:text-gray-500">
+                    <span class="font-semibold">Categoría:</span> {{ producto.categoria }}
+                </p>
+                <p class="text-xs text-gray-600 dark:text-gray-500">
+                    <span class="font-semibold">Medida:</span> {{ producto.medida }}
+                </p>
+            </div>
 
             <!-- Precio -->
             <p class="text-xl font-bold text-blue-600 dark:text-blue-400 mb-2">

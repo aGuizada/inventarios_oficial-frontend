@@ -60,8 +60,8 @@ export class ProductListComponent implements OnChanges {
     aplicarFiltros(): void {
         let productos = [...this.productosInventario];
 
-        // Filtro por categoría
-        if (this.categoriaSeleccionada) {
+        // Filtro por categoría (solo si hay una categoría seleccionada)
+        if (this.categoriaSeleccionada !== null) {
             productos = productos.filter(producto =>
                 producto.articulo?.categoria_id === this.categoriaSeleccionada
             );
@@ -77,24 +77,11 @@ export class ProductListComponent implements OnChanges {
         }
 
         this.productosFiltrados = productos;
-        // Si hay búsqueda, mostramos los filtrados por texto, si no, los filtrados por categoría (para el grid principal)
-        // En el template original: (productosFiltradosPorCategoria.length > 0 ? productosFiltradosPorCategoria : productosInventario)
-        // Pero aquí simplificamos: productosFiltradosPorCategoria son los que se muestran en el grid
-
-        // Recalculamos productosFiltradosPorCategoria solo con el filtro de categoría
-        let productosCategoria = [...this.productosInventario];
-        if (this.categoriaSeleccionada) {
-            productosCategoria = productosCategoria.filter(producto =>
-                producto.articulo?.categoria_id === this.categoriaSeleccionada
-            );
-        }
-        // Si hay búsqueda, el grid también debería filtrarse por búsqueda? 
-        // En el original: 
-        // this.productosFiltrados = productos (con todos los filtros)
-        // this.productosFiltradosPorCategoria = productos (con todos los filtros)
-        // Y el grid usa: (productosFiltradosPorCategoria.length > 0 ? productosFiltradosPorCategoria : productosInventario)
-
-        // Vamos a mantener la lógica original:
+        
+        // productosFiltradosPorCategoria se usa para el grid principal
+        // Si hay categoría seleccionada, muestra solo esa categoría
+        // Si no hay categoría seleccionada (null = "Todos"), muestra todos los productos
+        // Si hay búsqueda, también aplica el filtro de búsqueda
         this.productosFiltradosPorCategoria = productos;
 
         this.mostrarSugerenciasProducto = this.busquedaProducto.length > 0 && this.productosFiltrados.length > 0;

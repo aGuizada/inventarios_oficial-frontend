@@ -139,22 +139,66 @@ export class InventarioImportarComponent {
         const worksheet = workbook.Sheets[firstSheetName];
 
         // Convertir a JSON
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: '' });
+
+        console.log('Datos leídos del Excel:', jsonData);
+        console.log('Número de filas:', jsonData.length);
+
+        // Función auxiliar para buscar columna (case-insensitive, sin espacios)
+        const getColumnValue = (row: any, possibleNames: string[]): string => {
+          for (const name of possibleNames) {
+            // Buscar exacto
+            if (row[name] !== undefined && row[name] !== null && row[name] !== '') {
+              return String(row[name]);
+            }
+            // Buscar case-insensitive
+            const foundKey = Object.keys(row).find(
+              key => key.toLowerCase().trim() === name.toLowerCase().trim()
+            );
+            if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null && row[foundKey] !== '') {
+              return String(row[foundKey]);
+            }
+          }
+          return '';
+        };
 
         // Mapear a formato esperado
-        this.previewData = jsonData.map((row: any) => ({
-          codigo_articulo: String(row['codigo_articulo'] || ''),
-          nombre_articulo: String(row['nombre_articulo'] || ''),
-          sucursal: row['sucursal'] ? String(row['sucursal']) : '',
-          almacen: String(row['almacen'] || ''),
-          saldo_stock: Number(row['saldo_stock'] || 0),
-          cantidad: Number(row['cantidad'] || 0),
-          fecha_vencimiento: row['fecha_vencimiento'] ? String(row['fecha_vencimiento']) : ''
-        }));
+        this.previewData = jsonData
+          .map((row: any) => {
+            const codigo = getColumnValue(row, ['codigo_articulo', 'codigo', 'código', 'codigo articulo']);
+            const nombre = getColumnValue(row, ['nombre_articulo', 'nombre', 'articulo', 'nombre articulo']);
+            const sucursal = getColumnValue(row, ['sucursal']);
+            const almacen = getColumnValue(row, ['almacen', 'almacén']);
+            const saldoStock = getColumnValue(row, ['saldo_stock', 'saldo stock', 'stock', 'saldo']);
+            const cantidad = getColumnValue(row, ['cantidad']);
+            const fechaVencimiento = getColumnValue(row, ['fecha_vencimiento', 'fecha vencimiento', 'vencimiento']);
+
+            return {
+              codigo_articulo: codigo,
+              nombre_articulo: nombre,
+              sucursal: sucursal,
+              almacen: almacen,
+              saldo_stock: saldoStock ? Number(saldoStock) : 0,
+              cantidad: cantidad ? Number(cantidad) : 0,
+              fecha_vencimiento: fechaVencimiento
+            };
+          })
+          .filter((row: PreviewData) => {
+            // Filtrar filas vacías (debe tener al menos nombre_articulo y almacen)
+            return row.nombre_articulo.trim() !== '' && row.almacen.trim() !== '';
+          });
+
+        console.log('Datos procesados:', this.previewData);
+        console.log('Registros válidos:', this.previewData.length);
+
+        if (this.previewData.length === 0) {
+          alert('No se encontraron datos válidos en el archivo. Verifica que el archivo tenga las columnas correctas: nombre_articulo, almacen, saldo_stock, cantidad.');
+        }
 
       } catch (error) {
         console.error('Error leyendo archivo Excel:', error);
         alert('Error al leer el archivo Excel. Verifica que el formato sea correcto.');
+        this.previewData = [];
       }
     };
 

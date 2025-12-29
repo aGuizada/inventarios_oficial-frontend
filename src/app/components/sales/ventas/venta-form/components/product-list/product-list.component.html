@@ -88,7 +88,7 @@
 
         <!-- Grid de Productos -->
         <div *ngIf="almacenId" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
-            <div *ngFor="let producto of (productosFiltradosPorCategoria.length > 0 ? productosFiltradosPorCategoria : productosInventario).slice(0, 50)"
+            <div *ngFor="let producto of productosFiltradosPorCategoria"
                 class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:shadow-md transition-shadow transition-colors duration-200 flex flex-col justify-between h-full">
                 <div class="mb-2">
                     <h5 class="font-semibold text-gray-900 dark:text-slate-100 text-sm mb-1 line-clamp-2"
