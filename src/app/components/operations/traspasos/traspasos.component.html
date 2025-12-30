@@ -259,6 +259,12 @@
                         <div class="font-medium text-gray-900">{{ producto.articulo?.nombre }}</div>
                         <div class="text-xs text-gray-500">
                           Código: {{ producto.articulo?.codigo }}
+                          <span *ngIf="producto.articulo?.marca?.nombre" class="ml-2">
+                            | Marca: {{ producto.articulo.marca.nombre }}
+                          </span>
+                          <span *ngIf="producto.articulo?.industria?.nombre" class="ml-2">
+                            | Industria: {{ producto.articulo.industria.nombre }}
+                          </span>
                           <span class="ml-2 font-semibold text-green-600">
                             | Stock: {{ producto.stock_disponible }}
                           </span>
@@ -275,6 +281,12 @@
                     <div>
                       <h5 class="text-lg font-semibold text-gray-900">{{ productoSeleccionado.articulo?.nombre }}</h5>
                       <p class="text-sm text-gray-500">Código: {{ productoSeleccionado.articulo?.codigo }}</p>
+                      <p *ngIf="productoSeleccionado.articulo?.marca?.nombre" class="text-sm text-gray-500">
+                        Marca: {{ productoSeleccionado.articulo.marca.nombre }}
+                      </p>
+                      <p *ngIf="productoSeleccionado.articulo?.industria?.nombre" class="text-sm text-gray-500">
+                        Industria: {{ productoSeleccionado.articulo.industria.nombre }}
+                      </p>
                     </div>
                     <button type="button" (click)="limpiarBusquedaProducto()" class="text-gray-400 hover:text-gray-600">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -320,7 +332,15 @@
                       <div class="flex justify-between items-center">
                         <div class="flex-1">
                           <div class="font-medium text-gray-900">{{ producto.articulo?.nombre }}</div>
-                          <div class="text-sm text-gray-500">Código: {{ producto.articulo?.codigo }}</div>
+                          <div class="text-sm text-gray-500">
+                            Código: {{ producto.articulo?.codigo }}
+                            <span *ngIf="producto.articulo?.marca?.nombre" class="ml-2">
+                              | Marca: {{ producto.articulo.marca.nombre }}
+                            </span>
+                            <span *ngIf="producto.articulo?.industria?.nombre" class="ml-2">
+                              | Industria: {{ producto.articulo.industria.nombre }}
+                            </span>
+                          </div>
                         </div>
                         <div class="text-right">
                           <div class="font-semibold text-green-600">Stock: {{ producto.stock_disponible }}</div>
