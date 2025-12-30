@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule, NgClass } from '@angular/common';
 import { MonedaPipe } from '../../../../pipes/moneda.pipe';
 import { Articulo } from '../../../../interfaces';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-articulos-list',
@@ -11,8 +12,8 @@ import { Articulo } from '../../../../interfaces';
 })
 export class ArticulosListComponent {
   private _articulos: Articulo[] = [];
-  
-  @Input() 
+
+  @Input()
   set articulos(value: Articulo[] | null | undefined) {
     // Asegurar que siempre sea un array válido
     if (Array.isArray(value)) {
@@ -28,7 +29,7 @@ export class ArticulosListComponent {
   get articulos(): Articulo[] {
     return this._articulos || [];
   }
-  
+
   @Input() isLoading: boolean = false;
   @Input() currentPage: number = 1;
   @Input() lastPage: number = 1;
@@ -38,6 +39,14 @@ export class ArticulosListComponent {
   @Output() edit = new EventEmitter<Articulo>();
   @Output() delete = new EventEmitter<number>();
   @Output() pageChange = new EventEmitter<number>();
+
+  getImageUrl(articulo: Articulo): string {
+    if (articulo.fotografia) {
+      const baseUrl = environment.apiUrl.replace('/api', '');
+      return `${baseUrl}/storage/${articulo.fotografia}`;
+    }
+    return '/assets/images/no-image.jpg';
+  }
 
   onView(articulo: Articulo): void {
     this.view.emit(articulo);

@@ -35,7 +35,7 @@ export class ArticuloFormComponent implements OnInit, OnChanges {
     private configService: ConfiguracionTrabajoService
   ) {
     this.form = this.fb.group({
-      codigo: ['', Validators.required],
+      codigo: [''],
       nombre: ['', Validators.required],
       descripcion: [''],
       categoria_id: ['', Validators.required],

@@ -51,31 +51,42 @@ export class VentaService {
 
     private productosCache: Map<string, Observable<ProductoInventario[]>> = new Map();
 
-    getProductosInventario(almacenId?: number, forceRefresh: boolean = false): Observable<ProductoInventario[]> {
-        const cacheKey = almacenId?.toString() || 'all';
-        
-        // Si se fuerza la recarga, limpiar el caché para este almacén
+    getProductosInventario(almacenId?: number, forceRefresh: boolean = false, params?: PaginationParams): Observable<any> {
+        const cacheKey = `${almacenId?.toString() || 'all'}_${JSON.stringify(params || {})}`;
+
+        // Si se fuerza la recarga, limpiar el caché para esta combinación
         if (forceRefresh && this.productosCache.has(cacheKey)) {
             this.productosCache.delete(cacheKey);
         }
-        
-        // Si ya existe una petición en curso para este almacén, reutilizarla
+
+        // Si ya existe una petición en curso, reutilizarla
         if (!this.productosCache.has(cacheKey)) {
-            let params = new HttpParams();
+            let httpParams = new HttpParams();
             if (almacenId) {
-                params = params.set('almacen_id', almacenId.toString());
+                httpParams = httpParams.set('almacen_id', almacenId.toString());
             }
+
+            if (params) {
+                Object.keys(params).forEach(key => {
+                    const value = (params as any)[key];
+                    if (value !== undefined && value !== null) {
+                        httpParams = httpParams.set(key, value.toString());
+                    }
+                });
+            }
+
             // Agregar timestamp para evitar caché del navegador cuando se fuerza la recarga
             if (forceRefresh) {
-                params = params.set('_t', Date.now().toString());
+                httpParams = httpParams.set('_t', Date.now().toString());
             }
-            const request = this.http.get<ProductoInventario[]>(`${this.apiUrl}/productos-inventario`, { params })
+
+            const request = this.http.get<any>(`${this.apiUrl}/productos-inventario`, { params: httpParams })
                 .pipe(
-                    shareReplay(1) // Cachear la respuesta y compartirla entre suscriptores
+                    shareReplay(1)
                 );
             this.productosCache.set(cacheKey, request);
         }
-        
+
         return this.productosCache.get(cacheKey)!;
     }
 
@@ -98,7 +109,7 @@ export class VentaService {
 
     imprimirComprobante(id: number, formato: 'rollo' | 'carta'): void {
         const token = localStorage.getItem('token');
-        
+
         if (!token) {
             alert('No hay token de autenticación. Por favor, inicie sesión nuevamente.');
             window.location.href = '/login';
@@ -113,7 +124,7 @@ export class VentaService {
         xhr.setRequestHeader('Accept', 'application/pdf');
         xhr.responseType = 'blob';
 
-        xhr.onload = function() {
+        xhr.onload = function () {
             if (xhr.status === 200) {
                 const blob = xhr.response;
                 const url = window.URL.createObjectURL(blob);
@@ -129,7 +140,7 @@ export class VentaService {
                 window.location.href = '/login';
             } else {
                 const reader = new FileReader();
-                reader.onload = function() {
+                reader.onload = function () {
                     try {
                         const errorData = JSON.parse(reader.result as string);
                         alert('Error al generar el PDF: ' + (errorData.message || 'Error desconocido'));
@@ -141,7 +152,7 @@ export class VentaService {
             }
         };
 
-        xhr.onerror = function() {
+        xhr.onerror = function () {
             alert('Error de conexión al descargar el PDF. Por favor, verifique su conexión a internet.');
         };
 
@@ -150,7 +161,7 @@ export class VentaService {
 
     exportReporteDetalladoPDF(params?: { fecha_desde?: string; fecha_hasta?: string; sucursal_id?: number }): void {
         const token = localStorage.getItem('token');
-        
+
         if (!token) {
             alert('No hay token de autenticación. Por favor, inicie sesión nuevamente.');
             window.location.href = '/login';
@@ -159,7 +170,7 @@ export class VentaService {
 
         let url = `${this.apiUrl}/reporte/detallado-pdf`;
         const queryParams = new URLSearchParams();
-        
+
         if (params?.fecha_desde) {
             queryParams.append('fecha_desde', params.fecha_desde);
         }
@@ -169,7 +180,7 @@ export class VentaService {
         if (params?.sucursal_id) {
             queryParams.append('sucursal_id', params.sucursal_id.toString());
         }
-        
+
         if (queryParams.toString()) {
             url += '?' + queryParams.toString();
         }
@@ -180,7 +191,7 @@ export class VentaService {
         xhr.setRequestHeader('Accept', 'application/pdf');
         xhr.responseType = 'blob';
 
-        xhr.onload = function() {
+        xhr.onload = function () {
             if (xhr.status === 200) {
                 const blob = xhr.response;
                 const url = window.URL.createObjectURL(blob);
@@ -196,7 +207,7 @@ export class VentaService {
                 window.location.href = '/login';
             } else {
                 const reader = new FileReader();
-                reader.onload = function() {
+                reader.onload = function () {
                     try {
                         const errorData = JSON.parse(reader.result as string);
                         alert('Error al generar el PDF: ' + (errorData.message || 'Error desconocido'));
@@ -208,7 +219,7 @@ export class VentaService {
             }
         };
 
-        xhr.onerror = function() {
+        xhr.onerror = function () {
             alert('Error de conexión al descargar el PDF. Por favor, verifique su conexión a internet.');
         };
 
@@ -217,7 +228,7 @@ export class VentaService {
 
     exportReporteGeneralPDF(params?: { fecha_desde?: string; fecha_hasta?: string; sucursal_id?: number }): void {
         const token = localStorage.getItem('token');
-        
+
         if (!token) {
             alert('No hay token de autenticación. Por favor, inicie sesión nuevamente.');
             window.location.href = '/login';
@@ -226,7 +237,7 @@ export class VentaService {
 
         let url = `${this.apiUrl}/reporte/general-pdf`;
         const queryParams = new URLSearchParams();
-        
+
         if (params?.fecha_desde) {
             queryParams.append('fecha_desde', params.fecha_desde);
         }
@@ -236,7 +247,7 @@ export class VentaService {
         if (params?.sucursal_id) {
             queryParams.append('sucursal_id', params.sucursal_id.toString());
         }
-        
+
         if (queryParams.toString()) {
             url += '?' + queryParams.toString();
         }
@@ -247,7 +258,7 @@ export class VentaService {
         xhr.setRequestHeader('Accept', 'application/pdf');
         xhr.responseType = 'blob';
 
-        xhr.onload = function() {
+        xhr.onload = function () {
             if (xhr.status === 200) {
                 const blob = xhr.response;
                 const url = window.URL.createObjectURL(blob);
@@ -263,7 +274,7 @@ export class VentaService {
                 window.location.href = '/login';
             } else {
                 const reader = new FileReader();
-                reader.onload = function() {
+                reader.onload = function () {
                     try {
                         const errorData = JSON.parse(reader.result as string);
                         alert('Error al generar el PDF: ' + (errorData.message || 'Error desconocido'));
@@ -275,7 +286,7 @@ export class VentaService {
             }
         };
 
-        xhr.onerror = function() {
+        xhr.onerror = function () {
             alert('Error de conexión al descargar el PDF. Por favor, verifique su conexión a internet.');
         };
 

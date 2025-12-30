@@ -16,12 +16,12 @@ export class LoginComponent implements OnInit, OnDestroy {
   errorMessage = '';
   showPassword = false;
 
-  images = [
-    '/assets/images/carousel-1.jpg',
-    '/assets/images/carousel-2 (2).jpg'
-  ];
-  currentImageIndex = 0;
-  private intervalId: any;
+  images = {
+    light: '/assets/images/carousel-1.jpg',
+    dark: '/assets/images/carousel-2 (2).jpg'
+  };
+  currentImage = '';
+  private themeObserver: MutationObserver | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -36,19 +36,29 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.startCarousel();
+    this.updateImage();
+    this.setupThemeObserver();
   }
 
   ngOnDestroy() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
+    if (this.themeObserver) {
+      this.themeObserver.disconnect();
     }
   }
 
-  startCarousel() {
-    this.intervalId = setInterval(() => {
-      this.currentImageIndex = (this.currentImageIndex + 1) % this.images.length;
-    }, 3000);
+  setupThemeObserver() {
+    this.themeObserver = new MutationObserver(() => {
+      this.updateImage();
+    });
+    this.themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  }
+
+  updateImage() {
+    const isDark = document.documentElement.classList.contains('dark');
+    this.currentImage = isDark ? this.images.dark : this.images.light;
   }
 
   onSubmit(): void {

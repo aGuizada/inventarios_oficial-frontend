@@ -12,8 +12,8 @@
                     <i class="fas fa-th mr-2"></i>
                     Todos
                 </button>
-                <button type="button" *ngFor="let categoria of categorias" (click)="seleccionarCategoria(categoria.id)"
-                    [ngClass]="{
+                <button type="button" *ngFor="let categoria of categorias; trackBy: trackByCategoria"
+                    (click)="seleccionarCategoria(categoria.id)" [ngClass]="{
             'bg-blue-600 text-white': categoriaSeleccionada === categoria.id,
             'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300': categoriaSeleccionada !== categoria.id
           }" class="px-4 py-2 rounded-full font-medium text-sm whitespace-nowrap transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30">
@@ -52,7 +52,7 @@
                     <div *ngIf="mostrarSugerenciasProducto && productosFiltrados.length > 0"
                         class="absolute z-20 mt-1 w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-md shadow-lg max-h-64 overflow-auto transition-colors duration-200">
                         <ul class="py-1">
-                            <li *ngFor="let producto of productosFiltrados"
+                            <li *ngFor="let producto of productosFiltrados; trackBy: trackByProducto"
                                 (mousedown)="seleccionarProductoCatalogo(producto)"
                                 class="px-4 py-2 hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer transition-colors duration-200">
                                 <div class="font-medium text-gray-900 dark:text-slate-100">{{ producto.articulo?.nombre
@@ -87,52 +87,158 @@
         </div>
 
         <!-- Grid de Productos -->
-        <div *ngIf="almacenId" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
-            <div *ngFor="let producto of productosFiltradosPorCategoria"
-                class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:shadow-md transition-shadow transition-colors duration-200 flex flex-col justify-between h-full">
-                <div class="mb-2">
-                    <h5 class="font-semibold text-gray-900 dark:text-slate-100 text-sm mb-1 line-clamp-2"
-                        title="{{ producto.articulo?.nombre }}">
-                        {{ producto.articulo?.nombre }}
-                    </h5>
-                    <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">Código: {{ producto.articulo?.codigo }}
-                    </p>
-                    <p class="text-lg font-bold text-blue-600 dark:text-blue-400 mb-1">
-                        {{ producto.articulo?.precio_venta || producto.articulo?.precio_uno | moneda }}
-                    </p>
-                    <p class="text-sm text-gray-600 dark:text-slate-400">
-                        Stock: <span [ngClass]="{
-                'text-red-600 dark:text-red-400': producto.stock_disponible < 5,
-                'text-green-600 dark:text-green-400': producto.stock_disponible >= 5
-              }">
-                            {{ producto.stock_disponible }}
+        <div *ngIf="almacenId" [ngClass]="{
+                'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8': !hasCart,
+                'grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5': hasCart
+            }" class="grid gap-4 pb-6">
+            <div *ngFor="let producto of productosFiltrados; trackBy: trackByProducto"
+                class="group relative bg-white dark:bg-slate-800/80 backdrop-blur-sm border border-gray-200 dark:border-slate-700/50 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 flex flex-col h-full transform hover:-translate-y-1">
+
+                <!-- Imagen del Producto con Overlay -->
+                <div
+                    class="relative h-32 w-full bg-gray-100 dark:bg-slate-900/50 flex items-center justify-center overflow-hidden">
+                    <img [src]="getImageUrl(producto)" [alt]="producto.articulo?.nombre"
+                        class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        onerror="this.src='/assets/images/no-image.jpg'">
+
+                    <!-- Gradiente sutil sobre la imagen -->
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                    </div>
+
+                    <!-- Badge de Stock Flotante (Siempre Visible) -->
+                    <div class="absolute top-2 right-2 z-10">
+                        <span [ngClass]="{
+                            'bg-red-500/90 backdrop-blur-md': producto.stock_disponible < 5,
+                            'bg-emerald-500/90 backdrop-blur-md': producto.stock_disponible >= 5
+                        }"
+                            class="px-2 py-0.5 rounded-lg text-[9px] font-bold text-white shadow-lg border border-white/20">
+                            Stock: {{ producto.stock_disponible }}
                         </span>
-                    </p>
+                    </div>
                 </div>
-                <div class="flex gap-2 justify-end mt-2">
-                    <button type="button" (click)="openProductDetail(producto)" title="Ver Detalle"
-                        class="w-9 h-9 bg-gray-50 hover:bg-gray-100 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                    </button>
-                    <button type="button" (click)="agregarProductoAVenta(producto)" title="Agregar al Carrito"
-                        [disabled]="producto.stock_disponible <= 0"
-                        class="w-9 h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-md hover:shadow-lg hover:scale-105">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                    </button>
+
+                <!-- Información del Producto -->
+                <div class="p-3 flex-1 flex flex-col">
+                    <div class="mb-2">
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <span
+                                class="text-[8px] uppercase tracking-wider font-bold text-blue-500 dark:text-blue-400">
+                                {{ producto.articulo?.categoria?.nombre || 'General' }}
+                            </span>
+                        </div>
+                        <h5 class="font-bold text-gray-900 dark:text-slate-100 text-xs line-clamp-2 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300"
+                            title="{{ producto.articulo?.nombre }}">
+                            {{ producto.articulo?.nombre }}
+                        </h5>
+                    </div>
+
+                    <div class="mt-auto space-y-2">
+                        <!-- Marca e Industria (Compacto) -->
+                        <div class="flex flex-wrap gap-1"
+                            *ngIf="producto.articulo?.marca || producto.articulo?.industria">
+                            <span *ngIf="producto.articulo?.marca"
+                                class="text-[7px] px-1 py-0.5 bg-slate-50 dark:bg-slate-700/30 text-slate-500 dark:text-slate-400 rounded border border-slate-100 dark:border-slate-700/50 truncate max-w-[50%]">
+                                {{ producto.articulo?.marca?.nombre }}
+                            </span>
+                            <span *ngIf="producto.articulo?.industria"
+                                class="text-[7px] px-1 py-0.5 bg-slate-50 dark:bg-slate-700/30 text-slate-500 dark:text-slate-400 rounded border border-slate-100 dark:border-slate-700/50 truncate max-w-[50%]">
+                                {{ producto.articulo?.industria?.nombre }}
+                            </span>
+                        </div>
+
+                        <!-- Precio y Unidad -->
+                        <div class="flex items-center justify-between gap-1">
+                            <span class="text-base font-black text-slate-900 dark:text-white whitespace-nowrap">
+                                {{ producto.articulo?.precio_venta || producto.articulo?.precio_uno | moneda }}
+                            </span>
+                            <span [ngClass]="getBadgeClass(producto.articulo?.medida?.nombre_medida)"
+                                class="text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-tighter truncate max-w-[60px]"
+                                [title]="producto.articulo?.medida?.nombre_medida || 'Unid.'">
+                                {{ producto.articulo?.medida?.nombre_medida || 'Unid.' }}
+                            </span>
+                        </div>
+
+                        <!-- Acciones (Abajo) -->
+                        <div class="flex gap-1.5 pt-2 border-t border-gray-100 dark:border-slate-700/50">
+                            <!-- Botón Detalle (Ojo) -->
+                            <button type="button" (click)="openProductDetail(producto, $event)" title="Ver Detalle"
+                                class="flex-1 h-8 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-all duration-300 flex items-center justify-center shadow-sm border border-slate-200 dark:border-slate-600/50 hover:scale-105 active:scale-95">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+
+                            <!-- Botón Agregar (Carrito) -->
+                            <button type="button" (click)="agregarProductoAVenta(producto)"
+                                [disabled]="producto.stock_disponible <= 0"
+                                class="flex-1 h-8 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white rounded-lg transition-all duration-300 flex items-center justify-center shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-105 active:scale-95 group/btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div *ngIf="productosInventario.length === 0"
-                class="col-span-full text-center text-sm text-gray-500 dark:text-slate-400 py-8">
-                No hay productos disponibles en el inventario de este almacén.
+
+            <!-- Paginación Numerada -->
+            <div *ngIf="lastPage > 1"
+                class="col-span-full flex flex-wrap justify-center items-center gap-2 py-6 border-t border-gray-100 dark:border-slate-700/50 mt-4">
+                <!-- Botón Anterior -->
+                <button type="button" (click)="goToPage(currentPage - 1)"
+                    [disabled]="currentPage === 1 || isLoadingMore"
+                    class="flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 shadow-sm">
+                    <i class="fas fa-chevron-left text-xs"></i>
+                </button>
+
+                <!-- Números de Página -->
+                <div class="flex items-center gap-1.5">
+                    <button *ngFor="let page of getPages()" type="button" (click)="goToPage(page)"
+                        [disabled]="isLoadingMore" [ngClass]="{
+                            'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20': currentPage === page,
+                            'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-400 border-gray-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400': currentPage !== page
+                        }"
+                        class="flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-xl border font-bold text-sm transition-all duration-200 shadow-sm">
+                        {{ page }}
+                    </button>
+                </div>
+
+                <!-- Botón Siguiente -->
+                <button type="button" (click)="goToPage(currentPage + 1)"
+                    [disabled]="currentPage === lastPage || isLoadingMore"
+                    class="flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 shadow-sm">
+                    <i class="fas fa-chevron-right text-xs"></i>
+                </button>
+
+                <!-- Indicador de Carga -->
+                <div *ngIf="isLoadingMore"
+                    class="ml-4 flex items-center gap-2 text-xs font-medium text-blue-600 dark:text-blue-400">
+                    <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+                            fill="none"></circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    <span>Cargando...</span>
+                </div>
+            </div>
+
+            <div *ngIf="productosFiltrados.length === 0"
+                class="col-span-full flex flex-col items-center justify-center py-12 px-4">
+                <div class="bg-slate-100 dark:bg-slate-800 p-6 rounded-full mb-4">
+                    <i class="fas fa-search text-4xl text-slate-300 dark:text-slate-600"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">No se encontraron productos</h3>
+                <p class="text-slate-500 dark:text-slate-400 text-center max-w-xs mt-2">Intenta ajustar tus filtros o
+                    términos de búsqueda para encontrar lo que necesitas.</p>
             </div>
         </div>
     </div>

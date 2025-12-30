@@ -62,10 +62,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
     // Cargar notificaciones inicialmente
     this.loadNotifications(true); // true = primera carga, no mostrar toast
 
-    // Actualizar notificaciones cada 15 segundos (más frecuente para ser más reactivo)
+    // Actualizar notificaciones cada 60 segundos (menos frecuente para reducir carga)
     this.notificationInterval = setInterval(() => {
       this.loadNotifications(false); // false = polling, sí mostrar toast si hay nuevas
-    }, 15000);
+    }, 60000);
   }
 
   ngOnDestroy(): void {

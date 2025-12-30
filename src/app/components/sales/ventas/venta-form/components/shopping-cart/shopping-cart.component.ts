@@ -53,6 +53,10 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
         return index;
     }
 
+    trackById(index: number, item: any): number {
+        return item.id;
+    }
+
     removeDetalle(index: number, event?: Event): void {
         if (event) {
             event.preventDefault();
@@ -184,7 +188,7 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
                 const unidadEnvase = Number(producto.articulo.unidad_envase) || 1;
                 const precioCostoPaq = Number(producto.articulo.precio_costo_paq) || 0;
                 const precioCostoUnid = Number(producto.articulo.precio_costo_unid) || 0;
-                
+
                 if (precioCostoPaq > 0 && precioCostoUnid > 0) {
                     // Calcular margen de ganancia del precio unitario
                     const margen = (nuevoPrecio - precioCostoUnid) / precioCostoUnid;
@@ -202,7 +206,7 @@ export class ShoppingCartComponent implements OnChanges, OnInit {
             nuevoPrecio = Number(nuevoPrecio) || 0;
             const precioFormateado = parseFloat(nuevoPrecio.toFixed(2));
 
-            detalle.patchValue({ 
+            detalle.patchValue({
                 precio: precioFormateado,
                 unidad_medida: unidad
             });

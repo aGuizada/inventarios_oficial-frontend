@@ -74,7 +74,10 @@
             <div [class]="detalles.length > 0 ? 'w-full lg:w-2/3 h-full flex flex-col' : 'w-full h-full flex flex-col'">
                 <app-product-list [almacenId]="form.get('almacen_id')?.value"
                     [productosInventario]="productosInventario" [categorias]="categorias"
-                    (addProduct)="agregarProductoAVenta($event)">
+                    [hasCart]="detalles.length > 0" [currentPage]="currentPage" [lastPage]="lastPage"
+                    [isLoadingMore]="isLoadingMore" [searchTerm]="busquedaActual"
+                    (addProduct)="agregarProductoAVenta($event)" (search)="onProductSearch($event)"
+                    (categoryChange)="onCategoryChange($event)" (pageChange)="onPageChange($event)">
 
                     <!-- Proyección del Selector de Almacén -->
                     <div warehouse-selector class="relative menu-almacenes">
@@ -101,7 +104,8 @@
                                         [ngModelOptions]="{standalone: true}"
                                         class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                                         <option [ngValue]="null">Todas</option>
-                                        <option *ngFor="let sucursal of sucursales" [ngValue]="sucursal.id">{{
+                                        <option *ngFor="let sucursal of sucursales; trackBy: trackById"
+                                            [ngValue]="sucursal.id">{{
                                             sucursal.nombre }}</option>
                                     </select>
                                 </div>
@@ -109,7 +113,7 @@
                                     class="px-3 py-2 font-semibold text-gray-800 dark:text-slate-100 border-b border-gray-200 dark:border-slate-700">
                                     Almacenes</h3>
                                 <div class="max-h-64 overflow-y-auto">
-                                    <button type="button" *ngFor="let almacen of almacenesFiltrados"
+                                    <button type="button" *ngFor="let almacen of almacenesFiltrados; trackBy: trackById"
                                         (click)="cambiarAlmacen(almacen.id)" [ngClass]="{
                       'bg-blue-50 dark:bg-blue-900/30': form.get('almacen_id')?.value == almacen.id
                     }" class="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-md transition-colors flex items-center gap-2">

@@ -160,7 +160,7 @@
             <div>
                 <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-2">Tipo Venta</label>
                 <div class="flex gap-2">
-                    <button type="button" *ngFor="let tipoVenta of tiposVenta"
+                    <button type="button" *ngFor="let tipoVenta of tiposVenta; trackBy: trackById"
                         (click)="seleccionarTipoVenta(tipoVenta.id, $event)" [ngClass]="{
               'bg-green-600 text-white': parentForm.get('tipo_venta_id')?.value == tipoVenta.id,
               'bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-slate-300': parentForm.get('tipo_venta_id')?.value != tipoVenta.id
@@ -239,8 +239,8 @@
 
                 <!-- Botones para agregar pago -->
                 <div class="grid grid-cols-3 gap-2">
-                    <button type="button" *ngFor="let tipoPago of tiposPago" (click)="agregarPago(tipoPago.id, $event)"
-                        [ngClass]="{
+                    <button type="button" *ngFor="let tipoPago of tiposPago; trackBy: trackById"
+                        (click)="agregarPago(tipoPago.id, $event)" [ngClass]="{
                             'bg-green-600 text-white': isPagoAdded(tipoPago.id),
                             'bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-slate-300': !isPagoAdded(tipoPago.id)
                         }"

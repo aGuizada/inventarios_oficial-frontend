@@ -5,47 +5,80 @@
 }
 
 @if (!isLoading) {
-<div class="bg-white dark:bg-slate-800 shadow-md rounded-lg overflow-hidden border border-slate-100 dark:border-slate-700 transition-colors duration-200">
+<div
+    class="bg-white dark:bg-slate-800 shadow-md rounded-lg overflow-hidden border border-slate-100 dark:border-slate-700 transition-colors duration-200">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
             <thead class="bg-gray-50 dark:bg-slate-700">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Código
+                    <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                        Imagen
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Nombre
+                    <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                        Código
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Categoría
+                    <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                        Nombre
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Marca
+                    <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                        Categoría
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Stock
+                    <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                        Marca
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Precio
+                    <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                        Stock
+                    </th>
+                    <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                        Precio
                         Venta</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Estado
+                    <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                        Estado
                     </th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">Acciones
+                    <th
+                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-300 uppercase tracking-wider">
+                        Acciones
                     </th>
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
                 @for (articulo of (articulos || []); track articulo.id) {
                 <tr class="hover:bg-gray-50 dark:hover:bg-slate-700 transition duration-150">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ articulo.codigo }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-slate-100">{{ articulo.nombre }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ articulo.categoria?.nombre || 'N/A'
-                        }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ articulo.marca?.nombre || 'N/A' }}
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex-shrink-0 h-10 w-10">
+                            <img class="h-10 w-10 rounded-lg object-cover border border-gray-200 dark:border-slate-700 shadow-sm"
+                                [src]="getImageUrl(articulo)" [alt]="articulo.nombre"
+                                onerror="this.src='/assets/images/no-image.jpg'">
+                        </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ articulo.stock }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ articulo.precio_venta | moneda }}
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ articulo.codigo
+                        }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-slate-100">{{
+                        articulo.nombre }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{
+                        articulo.categoria?.nombre || 'N/A'
+                        }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{
+                        articulo.marca?.nombre || 'N/A' }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ articulo.stock
+                        }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{
+                        articulo.precio_venta | moneda }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span [ngClass]="{
                             'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300': articulo.estado,
                             'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300': !articulo.estado
-                        }"
-                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                        }" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
                             {{ articulo.estado ? 'Activo' : 'Inactivo' }}
                         </span>
                     </td>
@@ -62,7 +95,8 @@
                             </svg>
                         </button>
                         <button (click)="onEdit(articulo)"
-                            class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-3 inline-flex items-center" title="Editar">
+                            class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-3 inline-flex items-center"
+                            title="Editar">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
                                 fill="currentColor">
                                 <path
@@ -70,7 +104,8 @@
                             </svg>
                         </button>
                         <button (click)="onDelete(articulo.id)"
-                            class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 inline-flex items-center" title="Eliminar">
+                            class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 inline-flex items-center"
+                            title="Eliminar">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
                                 fill="currentColor">
                                 <path fill-rule="evenodd"
@@ -82,7 +117,8 @@
                 </tr>
                 } @empty {
                 <tr>
-                    <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-slate-400">No hay artículos registrados.
+                    <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-slate-400">No hay
+                        artículos registrados.
                     </td>
                 </tr>
                 }
@@ -91,7 +127,8 @@
     </div>
 
 
-    <div class="bg-white dark:bg-slate-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-slate-700 sm:px-6 transition-colors duration-200">
+    <div
+        class="bg-white dark:bg-slate-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-slate-700 sm:px-6 transition-colors duration-200">
         <div class="flex-1 flex justify-between sm:hidden">
             <button (click)="onPageChange(currentPage - 1)" [disabled]="currentPage === 1"
                 class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-slate-600 text-sm font-medium rounded-md text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors duration-200">

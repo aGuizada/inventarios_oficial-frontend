@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { AuthService } from '../../../services/auth.service';
 import { SidebarService } from '../../../services/sidebar.service';
 import { CommonModule } from '@angular/common';
@@ -21,12 +21,12 @@ interface MenuItem {
 export class SidebarComponent implements OnInit, OnDestroy {
   isCollapsed = false;
 
-  images = [
-    '/assets/images/carousel-1.jpg',
-    '/assets/images/carousel-2 (2).jpg'
-  ];
-  currentImageIndex = 0;
-  private intervalId: any;
+  images = {
+    light: '/assets/images/carousel-1.jpg',
+    dark: '/assets/images/carousel-2 (2).jpg'
+  };
+  currentImage = '';
+  private themeObserver: MutationObserver | null = null;
 
   private allMenuItems: MenuItem[] = [
     {
@@ -115,7 +115,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
-    private sidebarService: SidebarService
+    private sidebarService: SidebarService,
+    private ngZone: NgZone
   ) { }
 
   ngOnInit() {
@@ -127,19 +128,29 @@ export class SidebarComponent implements OnInit, OnDestroy {
       this.isCollapsed = collapsed;
     });
 
-    this.startCarousel();
+    this.updateImage();
+    this.setupThemeObserver();
   }
 
   ngOnDestroy() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
+    if (this.themeObserver) {
+      this.themeObserver.disconnect();
     }
   }
 
-  startCarousel() {
-    this.intervalId = setInterval(() => {
-      this.currentImageIndex = (this.currentImageIndex + 1) % this.images.length;
-    }, 3000);
+  setupThemeObserver() {
+    this.themeObserver = new MutationObserver(() => {
+      this.updateImage();
+    });
+    this.themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  }
+
+  updateImage() {
+    const isDark = document.documentElement.classList.contains('dark');
+    this.currentImage = isDark ? this.images.dark : this.images.light;
   }
 
   updateMenu() {

@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy, HostListener, Output, EventEmitter } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonModule, NgClass } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { VentaService, ProductoInventario } from '../../../../services/venta.service';
@@ -21,6 +22,8 @@ import Swal from 'sweetalert2';
 import { ProductListComponent } from './components/product-list/product-list.component';
 import { ShoppingCartComponent } from './components/shopping-cart/shopping-cart.component';
 import { CreditoModalComponent } from './components/credito-modal/credito-modal.component';
+
+import { SoundService } from '../../../../services/sound.service';
 
 @Component({
     selector: 'app-venta-form',
@@ -58,12 +61,22 @@ export class VentaFormComponent implements OnInit, OnDestroy {
     isLoading = false;
     isLoadingProductos = false; // Indicador de carga específico para productos
     mostrarMenuAlmacenes = false;
+    cartDependenciesLoaded = false; // Flag para carga diferida de dependencias del carrito
+
+    // Paginación de productos
+    currentPage = 1;
+    lastPage = 1;
+    perPage = 24;
+    totalProducts = 0;
+    isLoadingMore = false;
+    busquedaActual = '';
+    categoriaActual: number | null = null;
 
     // Caché de productos por almacén para evitar recargas innecesarias
     productosCache: Map<number, ProductoInventario[]> = new Map();
-    
+
     // Intervalo para actualizar stock en tiempo real
-    private stockUpdateInterval: any;
+    // private stockUpdateInterval: any;
 
     currentUserId = 1;
     currentUserSucursalId: number | null = null;
@@ -101,7 +114,9 @@ export class VentaFormComponent implements OnInit, OnDestroy {
         private categoriaService: CategoriaService,
         private authService: AuthService,
         private sucursalService: SucursalService,
-        private cdr: ChangeDetectorRef // Added
+        private cdr: ChangeDetectorRef,
+        private soundService: SoundService,
+        private router: Router
     ) {
         this.detallesFormArray = this.fb.array([]);
         const fechaHoraActual = new Date();
@@ -142,27 +157,19 @@ export class VentaFormComponent implements OnInit, OnDestroy {
             }
         }
 
-        // Cargar sucursales solo si es admin (no bloquea la carga principal)
-        if (this.isAdmin) {
-            this.loadSucursales();
-        }
-
-        // Cargar dependencias y cajas en paralelo
-        this.loadDependencies();
-        this.loadCajas();
+        // Cargar datos iniciales necesarios para mostrar la pantalla
+        this.loadInitialData();
         this.actualizarFechaHora();
-        
-        // Iniciar actualización periódica del stock en tiempo real (cada 10 segundos)
-        this.startStockUpdateInterval();
     }
 
     ngOnDestroy(): void {
         // Limpiar el intervalo cuando se destruye el componente
-        if (this.stockUpdateInterval) {
-            clearInterval(this.stockUpdateInterval);
-        }
+        // if (this.stockUpdateInterval) {
+        //     clearInterval(this.stockUpdateInterval);
+        // }
     }
 
+    /*
     startStockUpdateInterval(): void {
         // Actualizar el stock cada 10 segundos, forzando la recarga
         this.stockUpdateInterval = setInterval(() => {
@@ -174,28 +181,9 @@ export class VentaFormComponent implements OnInit, OnDestroy {
             }
         }, 10000); // 10 segundos
     }
+    */
 
-    loadSucursales(): void {
-        this.sucursalService.getAll().subscribe({
-            next: (response: any) => {
-                this.sucursales = Array.isArray(response) ? response : (response.data || []);
-                
-                // Si el usuario tiene una sucursal asignada, establecerla como seleccionada
-                // Usar setTimeout para asegurar que las opciones del select estén renderizadas
-                if (this.currentUserSucursalId) {
-                    // Establecer inmediatamente
-                    this.selectedSucursalId = this.currentUserSucursalId;
-                    
-                    // Establecer nuevamente después de que las opciones estén renderizadas
-                    setTimeout(() => {
-                        this.selectedSucursalId = this.currentUserSucursalId;
-                        this.cdr.detectChanges();
-                    }, 200);
-                }
-            },
-            error: (error: any) => {}
-        });
-    }
+
 
     filtrarAlmacenes(): void {
         // Si el usuario tiene una sucursal asignada, filtrar por esa primero
@@ -207,7 +195,7 @@ export class VentaFormComponent implements OnInit, OnDestroy {
         // Si el admin seleccionó manualmente una sucursal diferente (y no tiene sucursal asignada)
         else if (this.selectedSucursalId) {
             this.almacenesFiltrados = this.almacenes.filter(a => a.sucursal_id == this.selectedSucursalId);
-        } 
+        }
         // Si es admin sin sucursal asignada ni seleccionada, mostrar todos
         else {
             this.almacenesFiltrados = [...this.almacenes];
@@ -217,7 +205,7 @@ export class VentaFormComponent implements OnInit, OnDestroy {
     onSucursalChange(): void {
         // Filtrar almacenes según la sucursal seleccionada
         this.filtrarAlmacenes();
-        
+
         // Seleccionar almacén por defecto de la sucursal seleccionada
         this.seleccionarAlmacenPorDefecto();
     }
@@ -280,10 +268,76 @@ export class VentaFormComponent implements OnInit, OnDestroy {
         });
     }
 
-    loadDependencies(): void {
+    loadInitialData(): void {
         this.isLoading = true;
 
-        // Cargar dependencias independientes en paralelo
+        const requests: any = {
+            categorias: this.categoriaService.getAll().pipe(
+                map((response: any) => Array.isArray(response) ? response : (response.data || [])),
+                catchError(() => of([]))
+            ),
+            cajas: this.cajaService.getAll().pipe(
+                map((response: any) => Array.isArray(response) ? response : (response.data || [])),
+                catchError(() => of([]))
+            ),
+            almacenes: (this.isAdmin
+                ? this.almacenService.getPaginated({ per_page: 100 }).pipe(
+                    map((response: any) => response.data?.data || response.data || []),
+                    catchError(() => this.almacenService.getAll().pipe(
+                        map((response: any) => Array.isArray(response) ? response : (response.data || []))
+                    ))
+                )
+                : this.almacenService.getAll().pipe(
+                    map((response: any) => Array.isArray(response) ? response : (response.data || []))
+                )).pipe(catchError(() => of([])))
+        };
+
+        if (this.isAdmin) {
+            requests.sucursales = this.sucursalService.getAll().pipe(
+                map((response: any) => Array.isArray(response) ? response : (response.data || [])),
+                catchError(() => of([]))
+            );
+        }
+
+        forkJoin(requests).pipe(
+            finalize(() => this.isLoading = false)
+        ).subscribe({
+            next: (results: any) => {
+                this.categorias = results.categorias;
+                this.cajas = results.cajas;
+                this.almacenes = results.almacenes;
+                if (results.sucursales) {
+                    this.sucursales = results.sucursales;
+                }
+
+                // 1. Seleccionar caja abierta
+                this.seleccionarCajaAbierta();
+
+                // 2. Filtrar almacenes y seleccionar por defecto
+                if (this.currentUserSucursalId) {
+                    this.selectedSucursalId = this.currentUserSucursalId;
+                }
+                this.filtrarAlmacenes();
+                this.seleccionarAlmacenPorDefecto();
+
+                // 3. Asegurar que el selector de sucursal se actualice
+                if (this.currentUserSucursalId && this.sucursales.length > 0) {
+                    setTimeout(() => {
+                        this.selectedSucursalId = this.currentUserSucursalId;
+                        this.cdr.detectChanges();
+                    }, 100);
+                }
+            },
+            error: (error) => {
+                console.error('Error loading initial data', error);
+            }
+        });
+    }
+
+    loadCartDependencies(): void {
+        if (this.cartDependenciesLoaded) return;
+
+        this.isLoading = true;
         forkJoin({
             tiposVenta: this.tipoVentaService.getAll().pipe(
                 map((response: any) => {
@@ -293,9 +347,7 @@ export class VentaFormComponent implements OnInit, OnDestroy {
                         nombre: item.nombre_tipo_ventas || item.nombre
                     }));
                 }),
-                catchError(error => {
-                    return of([]);
-                })
+                catchError(() => of([]))
             ),
             tiposPago: this.tipoPagoService.getAll().pipe(
                 map((response: any) => {
@@ -305,89 +357,37 @@ export class VentaFormComponent implements OnInit, OnDestroy {
                         nombre: item.nombre_tipo_pago || item.nombre
                     }));
                 }),
-                catchError(error => {
-                    return of([]);
-                })
+                catchError(() => of([]))
+            ),
+            clientes: this.clienteService.getAll().pipe(
+                map((response: any) => Array.isArray(response) ? response : (response.data || [])),
+                catchError(() => of([]))
             )
         }).pipe(
-            finalize(() => this.isLoading = false)
+            finalize(() => {
+                this.isLoading = false;
+                this.cartDependenciesLoaded = true;
+            })
         ).subscribe({
             next: (results) => {
                 this.tiposVenta = results.tiposVenta;
                 this.tiposPago = results.tiposPago;
+                this.clientes = results.clientes;
 
-                // Seleccionar valores por defecto si existen
+                // 1. Configurar tipos de venta y pago por defecto
                 if (this.tiposVenta.length > 0) {
                     const contado = this.tiposVenta.find(t => (t.nombre || '').toLowerCase().includes('contado'));
-                    if (contado) {
-                        this.form.patchValue({ tipo_venta_id: contado.id });
-                    } else {
-                        this.form.patchValue({ tipo_venta_id: this.tiposVenta[0].id });
-                    }
+                    this.form.patchValue({ tipo_venta_id: contado ? contado.id : this.tiposVenta[0].id });
                 }
 
                 if (this.tiposPago.length > 0) {
                     const efectivo = this.tiposPago.find(t => (t.nombre || '').toLowerCase().includes('efectivo'));
-                    if (efectivo) {
-                        this.form.patchValue({ tipo_pago_id: efectivo.id });
-                    } else {
-                        this.form.patchValue({ tipo_pago_id: this.tiposPago[0].id });
-                    }
+                    this.form.patchValue({ tipo_pago_id: efectivo ? efectivo.id : this.tiposPago[0].id });
                 }
-            },
-            error: (error) => {}
-        });
 
-        // Cargar otras dependencias
-        this.clienteService.getAll().subscribe({
-            next: (response: any) => {
-                this.clientes = Array.isArray(response) ? response : (response.data || []);
+                // 2. Buscar cliente por defecto
                 this.buscarClientePorDefecto();
-            },
-            error: (error: any) => {}
-        });
-
-        // Cargar almacenes según el rol del usuario
-        const almacenRequest = this.isAdmin
-            ? this.almacenService.getPaginated({ per_page: 100 }).pipe(
-                map((response: any) => response.data?.data || response.data || []),
-                catchError(() => this.almacenService.getAll().pipe(
-                    map((response: any) => Array.isArray(response) ? response : (response.data || []))
-                ))
-            )
-            : this.almacenService.getAll().pipe(
-                map((response: any) => Array.isArray(response) ? response : (response.data || []))
-            );
-
-        almacenRequest.subscribe({
-            next: (almacenesData: Almacen[]) => {
-                this.almacenes = almacenesData;
-                
-                // Asegurar que selectedSucursalId esté establecido ANTES de filtrar
-                if (this.currentUserSucursalId) {
-                    this.selectedSucursalId = this.currentUserSucursalId;
-                }
-                
-                // Filtrar almacenes y seleccionar por defecto (igual que en compras)
-                this.filtrarAlmacenes();
-                this.seleccionarAlmacenPorDefecto();
-                
-                // Si las sucursales ya están cargadas, asegurar que el selector muestre la sucursal correcta
-                if (this.currentUserSucursalId && this.sucursales.length > 0) {
-                    setTimeout(() => {
-                        this.selectedSucursalId = this.currentUserSucursalId;
-                        this.cdr.detectChanges();
-                    }, 100);
-                }
-            },
-            error: (error: any) => {
-                this.almacenes = [];
             }
-        });
-
-        this.categoriaService.getAll().subscribe({
-            next: (response: any) => this.categorias = Array.isArray(response) ? response : (response.data || []),
-            error: (error: any) => {}
         });
     }
 
@@ -401,6 +401,7 @@ export class VentaFormComponent implements OnInit, OnDestroy {
 
         if (clienteEncontrado) {
             this.defaultCliente = clienteEncontrado;
+            this.form.patchValue({ cliente_id: clienteEncontrado.id });
         } else {
             // Intentar crear cliente por defecto automáticamente solo una vez
             // Si falla, simplemente no establecer cliente por defecto (el usuario deberá seleccionar uno)
@@ -422,6 +423,7 @@ export class VentaFormComponent implements OnInit, OnDestroy {
                     if (clienteCreado) {
                         this.clientes.push(clienteCreado);
                         this.defaultCliente = clienteCreado;
+                        this.form.patchValue({ cliente_id: clienteCreado.id });
                     }
                 },
                 error: (error: any) => {
@@ -431,17 +433,7 @@ export class VentaFormComponent implements OnInit, OnDestroy {
         }
     }
 
-    loadCajas(): void {
-        this.cajaService.getAll().subscribe({
-            next: (response: any) => {
-                this.cajas = Array.isArray(response) ? response : (response.data || []);
-                this.seleccionarCajaAbierta();
-            },
-            error: (error: any) => {
-                this.cajas = [];
-            }
-        });
-    }
+
 
     seleccionarCajaAbierta(): void {
         // Si es vendedor, solo buscar cajas de su sucursal
@@ -515,28 +507,103 @@ export class VentaFormComponent implements OnInit, OnDestroy {
     onAlmacenChange(): void {
         const almacenId = this.form.get('almacen_id')?.value;
         if (almacenId) {
+            this.currentPage = 1;
+            this.productosInventario = [];
             this.loadProductosInventario(almacenId);
         } else {
             this.productosInventario = [];
         }
     }
 
-    loadProductosInventario(almacenId: number, forceRefresh: boolean = false): void {
-        this.ventaService.getProductosInventario(almacenId, forceRefresh).subscribe({
-            next: (productos) => {
+    onProductSearch(term: string): void {
+        this.busquedaActual = term;
+        this.currentPage = 1;
+        this.productosInventario = [];
+        const almacenId = this.form.get('almacen_id')?.value;
+        if (almacenId) {
+            this.loadProductosInventario(almacenId);
+        }
+    }
+
+    onCategoryChange(categoriaId: number | null): void {
+        this.categoriaActual = categoriaId;
+        this.currentPage = 1;
+        this.productosInventario = [];
+        const almacenId = this.form.get('almacen_id')?.value;
+        if (almacenId) {
+            this.loadProductosInventario(almacenId);
+        }
+    }
+
+    onPageChange(page: number): void {
+        if (page >= 1 && page <= this.lastPage && !this.isLoadingMore) {
+            this.currentPage = page;
+            const almacenId = this.form.get('almacen_id')?.value;
+            if (almacenId) {
+                this.loadProductosInventario(almacenId, false, true);
+            }
+        }
+    }
+
+    loadProductosInventario(almacenId: number, forceRefresh: boolean = false, isLoadMore: boolean = false): void {
+        if (isLoadMore) {
+            this.isLoadingMore = true;
+        } else {
+            this.isLoadingProductos = true;
+        }
+
+        const params: any = {
+            page: this.currentPage,
+            per_page: this.perPage,
+            search: this.busquedaActual,
+            categoria_id: this.categoriaActual
+        };
+
+        this.ventaService.getProductosInventario(almacenId, forceRefresh, params).subscribe({
+            next: (response) => {
+                let nuevosProductos: ProductoInventario[] = [];
+
+                if (response.data && response.data.data) {
+                    // Respuesta paginada
+                    nuevosProductos = response.data.data;
+                    this.currentPage = response.data.current_page;
+                    this.lastPage = response.data.last_page;
+                    this.totalProducts = response.data.total;
+                } else {
+                    // Respuesta no paginada (array simple)
+                    nuevosProductos = Array.isArray(response) ? response : (response.data || []);
+                    this.currentPage = 1;
+                    this.lastPage = 1;
+                }
+
                 // Filtrar productos con stock > 0 (doble verificación)
-                const productosConStock = productos.filter(p => (p.stock_disponible ?? 0) > 0);
-                
-                // Guardar el stock original y actualizar el stock disponible
-                this.productosInventario = productosConStock.map(p => ({
+                const productosConStock = nuevosProductos.filter(p => (p.stock_disponible ?? 0) > 0);
+
+                const productosMapeados = productosConStock.map(p => ({
                     ...p,
                     stock_disponible_original: p.stock_disponible
                 } as ProductoInventario));
+
+                if (isLoadMore) {
+                    // En paginación numerada, reemplazamos la lista en lugar de concatenar
+                    this.productosInventario = productosMapeados;
+                } else {
+                    this.productosInventario = productosMapeados;
+                }
+
                 // Actualizar el stock local después de cargar
                 this.actualizarStockLocal();
+
+                this.isLoadingProductos = false;
+                this.isLoadingMore = false;
             },
             error: (error: any) => {
-                this.productosInventario = [];
+                console.error('Error loading products', error);
+                this.isLoadingProductos = false;
+                this.isLoadingMore = false;
+                if (!isLoadMore) {
+                    this.productosInventario = [];
+                }
             }
         });
     }
@@ -590,6 +657,11 @@ export class VentaFormComponent implements OnInit, OnDestroy {
     }
 
     agregarProductoAVenta(producto: ProductoInventario): void {
+        // Cargar dependencias del carrito si es la primera vez
+        if (!this.cartDependenciesLoaded) {
+            this.loadCartDependencies();
+        }
+
         const stockDisponible = producto.stock_disponible;
         if (stockDisponible <= 0) {
             this.showAlertMessage('Este producto no tiene stock disponible', 'warning');
@@ -610,6 +682,7 @@ export class VentaFormComponent implements OnInit, OnDestroy {
                 if (nuevaCantidad <= stockDisponible) {
                     detalleExistente.patchValue({ cantidad: nuevaCantidad });
                     this.calcularSubtotal(detalleExistente as FormGroup);
+                    this.soundService.playSuccessBeep();
                     return;
                 } else {
                     this.showAlertMessage(`No hay suficiente stock. Disponible: ${stockDisponible}`, 'warning');
@@ -633,13 +706,13 @@ export class VentaFormComponent implements OnInit, OnDestroy {
         // Calcular precio según la unidad de medida
         // Asegurar que siempre sea un número
         let precioVenta = Number(producto.articulo?.precio_venta) || Number(producto.articulo?.precio_uno) || 0;
-        
+
         if (unidadDefecto === 'Paquete') {
             // Calcular precio de venta del paquete: precio unitario * unidades por paquete
             const unidadEnvase = Number(producto.articulo?.unidad_envase) || 1;
             const precioCostoPaq = Number(producto.articulo?.precio_costo_paq) || 0;
             const precioCostoUnid = Number(producto.articulo?.precio_costo_unid) || 0;
-            
+
             if (precioCostoPaq > 0 && precioCostoUnid > 0) {
                 // Calcular margen de ganancia del precio unitario
                 const margen = (precioVenta - precioCostoUnid) / precioCostoUnid;
@@ -676,6 +749,7 @@ export class VentaFormComponent implements OnInit, OnDestroy {
         this.detalles.push(detalle);
         this.calcularTotal();
         this.actualizarStockLocal();
+        this.soundService.playSuccessBeep();
     }
 
     calcularSubtotal(detalle: FormGroup): void {
@@ -707,30 +781,30 @@ export class VentaFormComponent implements OnInit, OnDestroy {
     actualizarStockLocal(): void {
         // Crear un mapa de cantidades en el carrito por artículo
         const cantidadesEnCarrito = new Map<number, number>();
-        
+
         this.detalles.controls.forEach(control => {
             const articuloId = control.get('articulo_id')?.value;
             const cantidad = Number(control.get('cantidad')?.value || 0);
             const unidadMedida = control.get('unidad_medida')?.value || 'Unidad';
-            
+
             if (articuloId && cantidad > 0) {
                 const producto = this.productosInventario.find(p => p.articulo_id === articuloId);
                 if (producto) {
                     let cantidadDeducir = cantidad;
-                    
+
                     // Calcular cantidad a deducir según unidad de medida
                     if (unidadMedida === 'Paquete' && producto.articulo?.unidad_envase) {
                         cantidadDeducir = cantidad * (producto.articulo.unidad_envase > 0 ? producto.articulo.unidad_envase : 1);
                     } else if (unidadMedida === 'Centimetro') {
                         cantidadDeducir = cantidad / 100;
                     }
-                    
+
                     const cantidadActual = cantidadesEnCarrito.get(articuloId) || 0;
                     cantidadesEnCarrito.set(articuloId, cantidadActual + cantidadDeducir);
                 }
             }
         });
-        
+
         // Actualizar el stock disponible mostrado restando las cantidades en el carrito
         // Y filtrar productos que llegaron a stock 0 (solo si no están en el carrito)
         this.productosInventario = this.productosInventario
@@ -872,10 +946,10 @@ export class VentaFormComponent implements OnInit, OnDestroy {
             const cantidad = detalle.get('cantidad')?.value;
             const unidadMedida = detalle.get('unidad_medida')?.value || 'Unidad';
             const producto = this.productosInventario.find(p => p.articulo_id === articuloId);
-            
+
             // Usar stock_disponible_original (stock real) en lugar de stock_disponible (que ya fue descontado localmente)
             const stockOriginal = (producto as any)?.stock_disponible_original ?? producto?.stock_disponible ?? 0;
-            
+
             // Calcular cantidad a deducir según unidad de medida
             let cantidadDeducir = cantidad;
             if (unidadMedida === 'Paquete' && producto?.articulo?.unidad_envase) {
@@ -950,12 +1024,15 @@ export class VentaFormComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: (response: any) => {
                     this.showAlertMessage('Venta registrada con éxito', 'success');
-                    
+
+                    // Feedback sonoro (opcional aquí, ya se toca al agregar, pero una venta exitosa merece uno)
+                    this.soundService.playSuccessBeep();
+
                     // Limpiar el formulario y los detalles
                     this.detalles.clear();
                     this.pagos.clear();
                     this.calcularTotal();
-                    
+
                     // Limpiar el caché y recargar el inventario para reflejar el stock actualizado
                     const almacenId = this.form.get('almacen_id')?.value;
                     if (almacenId) {
@@ -966,7 +1043,7 @@ export class VentaFormComponent implements OnInit, OnDestroy {
                             this.loadProductosInventario(almacenId, true);
                         }, 500); // 500ms de delay para asegurar que el backend haya terminado
                     }
-                    
+
                     this.saleCompleted.emit();
 
                     const ventaId = response.id;
@@ -1009,5 +1086,14 @@ export class VentaFormComponent implements OnInit, OnDestroy {
 
     closeAlert(): void {
         this.showAlert = false;
+    }
+
+    isFieldInvalid(fieldName: string): boolean {
+        const field = this.form.get(fieldName);
+        return !!(field?.invalid && field.touched);
+    }
+
+    trackById(index: number, item: any): number {
+        return item.id;
     }
 }

@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, Input, OnInit, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Cliente } from '../../../../../../interfaces';
@@ -11,7 +11,7 @@ import { ClienteService } from '../../../../../../services/cliente.service';
     imports: [CommonModule, ReactiveFormsModule, FormsModule, ClienteFormComponent],
     templateUrl: './cliente-selector.component.html',
 })
-export class ClienteSelectorComponent implements OnInit {
+export class ClienteSelectorComponent implements OnInit, OnChanges {
     @Input() parentForm!: FormGroup;
     @Input() clientes: Cliente[] = [];
     @Output() clienteCreado = new EventEmitter<Cliente>();
@@ -25,9 +25,19 @@ export class ClienteSelectorComponent implements OnInit {
     constructor(private clienteService: ClienteService) { }
 
     ngOnInit(): void {
+        this.checkInitialSelection();
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes['clientes'] && this.clientes.length > 0) {
+            this.checkInitialSelection();
+        }
+    }
+
+    private checkInitialSelection(): void {
         // Si el formulario ya tiene un valor, intentar buscar el cliente para mostrar el nombre
         const clienteId = this.parentForm.get('cliente_id')?.value;
-        if (clienteId && this.clientes.length > 0) {
+        if (clienteId && this.clientes.length > 0 && !this.clienteSeleccionado) {
             const cliente = this.clientes.find(c => c.id === clienteId);
             if (cliente) {
                 this.seleccionarCliente(cliente);

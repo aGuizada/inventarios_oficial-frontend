@@ -14,11 +14,11 @@ export class ArticuloDetailComponent {
   @Input() articulo: Articulo | null = null;
   @Output() close = new EventEmitter<void>();
 
-  get imageUrl(): string | null {
+  get imageUrl(): string {
     if (this.articulo?.fotografia) {
       return `${environment.apiUrl.replace('/api', '')}/storage/${this.articulo.fotografia}`;
     }
-    return null;
+    return '/assets/images/no-image.jpg';
   }
 
   onClose(): void {
