@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ArticuloService } from '../../../services/articulo.service';
 import { CategoriaService } from '../../../services/categoria.service';
 import { MarcaService } from '../../../services/marca.service';
@@ -20,6 +21,7 @@ import { ArticuloDetailComponent } from './articulo-detail/articulo-detail.compo
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     ArticulosListComponent,
     ArticuloFormComponent,
     ArticuloImportComponent,
@@ -45,6 +47,10 @@ export class ArticulosComponent implements OnInit {
   perPage = 10;
   totalItems = 0;
   lastPage = 1;
+
+  // Search
+  searchTerm: string = '';
+  private searchTimeout: any;
 
   constructor(
     private articuloService: ArticuloService,
@@ -77,7 +83,18 @@ export class ArticulosComponent implements OnInit {
     // Asegurar que articulos siempre sea un array antes de la llamada
     this.articulos = [];
 
-    this.articuloService.getAll(page, this.perPage)
+    // Usar getAllPaginated para soportar búsqueda
+    const params: any = {
+      page: page,
+      per_page: this.perPage
+    };
+
+    if (this.searchTerm && this.searchTerm.trim() !== '') {
+      params.search = this.searchTerm.trim();
+      console.log('Parámetros de búsqueda enviados:', params);
+    }
+
+    this.articuloService.getAllPaginated(params)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response) => {
@@ -197,5 +214,25 @@ export class ArticulosComponent implements OnInit {
 
   exportPDF(): void {
     this.articuloService.exportPDF();
+  }
+
+  onSearchChange(): void {
+    // Limpiar timeout anterior
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
+
+    // Esperar 300ms después de que el usuario deje de escribir
+    this.searchTimeout = setTimeout(() => {
+      this.currentPage = 1; // Resetear a la primera página
+      console.log('Buscando con término:', this.searchTerm);
+      this.loadArticulos(1);
+    }, 300);
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.currentPage = 1;
+    this.loadArticulos(1);
   }
 }
